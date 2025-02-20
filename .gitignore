@@ -1,11 +1,16 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
+<<<<<<< HEAD
 # Rust
 backend/target/
 
 frontend/.next 
 frontend/node_modules
 
+=======
+.next 
+node_modules
+>>>>>>> 582419c (created bitcoin and nostr services with static website compatibility)
 # dependencies
 /node_modules
 /.pnp
