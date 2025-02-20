@@ -1,6 +1,24 @@
 [package]
-name = "backend"
+name = "scrow-backend"
 version = "0.1.0"
 edition = "2021"
+authors = [
+    "Jose Storopoli <jose@storopoli.com>",
+    "Luis Schwab <luisschwab@protonmail.com>",
+    "luca70d <lcgntj@protonmail.com>",
+    "blessedux <blessedux@protonmail.com>"
+]
+license = "MIT"
+
+[lib]
+crate-type = ["cdylib"]
 
 [dependencies]
+bitcoin = { version = "0.32.5", default-features = false, features = ["std", "serde", "secp-recovery", "rand"] }
+wasm-bindgen = "0.2.100"
+serde = { version = "1.0.218", features = ["derive"] }
+serde-wasm-bindgen = "0.6.5"
+getrandom = { version = "0.2", features = ["js"] }
+
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = true
