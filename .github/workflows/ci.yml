@@ -31,6 +31,7 @@ jobs:
           components: rustfmt
 
       - name: Check formatting
+        working-directory: backend
         run: |
           cargo fmt -- --check
 
@@ -93,4 +94,5 @@ jobs:
             cargo-${{ runner.os }}-
 
       - name: Check clippy
+        working-directory: backend
         run: cargo clippy --all-features --tests -- -D warnings
