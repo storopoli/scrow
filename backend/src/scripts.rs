@@ -163,7 +163,7 @@ mod tests {
         assert_eq!(unlocking_script_1, unlocking_script_2);
         assert_eq!(
             unlocking_script_1.to_asm_string(),
-            "OP_PUSHBYTES_33 028bde91b10013e08949a318018fedbd896534a549a278e220169ee2a36517c7aa OP_CHECKSIGVERIFY OP_PUSHBYTES_33 038f47dcd43ba6d97fc9ed2e3bba09b175a45fac55f0683e8cf771e8ced4572354 OP_CHECKSIG".to_string()
+            "OP_PUSHNUM_2 OP_PUSHBYTES_33 028bde91b10013e08949a318018fedbd896534a549a278e220169ee2a36517c7aa OP_PUSHBYTES_33 038f47dcd43ba6d97fc9ed2e3bba09b175a45fac55f0683e8cf771e8ced4572354 OP_PUSHNUM_2 OP_CHECKMULTISIG".to_string()
         );
     }
 
