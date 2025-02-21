@@ -13,6 +13,14 @@ pub fn convert_days_to_blocks(days: usize) -> usize {
     days * 144
 }
 
+pub fn convert_hours_to_blocks(hours: usize) -> usize {
+    hours * 6
+}
+
+pub fn convert_days_hours_to_blocks(days: usize, hours: usize) -> usize {
+    convert_days_to_blocks(days) + convert_hours_to_blocks(hours)
+}
+
 /// Checks `npub` from a bech32-encoded string
 pub fn check_npub(input: String) -> bool {
     let (hrp, data) = bech32::decode(&input).expect("Not a valid npub");
