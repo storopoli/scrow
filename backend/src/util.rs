@@ -4,25 +4,31 @@ use bitcoin::{
     bech32, hex, key::Parity, secp256k1::SecretKey as SecpSecretKey, PrivateKey, PublicKey,
     XOnlyPublicKey,
 };
+use wasm_bindgen::prelude::*;
+
 const PREFIX_BECH32_PUBLIC_KEY: &str = "npub";
 const PREFIX_BECH32_SECRET_KEY: &str = "nsec";
 const HRP_PUBLIC_KEY: bech32::Hrp = bech32::Hrp::parse_unchecked(PREFIX_BECH32_PUBLIC_KEY);
 const HRP_SECRET_KEY: bech32::Hrp = bech32::Hrp::parse_unchecked(PREFIX_BECH32_SECRET_KEY);
 
-pub fn convert_days_to_blocks(days: usize) -> usize {
+#[wasm_bindgen]
+pub fn convert_days_to_blocks_wasm(days: usize) -> usize {
     days * 144
 }
 
-pub fn convert_hours_to_blocks(hours: usize) -> usize {
+#[wasm_bindgen]
+pub fn convert_hours_to_blocks_wasm(hours: usize) -> usize {
     hours * 6
 }
 
-pub fn convert_days_hours_to_blocks(days: usize, hours: usize) -> usize {
-    convert_days_to_blocks(days) + convert_hours_to_blocks(hours)
+#[wasm_bindgen]
+pub fn convert_days_hours_to_blocks_wasm(days: usize, hours: usize) -> usize {
+    convert_days_to_blocks_wasm(days) + convert_hours_to_blocks_wasm(hours)
 }
 
+#[wasm_bindgen]
 /// Checks `npub` from a bech32-encoded string
-pub fn check_npub(input: String) -> bool {
+pub fn check_npub_wasm(input: String) -> bool {
     let (hrp, data) = bech32::decode(&input).expect("Not a valid npub");
 
     if hrp != HRP_PUBLIC_KEY || data.len() != 32 {
@@ -32,7 +38,7 @@ pub fn check_npub(input: String) -> bool {
 }
 
 /// Converts a `nsec` string to a [`SecretKey`]
-pub fn convert_nsec_to_secret_key(nsec: String, network: Network) -> PrivateKey {
+fn convert_nsec_to_secret_key(nsec: String, network: Network) -> PrivateKey {
     let (hrp, data) = bech32::decode(&nsec).expect("Invalid bech32 string");
     if hrp != HRP_SECRET_KEY {
         panic!("Wrong prefix for nsec");
@@ -42,13 +48,26 @@ pub fn convert_nsec_to_secret_key(nsec: String, network: Network) -> PrivateKey 
 }
 
 /// Convert a `nsec` bech32-encoded string to a hex-encoded string
-pub fn convert_nsec_to_hex(nsec: String, network: Network) -> String {
+fn convert_nsec_to_hex(nsec: String, network: Network) -> String {
     let secret_key: PrivateKey = convert_nsec_to_secret_key(nsec, network);
     hex::BytesToHexIter::new(secret_key.to_bytes().iter().copied()).collect()
 }
 
+#[wasm_bindgen]
+/// Convert a `nsec` bech32-encoded string to a hex-encoded string to wasm
+pub fn convert_nsec_to_hex_wasm(nsec: String, network: String) -> String {
+    let network = match network.as_str() {
+        "Mainnet" => Network::Bitcoin,
+        "Testnet" => Network::Testnet,
+        "Signet" => Network::Signet,
+        "Mutinynet" => Network::Signet,
+        _ => panic!("Invalid network"),
+    };
+    convert_nsec_to_hex(nsec, network)
+}
+
 /// Convert a `npub` to a [`PublicKey`]
-pub fn convert_npub_to_public_key(npub: String) -> PublicKey {
+fn convert_npub_to_public_key(npub: String) -> PublicKey {
     let (hrp, data) = bech32::decode(&npub).expect("Invalid bech32 string");
     if hrp != HRP_PUBLIC_KEY {
         panic!("Wrong prefix for npub");
@@ -58,21 +77,28 @@ pub fn convert_npub_to_public_key(npub: String) -> PublicKey {
     PublicKey::from(pk)
 }
 
+#[wasm_bindgen]
+/// Convert a `npub` bech32-encoded string to a hex-encoded string
+pub fn convert_npub_to_hex_wasm(npub: String) -> String {
+    let public_key: PublicKey = convert_npub_to_public_key(npub);
+    hex::BytesToHexIter::new(public_key.to_bytes().iter().copied()).collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn test_convert_days_to_blocks() {
-        assert_eq!(convert_days_to_blocks(1), 144);
-        assert_eq!(convert_days_to_blocks(2), 288);
-        assert_eq!(convert_days_to_blocks(3), 432);
+        assert_eq!(convert_days_to_blocks_wasm(1), 144);
+        assert_eq!(convert_days_to_blocks_wasm(2), 288);
+        assert_eq!(convert_days_to_blocks_wasm(3), 432);
     }
 
     #[test]
     fn test_check_npub() {
         let npub = "npub1tv7hxxwtw4gcz4n6fpduads7lsmynh5pjedgfhvdctnulrz9rsksjx28xe";
-        assert!(check_npub(npub.to_string()));
+        assert!(check_npub_wasm(npub.to_string()));
     }
 
     #[test]
@@ -100,6 +126,22 @@ mod tests {
         // NOTE: adding 02 for the even parity
         let expected_hex = "027e7e9c42a91bfef19fa929e5fda1b72e0ebc1a4c1141673e2794234d86addf4e";
         let hex: String = hex::BytesToHexIter::new(public_key.to_bytes().iter().copied()).collect();
+        assert_eq!(expected_hex, hex);
+    }
+
+    #[test]
+    fn test_convert_npub_to_hex() {
+        let npub = "npub10elfcs4fr0l0r8af98jlmgdh9c8tcxjvz9qkw038js35mp4dma8qzvjptg";
+        let expected_hex = "027e7e9c42a91bfef19fa929e5fda1b72e0ebc1a4c1141673e2794234d86addf4e";
+        let hex = convert_npub_to_hex_wasm(npub.to_string());
+        assert_eq!(expected_hex, hex);
+    }
+
+    #[test]
+    fn test_convert_nsec_to_hex_wasm() {
+        let nsec = "nsec1vl029mgpspedva04g90vltkh6fvh240zqtv9k0t9af8935ke9laqsnlfe5";
+        let expected_hex = "67dea2ed018072d675f5415ecfaed7d2597555e202d85b3d65ea4e58d2d92ffa";
+        let hex = convert_nsec_to_hex_wasm(nsec.to_string(), "Mainnet".to_string());
         assert_eq!(expected_hex, hex);
     }
 }
