@@ -1,6 +1,6 @@
 "use client"
 
-import { Copy, Camera, Info } from "lucide-react"
+import { Copy, Camera, Info, Github } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -13,6 +13,7 @@ import { Switch } from "@/components/ui/switch"
 import { useState } from "react"
 import { toast } from "sonner"
 import { useBitcoinPrice } from "@/hooks/useBitcoinPrice"
+import { cn } from "@/lib/utils"
 
 export default function CreateEscrowPage() {
   const [useThirdParty, setUseThirdParty] = useState(false)
@@ -20,6 +21,8 @@ export default function CreateEscrowPage() {
   const [amount, setAmount] = useState("")
   const [unit, setUnit] = useState<"sats" | "btc" | "usd">("sats")
   const { price, loading } = useBitcoinPrice()
+  const [feeRate, setFeeRate] = useState(16)
+  const [feePreset, setFeePreset] = useState<"economic" | "recommended" | "priority">("recommended")
 
   const handleCreateEscrow = async () => {
     try {
@@ -55,8 +58,42 @@ export default function CreateEscrowPage() {
     }
   }
 
+  const handleFeeChange = (value: number[]) => {
+    const newFee = value[0]
+    setFeeRate(newFee)
+    
+    if (newFee < 24) {
+      setFeePreset("economic")
+    } else if (newFee <= 32) {
+      setFeePreset("recommended")
+    } else {
+      setFeePreset("priority")
+    }
+  }
+
+  const handleFeePresetChange = (preset: "economic" | "recommended" | "priority") => {
+    setFeePreset(preset)
+    switch (preset) {
+      case "economic":
+        setFeeRate(16)
+        break
+      case "recommended":
+        setFeeRate(28)
+        break
+      case "priority":
+        setFeeRate(40)
+        break
+    }
+  }
+
+  const getConfirmationTime = (fee: number) => {
+    if (fee < 24) return "~30 min"
+    if (fee <= 32) return "~10 min"
+    return "< 5 min"
+  }
+
   return (
-    <div className="max-w-3xl mx-auto">
+    <div className="max-w-3xl mx-auto relative pb-16">
       <h1 className="text-2xl font-bold mb-6">Create Escrow</h1>
       <Card>
         <CardContent className="p-6 space-y-6">
@@ -340,36 +377,40 @@ export default function CreateEscrowPage() {
               </TooltipProvider>
             </div>
 
-            <Tabs defaultValue="recommended">
+            <Tabs value={feePreset} onValueChange={handleFeePresetChange}>
               <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="economic">Economic</TabsTrigger>
-                <TabsTrigger value="recommended">Recommended</TabsTrigger>
-                <TabsTrigger value="priority">Priority</TabsTrigger>
+                <TabsTrigger 
+                  value="economic"
+                  className={cn(feePreset === "economic" && "text-orange-500")}
+                >
+                  Economic
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="recommended"
+                  className={cn(feePreset === "recommended" && "text-orange-500")}
+                >
+                  Recommended
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="priority"
+                  className={cn(feePreset === "priority" && "text-orange-500")}
+                >
+                  Priority
+                </TabsTrigger>
               </TabsList>
-              <TabsContent value="economic">
+              <TabsContent value={feePreset}>
                 <div className="py-4">
-                  <Slider defaultValue={[2]} max={100} step={1} />
+                  <Slider 
+                    value={[feeRate]} 
+                    onValueChange={handleFeeChange}
+                    min={1}
+                    max={50}
+                    step={1}
+                    className="my-4"
+                  />
                   <div className="flex justify-between mt-2 text-sm text-muted-foreground">
-                    <span>8 sat/vB</span>
-                    <span>~30 min confirmation</span>
-                  </div>
-                </div>
-              </TabsContent>
-              <TabsContent value="recommended">
-                <div className="py-4">
-                  <Slider defaultValue={[16]} max={100} step={1} />
-                  <div className="flex justify-between mt-2 text-sm text-muted-foreground">
-                    <span>16 sat/vB</span>
-                    <span>~10 min confirmation</span>
-                  </div>
-                </div>
-              </TabsContent>
-              <TabsContent value="priority">
-                <div className="py-4">
-                  <Slider defaultValue={[32]} max={100} step={1} />
-                  <div className="flex justify-between mt-2 text-sm text-muted-foreground">
-                    <span>32 sat/vB</span>
-                    <span>~5 min confirmation</span>
+                    <span>{feeRate} sat/vB</span>
+                    <span>{getConfirmationTime(feeRate)}</span>
                   </div>
                 </div>
               </TabsContent>
@@ -382,6 +423,16 @@ export default function CreateEscrowPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Add GitHub link with circular background */}
+      <a
+        href="https://github.com/storopoli/scrow/"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="fixed bottom-4 right-4 p-2 bg-black rounded-full border border-zinc-800/40 text-zinc-400 hover:text-white transition-colors"
+      >
+        <Github className="w-6 h-6" />
+      </a>
     </div>
   )
 }

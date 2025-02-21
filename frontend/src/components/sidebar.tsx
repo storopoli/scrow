@@ -3,7 +3,7 @@
 import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
 import { navItems } from "@/config/nav"
-import { ChevronLeft, ChevronRight } from "lucide-react"
+import { ChevronLeft, ChevronRight, Github } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useState } from "react"
 import { cn } from "@/lib/utils"
@@ -14,10 +14,10 @@ export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false)
 
   return (
-    <div className="relative flex">
+    <div className="relative flex h-screen flex-col">
       <div
         className={cn(
-          "bg-gradient-to-b from-zinc-900 to-black border-r border-zinc-800/40 text-white p-4 transition-all duration-300",
+          "bg-gradient-to-b from-zinc-900 to-black border-r border-zinc-800/40 text-white p-4 flex flex-col flex-1",
           collapsed ? "w-[80px]" : "w-[240px]"
         )}
       >
@@ -63,6 +63,15 @@ export function Sidebar() {
             </button>
           ))}
         </nav>
+
+        <div className="mt-auto pt-4 text-center">
+          <p className={cn(
+            "text-white/80 text-sm transition-opacity duration-200",
+            collapsed ? "opacity-0" : "opacity-100"
+          )}>
+            Satoshi Escrow
+          </p>
+        </div>
       </div>
 
       <Button
