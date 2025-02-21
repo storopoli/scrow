@@ -15,6 +15,8 @@ import { toast } from "sonner"
 import { useBitcoinPrice } from "@/hooks/useBitcoinPrice"
 import { cn } from "@/lib/utils"
 
+type FeePreset = "economic" | "recommended" | "priority"
+
 export default function CreateEscrowPage() {
   const [useThirdParty, setUseThirdParty] = useState(false)
   const [includeThirdPartyAddress, setIncludeThirdPartyAddress] = useState(false)
@@ -22,7 +24,7 @@ export default function CreateEscrowPage() {
   const [unit, setUnit] = useState<"sats" | "btc" | "usd">("sats")
   const { price, loading } = useBitcoinPrice()
   const [feeRate, setFeeRate] = useState(16)
-  const [feePreset, setFeePreset] = useState<"economic" | "recommended" | "priority">("recommended")
+  const [feePreset, setFeePreset] = useState<FeePreset>("recommended")
 
   const handleCreateEscrow = async () => {
     try {
@@ -71,7 +73,8 @@ export default function CreateEscrowPage() {
     }
   }
 
-  const handleFeePresetChange = (preset: "economic" | "recommended" | "priority") => {
+  const handleFeePresetChange = (value: string) => {
+    const preset = value as FeePreset
     setFeePreset(preset)
     switch (preset) {
       case "economic":
