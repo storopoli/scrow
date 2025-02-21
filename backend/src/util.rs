@@ -1,9 +1,11 @@
+use bitcoin::key::Secp256k1;
 use bitcoin::secp256k1::PublicKey as SecpPublicKey;
 use bitcoin::Network;
 use bitcoin::{
     bech32, hex, key::Parity, secp256k1::SecretKey as SecpSecretKey, PrivateKey, PublicKey,
     XOnlyPublicKey,
 };
+use miniscript::ToPublicKey;
 use wasm_bindgen::prelude::*;
 
 const PREFIX_BECH32_PUBLIC_KEY: &str = "npub";
@@ -77,6 +79,29 @@ fn convert_npub_to_public_key(npub: String) -> PublicKey {
     PublicKey::from(pk)
 }
 
+/// Calculates a pub_key from a nsec string
+fn pub_key_derivation_to_sign(nsec: String, network: Network) -> SecpPublicKey {
+    let sec_key = convert_nsec_to_secret_key(nsec, network);
+    let pub_key: SecpPublicKey = SecpPublicKey::from_secret_key(&Secp256k1::new(), &sec_key.inner);
+    let x_only_pk = pub_key.to_x_only_pubkey();
+    SecpPublicKey::from_x_only_public_key(x_only_pk, Parity::Even)
+}
+
+#[wasm_bindgen]
+/// Calculates a pub_key from a nsec string to wasm
+/// Returns a hex-encoded string
+pub fn pub_key_derivation_to_sign_wasm(nsec: String, network: String) -> String {
+    let network = match network.as_str() {
+        "Mainnet" => Network::Bitcoin,
+        "Testnet" => Network::Testnet,
+        "Signet" => Network::Signet,
+        "Mutinynet" => Network::Signet,
+        _ => panic!("Invalid network"),
+    };
+    let public_key = pub_key_derivation_to_sign(nsec, network);
+    hex::BytesToHexIter::new(public_key.serialize().iter().copied()).collect()
+}
+
 #[wasm_bindgen]
 /// Convert a `npub` bech32-encoded string to a hex-encoded string
 pub fn convert_npub_to_hex_wasm(npub: String) -> String {
@@ -86,6 +111,9 @@ pub fn convert_npub_to_hex_wasm(npub: String) -> String {
 
 #[cfg(test)]
 mod tests {
+    use bitcoin::key::Secp256k1;
+    use miniscript::ToPublicKey;
+
     use super::*;
 
     #[test]
@@ -143,5 +171,33 @@ mod tests {
         let expected_hex = "67dea2ed018072d675f5415ecfaed7d2597555e202d85b3d65ea4e58d2d92ffa";
         let hex = convert_nsec_to_hex_wasm(nsec.to_string(), "Mainnet".to_string());
         assert_eq!(expected_hex, hex);
+    }
+
+    #[test]
+    fn test_convert_nsec_to_hex() {
+        let nsec = "nsec103m6x7a369k95rhtdn5w5mxsdpgyqprnysdtvhe6m0ef5xuz9d6s6emzda";
+        let expected_hex = "7c77a37bb1d16c5a0eeb6ce8ea6cd06850400473241ab65f3adbf29a1b822b75";
+        let hex = convert_nsec_to_hex_wasm(nsec.to_string(), "Mainnet".to_string());
+        assert_eq!(expected_hex, hex);
+    }
+
+    #[test]
+    fn test_pub_key_derivation_to_sign() {
+        let nsec = "nsec103m6x7a369k95rhtdn5w5mxsdpgyqprnysdtvhe6m0ef5xuz9d6s6emzda";
+        let sec_key = convert_nsec_to_secret_key(nsec.to_string(), Network::Bitcoin);
+        let pub_key: SecpPublicKey = SecpPublicKey::from_secret_key(&Secp256k1::new(), &sec_key.inner);
+        let pub_key = pub_key.to_x_only_pubkey();
+        let pub_key_hex: String = hex::BytesToHexIter::new(pub_key.serialize().iter().copied()).collect();
+        let expected_hex = "2d7b3d8028c474251676708ec41f12100685b200ccbb394e5e782d73b233a8eb";
+        assert_eq!(expected_hex, pub_key_hex);
+    }
+
+    #[test]
+    fn test_pub_key_derivation_to_sign_ypar() {
+        let nsec = "nsec103m6x7a369k95rhtdn5w5mxsdpgyqprnysdtvhe6m0ef5xuz9d6s6emzda";
+        let public_key = pub_key_derivation_to_sign(nsec.to_string(), Network::Bitcoin);
+        let pub_key_hex: String = hex::BytesToHexIter::new(public_key.serialize().iter().copied()).collect();
+        let expected_hex = "022d7b3d8028c474251676708ec41f12100685b200ccbb394e5e782d73b233a8eb";
+        assert_eq!(expected_hex, pub_key_hex);
     }
 }
