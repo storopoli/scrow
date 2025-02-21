@@ -1,7 +1,4 @@
-use std::str::FromStr;
-
-use bitcoin::{opcodes::all::*, Address, Network, PublicKey, ScriptBuf};
-use miniscript::Descriptor;
+use bitcoin::{opcodes::all::*, Address, Network, PublicKey, ScriptBuf, Sequence};
 
 /// Our homebrewed `OP_2` opcode.
 pub const OP_2: u8 = 0x52;
@@ -68,17 +65,30 @@ pub fn new_dispute_address(
     sorted_keys.sort();
     let mut sorted_keys_all = [public_keys.to_vec(), vec![arbitrator]].concat();
     sorted_keys_all.sort();
-    let descriptor = Descriptor::<PublicKey>::from_str(&format!(
-        "wsh(andor(pk({}),pk({}),and_v(v:multi(2,{},{},{}),older({}))))",
-        sorted_keys[0],
-        sorted_keys[1],
-        sorted_keys_all[0],
-        sorted_keys_all[1],
-        sorted_keys_all[2],
-        timelock_duration,
-    ))
-    .unwrap();
-    descriptor.address(network).unwrap()
+
+    let sequence = Sequence::from_consensus(timelock_duration);
+
+    let script = ScriptBuf::builder()
+        .push_opcode(OP_IF)
+        .push_opcode(OP_2.into())
+        .push_slice(sorted_keys[0].inner.serialize())
+        .push_slice(sorted_keys[1].inner.serialize())
+        .push_opcode(OP_2.into())
+        .push_opcode(OP_CHECKMULTISIG)
+        .push_opcode(OP_ELSE)
+        .push_opcode(OP_2.into())
+        .push_slice(sorted_keys_all[0].inner.serialize())
+        .push_slice(sorted_keys_all[1].inner.serialize())
+        .push_slice(sorted_keys_all[2].inner.serialize())
+        .push_opcode(OP_3.into())
+        .push_opcode(OP_CHECKMULTISIG)
+        .push_sequence(sequence)
+        .push_opcode(OP_CSV)
+        .push_opcode(OP_DROP)
+        .push_opcode(OP_ENDIF)
+        .into_script();
+
+    Address::p2wsh(&script, network)
 }
 
 /// Creates a dispute-resolution 2-of-3 multisig P2WSH locking script ([`ScriptBuf`]) from 2 [`PublicKey`]s
@@ -97,21 +107,34 @@ pub fn new_dispute_unlocking_script(
     sorted_keys.sort();
     let mut sorted_keys_all = [public_keys.to_vec(), vec![arbitrator]].concat();
     sorted_keys_all.sort();
-    let descriptor = Descriptor::<PublicKey>::from_str(&format!(
-        "wsh(andor(pk({}),pk({}),and_v(v:multi(2,{},{},{}),older({}))))",
-        sorted_keys[0],
-        sorted_keys[1],
-        sorted_keys_all[0],
-        sorted_keys_all[1],
-        sorted_keys_all[2],
-        timelock_duration,
-    ))
-    .unwrap();
-    descriptor.explicit_script().unwrap()
+
+    let sequence = Sequence::from_consensus(timelock_duration);
+
+    ScriptBuf::builder()
+        .push_opcode(OP_IF)
+        .push_opcode(OP_2.into())
+        .push_slice(sorted_keys[0].inner.serialize())
+        .push_slice(sorted_keys[1].inner.serialize())
+        .push_opcode(OP_2.into())
+        .push_opcode(OP_CHECKMULTISIG)
+        .push_opcode(OP_ELSE)
+        .push_opcode(OP_2.into())
+        .push_slice(sorted_keys_all[0].inner.serialize())
+        .push_slice(sorted_keys_all[1].inner.serialize())
+        .push_slice(sorted_keys_all[2].inner.serialize())
+        .push_opcode(OP_3.into())
+        .push_opcode(OP_CHECKMULTISIG)
+        .push_sequence(sequence)
+        .push_opcode(OP_CSV)
+        .push_opcode(OP_DROP)
+        .push_opcode(OP_ENDIF)
+        .into_script()
 }
 
 #[cfg(test)]
 mod tests {
+    use std::str::FromStr;
+
     use bitcoin::AddressType;
 
     use super::*;
@@ -191,7 +214,7 @@ mod tests {
         assert_eq!(address_1.address_type().unwrap(), AddressType::P2wsh);
         assert_eq!(
             address_1.to_string(),
-            "tb1q82d8pajf352tdskcrxzum7vwe4pypt0lfta0utaznntzpyldeh9sk2tsmd".to_string()
+            "tb1q2g57akwgzmhmrrfseafr3nre4fs0l0a7hsf7nsj3wqeltcqehycskvfxtr".to_string()
         );
     }
 
@@ -209,7 +232,7 @@ mod tests {
         assert_eq!(unlocking_script_1, unlocking_script_2);
         assert_eq!(
             unlocking_script_1.to_asm_string(),
-            "OP_PUSHBYTES_33 028bde91b10013e08949a318018fedbd896534a549a278e220169ee2a36517c7aa OP_CHECKSIG OP_NOTIF OP_PUSHNUM_2 OP_PUSHBYTES_33 028bde91b10013e08949a318018fedbd896534a549a278e220169ee2a36517c7aa OP_PUSHBYTES_33 032b8324c93575034047a52e9bca05a46d8347046b91a032eff07d5de8d3f2730b OP_PUSHBYTES_33 038f47dcd43ba6d97fc9ed2e3bba09b175a45fac55f0683e8cf771e8ced4572354 OP_PUSHNUM_3 OP_CHECKMULTISIGVERIFY OP_PUSHBYTES_1 64 OP_CSV OP_ELSE OP_PUSHBYTES_33 038f47dcd43ba6d97fc9ed2e3bba09b175a45fac55f0683e8cf771e8ced4572354 OP_CHECKSIG OP_ENDIF".to_string()
+            "OP_IF OP_PUSHNUM_2 OP_PUSHBYTES_33 028bde91b10013e08949a318018fedbd896534a549a278e220169ee2a36517c7aa OP_PUSHBYTES_33 038f47dcd43ba6d97fc9ed2e3bba09b175a45fac55f0683e8cf771e8ced4572354 OP_PUSHNUM_2 OP_CHECKMULTISIG OP_ELSE OP_PUSHNUM_2 OP_PUSHBYTES_33 028bde91b10013e08949a318018fedbd896534a549a278e220169ee2a36517c7aa OP_PUSHBYTES_33 032b8324c93575034047a52e9bca05a46d8347046b91a032eff07d5de8d3f2730b OP_PUSHBYTES_33 038f47dcd43ba6d97fc9ed2e3bba09b175a45fac55f0683e8cf771e8ced4572354 OP_PUSHNUM_3 OP_CHECKMULTISIG OP_PUSHBYTES_1 64 OP_CSV OP_DROP OP_ENDIF".to_string()
         );
     }
 }
