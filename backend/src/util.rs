@@ -9,7 +9,7 @@ pub fn convert_days_to_blocks(days: usize) -> usize {
     days * 144
 }
 
-/// Check npub from a bech32 encoded string
+/// Checks `npub` from a bech32-encoded string
 pub fn check_npub(input: String) -> bool {
     let (hrp, data) = bech32::decode(&input).expect("Not a valid npub");
 
@@ -19,7 +19,7 @@ pub fn check_npub(input: String) -> bool {
     true
 }
 
-// Converts a nsec string to a SecretKey
+/// Converts a `nsec` string to a [`SecretKey`]
 pub fn convert_nsec_to_secret_key(nsec: String) -> SecretKey {
     let (hrp, data) = bech32::decode(&nsec).expect("Invalid bech32 string");
     if hrp != HRP_SECRET_KEY {
@@ -28,7 +28,7 @@ pub fn convert_nsec_to_secret_key(nsec: String) -> SecretKey {
     SecretKey::from_slice(&data).expect("Invalid secret key data")
 }
 
-/// Convert a nsec on bech32 to a hex string
+/// Convert a `nsec` bech32-encoded string to a hex-encoded string
 pub fn convert_nsec_to_hex(nsec: String) -> String {
     let secret_key: SecretKey = convert_nsec_to_secret_key(nsec);
     let hex: String = hex::BytesToHexIter::new(secret_key.secret_bytes().iter().copied()).collect();
