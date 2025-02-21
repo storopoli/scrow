@@ -4,6 +4,7 @@ import type React from "react"
 import "../app/globals.css"
 import { Inter } from "next/font/google"
 import { Sidebar } from "@/components/sidebar"
+import { Toaster } from "sonner"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -21,6 +22,7 @@ export default function RootLayout({
             {children}
           </div>
         </div>
+        <Toaster theme="dark" position="top-right" />
       </body>
     </html>
   )
