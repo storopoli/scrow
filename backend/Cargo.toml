@@ -42,5 +42,8 @@ web-sys = { version = "0.3.77", features = ["console"] }
 tokio = { version = "1.43.0", features = ["test-util", "macros", "rt"] }
 wasm-bindgen-test = "0.3"
 
+[dev-dependencies]
+corepc-node = { version = "0.5.0", features = ["28_0", "download"] }
+
 [package.metadata.wasm-pack.profile.release]
 wasm-opt = true
