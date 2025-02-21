@@ -43,12 +43,12 @@ pub fn sign_tx_collaborative(
     index: usize,
     private_key: PrivateKey,
     amount: Amount,
-    script_pubkey: ScriptBuf,
+    unlocking_script: ScriptBuf,
 ) -> ecdsa::Signature {
     let sighash_type = EcdsaSighashType::All;
     let mut sighash_cache = SighashCache::new(tx);
     let sighash = sighash_cache
-        .p2wsh_signature_hash(index, &script_pubkey, amount, sighash_type)
+        .p2wsh_signature_hash(index, &unlocking_script, amount, sighash_type)
         .unwrap();
     let message = Message::from(sighash);
     let signature = SECP256K1.sign_ecdsa(&message, &private_key.inner);
@@ -398,7 +398,7 @@ mod tests {
             lock_time: LockTime::ZERO,
         };
         println!(
-            "Unsigned transaction: {}",
+            "Unsigned funding transaction: {}",
             consensus::serialize(&unsigned).as_hex()
         );
 
@@ -419,12 +419,13 @@ mod tests {
         };
         *sighash_cache.witness_mut(0).unwrap() = Witness::p2wpkh(&signature, &public_key1.inner);
         let signed_tx = sighash_cache.into_transaction();
-        println!("Signed transaction: {:?}", signed_tx);
+        println!("Signed funding transaction: {:?}", signed_tx);
 
         // Test if the transaction is valid.
         let result = btc_client.send_raw_transaction(&signed_tx);
         assert!(result.is_ok());
         let txid = result.unwrap().txid().unwrap();
+        assert_eq!(txid, signed_tx.compute_txid());
         println!("Transaction ID: {}", txid);
         // Mine 1 block to mine the transaction
         btc_client.generate_to_address(1, &funded_address).unwrap();
@@ -460,14 +461,14 @@ mod tests {
             0,
             private_key1,
             multisig_amount,
-            script_pubkey.clone(),
+            unlocking_script.clone(),
         );
         let sig_2 = sign_tx_collaborative(
             unsigned_tx.clone(),
             0,
             private_key2,
             multisig_amount,
-            script_pubkey,
+            unlocking_script.clone(),
         );
         let signed_tx =
             combine_signatures(unsigned_tx, 0, vec![sig_2, sig_1], unlocking_script, true);
