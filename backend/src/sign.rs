@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 
 use bitcoin::{
-    sighash::SighashCache, Amount, EcdsaSighashType, PrivateKey, Psbt, PublicKey, ScriptBuf,
+    ecdsa, sighash::SighashCache, Amount, EcdsaSighashType, PrivateKey, Psbt, PublicKey, ScriptBuf,
     Transaction, TxOut,
 };
 use secp256k1::{Message, SECP256K1};
@@ -44,9 +44,7 @@ pub fn sign_tx_collaborative(
     private_key: PrivateKey,
     amount: Amount,
     script_pubkey: ScriptBuf,
-    unlocking_script: ScriptBuf,
-    already_partially_signed: bool,
-) -> Transaction {
+) -> ecdsa::Signature {
     let sighash_type = EcdsaSighashType::All;
     let mut sighash_cache = SighashCache::new(tx);
     let sighash = sighash_cache
@@ -54,20 +52,25 @@ pub fn sign_tx_collaborative(
         .unwrap();
     let message = Message::from(sighash);
     let signature = SECP256K1.sign_ecdsa(&message, &private_key.inner);
+    ecdsa::Signature {
+        signature,
+        sighash_type,
+    }
+}
 
-    // Update the witness stack
-    let mut transaction = sighash_cache.into_transaction();
-    if !already_partially_signed {
-        // We need to push the length
-        transaction.input[index].witness.push([0x03]);
+/// Combine multiple [`ecdsa::Signature`]s into a single [`Transaction`] input.
+pub fn combine_signatures(
+    tx: Transaction,
+    index: usize,
+    signatures: Vec<ecdsa::Signature>,
+    unlocking_script: ScriptBuf,
+) -> Transaction {
+    let mut transaction = tx;
+    transaction.input[index].witness.push(&[]);
+    for (_, signature) in signatures.into_iter().enumerate() {
+        transaction.input[index].witness.push(signature.serialize());
     }
-    transaction.input[index]
-        .witness
-        .push(signature.serialize_der());
-    if already_partially_signed {
-        // Push the unlocking script after the final signature.
-        transaction.input[index].witness.push(&unlocking_script);
-    }
+    transaction.input[index].witness.push(&unlocking_script);
     transaction
 }
 
@@ -439,24 +442,21 @@ mod tests {
 
         let unlocking_script = new_collaborative_unlocking_script([public_key1, public_key2]);
         println!("Unlocking Script: {}", unlocking_script);
-        let partial_signed_tx = sign_tx_collaborative(
-            unsigned_tx,
-            0,
-            private_key2,
-            multisig_amount,
-            script_pubkey.clone(),
-            unlocking_script.clone(),
-            false,
-        );
-        let signed_tx = sign_tx_collaborative(
-            partial_signed_tx,
+        let sig_1 = sign_tx_collaborative(
+            unsigned_tx.clone(),
             0,
             private_key1,
             multisig_amount,
-            script_pubkey,
-            unlocking_script,
-            true,
+            script_pubkey.clone(),
         );
+        let sig_2 = sign_tx_collaborative(
+            unsigned_tx.clone(),
+            0,
+            private_key2,
+            multisig_amount,
+            script_pubkey,
+        );
+        let signed_tx = combine_signatures(unsigned_tx, 0, vec![sig_2, sig_1], unlocking_script);
         println!(
             "Signed transaction: {}",
             consensus::serialize(&signed_tx).as_hex()
