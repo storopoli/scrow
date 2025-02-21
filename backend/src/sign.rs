@@ -59,21 +59,37 @@ pub fn sign_tx_collaborative(
 }
 
 /// Combine multiple [`ecdsa::Signature`]s into a single [`Transaction`] input.
+///
+/// It also sorts the PKs to see which one is the first to go into the witness stack,
+/// given a sorted multisig script.
 pub fn combine_signatures(
     tx: Transaction,
     index: usize,
     signatures: Vec<ecdsa::Signature>,
+    pks: Vec<PublicKey>,
     unlocking_script: ScriptBuf,
     collaborative: bool,
 ) -> Transaction {
     let mut transaction = tx;
-    // Collaborative means 2-of-2 multisig
+    // Collaborative means 2-of-2 multisig.
+    // And we need a fucking empty thing first.
     if collaborative {
         transaction.input[index].witness.push([]);
     }
-    for signature in signatures.into_iter() {
+
+    // Create pairs of PKs and signatures and sort by PK
+    let mut pairs: Vec<(PublicKey, ecdsa::Signature)> =
+        pks.into_iter().zip(signatures.into_iter()).collect();
+
+    // Sort pairs based on public keys
+    pairs.sort_by(|a, b| a.0.cmp(&b.0));
+
+    // Push signatures in order of sorted public keys
+    for (_, signature) in pairs {
         transaction.input[index].witness.push(signature.serialize());
     }
+
+    // Finally, push the unlocking script
     transaction.input[index].witness.push(&unlocking_script);
     transaction
 }
@@ -470,8 +486,14 @@ mod tests {
             multisig_amount,
             unlocking_script.clone(),
         );
-        let signed_tx =
-            combine_signatures(unsigned_tx, 0, vec![sig_2, sig_1], unlocking_script, true);
+        let signed_tx = combine_signatures(
+            unsigned_tx,
+            0,
+            vec![sig_1, sig_2],
+            vec![public_key1, public_key2],
+            unlocking_script,
+            true,
+        );
         assert!(signed_tx.input[0].witness.witness_script().is_some());
         println!(
             "Signed transaction: {}",
