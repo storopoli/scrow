@@ -7,7 +7,7 @@ use miniscript::Descriptor;
 /// given a [`Network`].
 pub fn new_collaborative_address(public_keys: [PublicKey; 2], network: Network) -> Address {
     let descriptor = Descriptor::<PublicKey>::from_str(&format!(
-        "wsh(or_b(pk({}),s:pk({})))",
+        "wsh(and_v(v:pk({}),pk({})))",
         public_keys[0], public_keys[1]
     ))
     .unwrap();
@@ -18,7 +18,7 @@ pub fn new_collaborative_address(public_keys: [PublicKey; 2], network: Network) 
 /// an arbitrator [`PublicKey`] and a timelock duration in blocks
 /// given a [`Network`].
 ///
-/// The policy is as follows either:
+/// The policy is as follows. Either:
 ///
 /// - 2-of-2 multisig between the two parties without timelocks.
 /// - 2-of-3 multisig between the one of the parties and the arbitrator with a timelock.
