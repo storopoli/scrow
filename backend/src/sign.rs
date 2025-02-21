@@ -72,6 +72,7 @@ pub fn combine_signatures_collaborative(
     unlocking_script: ScriptBuf,
 ) -> Transaction {
     let mut transaction = tx;
+
     // Collaborative means 2-of-2 multisig.
     // And we need a fucking empty thing first.
     transaction.input[index].witness.push([]);
@@ -106,17 +107,25 @@ pub fn combine_signatures_dispute_collaborative(
     unlocking_script: ScriptBuf,
 ) -> Transaction {
     let mut transaction = tx;
+
+    // Collaborative means 2-of-2 multisig.
+    // And we need a fucking empty thing first.
+    transaction.input[index].witness.push([]);
+
     // Create pairs of PKs and signatures and sort by PK
     let mut pairs: Vec<(PublicKey, ecdsa::Signature)> =
         pks.into_iter().zip(signatures.into_iter()).collect();
 
-    // *Reverse* sort pairs based on public keys
-    pairs.sort_by(|a, b| b.0.cmp(&a.0));
+    // Sort pairs based on public keys
+    pairs.sort_by(|a, b| a.0.cmp(&b.0));
 
     // Push signatures in order of sorted public keys
     for (_, signature) in pairs {
         transaction.input[index].witness.push(signature.serialize());
     }
+
+    // Push true to activate OP_IF
+    transaction.input[index].witness.push(&[0x01]);
 
     // Finally, push the unlocking script
     transaction.input[index].witness.push(&unlocking_script);
@@ -132,28 +141,19 @@ pub fn combine_signatures_dispute_collaborative(
 pub fn combine_signatures_dispute_arbitrator(
     tx: Transaction,
     index: usize,
-    signature_participant: ecdsa::Signature,
-    pk_participant: PublicKey,
-    signature_arbitrator: ecdsa::Signature,
-    pk_arbitrator: PublicKey,
+    signatures: Vec<ecdsa::Signature>,
+    pks: Vec<PublicKey>,
     unlocking_script: ScriptBuf,
 ) -> Transaction {
     let mut transaction = tx;
-
-    // First witness is true
-    transaction.input[index].witness.push(&[0x01]);
 
     // 2-of-3 multisig.
     // We need a fucking empty thing first.
     transaction.input[index].witness.push([]);
 
     // Create pairs of PKs and signatures and sort by PK
-    let mut pairs: Vec<(PublicKey, ecdsa::Signature)> = vec![
-        (pk_participant, signature_participant),
-        (pk_arbitrator, signature_arbitrator),
-    ]
-    .into_iter()
-    .collect();
+    let mut pairs: Vec<(PublicKey, ecdsa::Signature)> =
+        pks.into_iter().zip(signatures.into_iter()).collect();
 
     // Sort pairs based on public keys
     pairs.sort_by(|a, b| a.0.cmp(&b.0));
@@ -163,10 +163,8 @@ pub fn combine_signatures_dispute_arbitrator(
         transaction.input[index].witness.push(signature.serialize());
     }
 
-    // We need the first sig to fail then add the arbitrator signature here to fail.
-    transaction.input[index]
-        .witness
-        .push(signature_arbitrator.serialize());
+    // Push false to activate OP_ELSE
+    transaction.input[index].witness.push([]);
 
     // Finally, push the unlocking script
     transaction.input[index].witness.push(&unlocking_script);
@@ -177,8 +175,8 @@ pub fn combine_signatures_dispute_arbitrator(
 mod tests {
     use bitcoin::{
         absolute::LockTime, consensus, ecdsa, hex::DisplayHex, sighash::SighashCache, transaction,
-        Address, Amount, BlockHash, CompressedPublicKey, Network, OutPoint, Transaction, TxIn,
-        TxOut, Witness,
+        Address, Amount, BlockHash, CompressedPublicKey, Network, OutPoint, Sequence, Transaction,
+        TxIn, TxOut, Witness,
     };
     use corepc_node::Node;
     use miniscript::ToPublicKey;
@@ -949,6 +947,7 @@ mod tests {
             version: transaction::Version(2),
             input: vec![TxIn {
                 previous_output: OutPoint { txid, vout: 0 },
+                sequence: Sequence::from_consensus(timelock_duration),
                 ..Default::default()
             }],
             output: vec![TxOut {
@@ -996,10 +995,8 @@ mod tests {
         let signed_tx = combine_signatures_dispute_arbitrator(
             unsigned_tx,
             0,
-            sig_1,
-            public_key1,
-            sig_third,
-            public_key_third,
+            vec![sig_1, sig_third],
+            vec![public_key1, public_key_third],
             unlocking_script,
         );
         assert!(signed_tx.input[0].witness.witness_script().is_some());
