@@ -111,8 +111,8 @@ pub fn combine_signatures_dispute_collaborative(
     let mut pairs: Vec<(PublicKey, ecdsa::Signature)> =
         pks.into_iter().zip(signatures.into_iter()).collect();
 
-    // Sort pairs based on public keys
-    pairs.sort_by(|a, b| a.0.cmp(&b.0));
+    // *Reverse* sort pairs based on public keys
+    pairs.sort_by(|a, b| b.0.cmp(&a.0));
 
     // Push signatures in order of sorted public keys
     for (_, signature) in pairs {
@@ -539,7 +539,7 @@ mod tests {
     }
 
     #[test]
-    fn sign_p2wsh_dispute_tx_flow() {
+    fn sign_p2wsh_dispute_no_arbitrator_tx_flow() {
         env_logger::init();
 
         // Setup regtest node and clients.
@@ -734,18 +734,11 @@ mod tests {
             multisig_amount,
             unlocking_script.clone(),
         );
-        let sig_third = sign_tx_collaborative(
-            unsigned_tx.clone(),
-            0,
-            private_key_third,
-            multisig_amount,
-            unlocking_script.clone(),
-        );
-        let signed_tx = combine_signatures_collaborative(
+        let signed_tx = combine_signatures_dispute_collaborative(
             unsigned_tx,
             0,
-            vec![sig_1, sig_2, sig_third],
-            vec![public_key1, public_key2, public_key_third],
+            vec![sig_1, sig_2],
+            vec![public_key1, public_key2],
             unlocking_script,
         );
         assert!(signed_tx.input[0].witness.witness_script().is_some());
