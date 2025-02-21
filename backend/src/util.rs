@@ -12,9 +12,9 @@ pub fn convert_days_to_blocks(days: usize) -> usize {
 /// Check npub from a bech32 encoded string
 pub fn check_npub(input: String) -> bool {
     let (hrp, data) = bech32::decode(&input).expect("Not a valid npub");
-    
+
     if hrp != HRP_PUBLIC_KEY || data.len() != 32 {
-        return false
+        return false;
     }
     true
 }
@@ -58,7 +58,6 @@ mod tests {
         let expected_hex = "c8b7f09997bca60595c9d3d7b85ec4cf8df74131f37ef07f63970d907831176f";
 
         let hex = convert_nsec_to_hex(nsec.to_string());
-        assert_eq!(expected_hex,hex);
+        assert_eq!(expected_hex, hex);
     }
 }
-
