@@ -47,7 +47,7 @@ pub fn sign_tx_collaborative(
     unlocking_script: ScriptBuf,
     already_partially_signed: bool,
 ) -> Transaction {
-    let sighash_type = EcdsaSighashType::All.into();
+    let sighash_type = EcdsaSighashType::All;
     let mut sighash_cache = SighashCache::new(tx);
     let sighash = sighash_cache
         .p2wsh_signature_hash(index, &script_pubkey, amount, sighash_type)
@@ -63,7 +63,7 @@ pub fn sign_tx_collaborative(
     }
     transaction.input[index]
         .witness
-        .push(&signature.serialize_der());
+        .push(signature.serialize_der());
     if already_partially_signed {
         // Push the unlocking script after the final signature.
         transaction.input[index].witness.push(&unlocking_script);
@@ -296,6 +296,10 @@ mod tests {
         *sighash_cache.witness_mut(0).unwrap() = Witness::p2wpkh(&signature, &public_key.inner);
         let signed_tx = sighash_cache.into_transaction();
         println!("Signed transaction: {:?}", signed_tx);
+        println!(
+            "Signed transaction: {}",
+            consensus::serialize(&signed_tx).as_hex()
+        );
 
         // Test if the transaction is valid.
         let result = btc_client.send_raw_transaction(&signed_tx);
@@ -304,6 +308,8 @@ mod tests {
 
     #[test]
     fn sign_p2wsh_tx_flow() {
+        env_logger::init();
+
         // Setup regtest node and clients.
         let bitcoind = Node::from_downloaded().unwrap();
         let btc_client = &bitcoind.client;
@@ -357,8 +363,9 @@ mod tests {
 
         // Send to the 2-of-2 multisig address.
         // We're sending 49.999 and 0.001 will be fees.
-        let send_amount = Amount::from_btc(49.999).unwrap();
-        let send_address = new_collaborative_address([public_key1, public_key2], network);
+        let multisig_amount = Amount::from_btc(49.999).unwrap();
+        let multisig_address = new_collaborative_address([public_key1, public_key2], network);
+        println!("Multisig address: {}", multisig_address);
 
         // Create the transaction.
         let funding_input = OutPoint {
@@ -370,8 +377,8 @@ mod tests {
             ..Default::default()
         }];
         let outputs = vec![TxOut {
-            value: send_amount,
-            script_pubkey: send_address.script_pubkey(),
+            value: multisig_amount,
+            script_pubkey: multisig_address.script_pubkey(),
         }];
         let unsigned = Transaction {
             version: transaction::Version(2),
@@ -379,6 +386,10 @@ mod tests {
             output: outputs,
             lock_time: LockTime::ZERO,
         };
+        println!(
+            "Unsigned transaction: {}",
+            consensus::serialize(&unsigned).as_hex()
+        );
 
         // Sign the first input using Sighashes
         let spk = funded_address.script_pubkey();
@@ -403,6 +414,7 @@ mod tests {
         let result = btc_client.send_raw_transaction(&signed_tx);
         assert!(result.is_ok());
         let txid = result.unwrap().txid().unwrap();
+        println!("Transaction ID: {}", txid);
         // Mine 1 block to mine the transaction
         btc_client.generate_to_address(1, &funded_address).unwrap();
 
@@ -422,13 +434,16 @@ mod tests {
             }],
             lock_time: LockTime::ZERO,
         };
-        let script_pubkey = send_address.script_pubkey();
+        let script_pubkey = multisig_address.script_pubkey();
+        println!("ScriptPubKey: {}", script_pubkey);
+
         let unlocking_script = new_collaborative_unlocking_script([public_key1, public_key2]);
+        println!("Unlocking Script: {}", unlocking_script);
         let partial_signed_tx = sign_tx_collaborative(
             unsigned_tx,
             0,
-            private_key1,
-            send_amount,
+            private_key2,
+            multisig_amount,
             script_pubkey.clone(),
             unlocking_script.clone(),
             false,
@@ -436,8 +451,8 @@ mod tests {
         let signed_tx = sign_tx_collaborative(
             partial_signed_tx,
             0,
-            private_key2,
-            send_amount,
+            private_key1,
+            multisig_amount,
             script_pubkey,
             unlocking_script,
             true,

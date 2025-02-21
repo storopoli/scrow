@@ -3,6 +3,16 @@ use std::str::FromStr;
 use bitcoin::{Address, Network, PublicKey, ScriptBuf};
 use miniscript::Descriptor;
 
+/// Gives the key index given a list of [`PublicKey`]s and a [`PublicKey`] to find.
+///
+/// Under the hood it sorts the key according to `sorted_multi` and then finds the index.
+pub fn find_key_index(public_keys: &[PublicKey], key: &PublicKey) -> usize {
+    assert!(public_keys.contains(key));
+    let mut sorted_keys = public_keys.to_vec();
+    sorted_keys.sort();
+    sorted_keys.iter().position(|k| k == key).unwrap()
+}
+
 /// Creates a collaborative 2-of-2 multisig P2WSH [`Address`] from 2 [`PublicKey`]s
 /// given a [`Network`].
 pub fn new_collaborative_address(public_keys: [PublicKey; 2], network: Network) -> Address {
@@ -14,16 +24,6 @@ pub fn new_collaborative_address(public_keys: [PublicKey; 2], network: Network) 
     ))
     .unwrap();
     descriptor.address(network).unwrap()
-}
-
-/// Gives the key index given a list of [`PublicKey`]s and a [`PublicKey`] to find.
-///
-/// Under the hood it sorts the key according to `sorted_multi` and then finds the index.
-pub fn find_key_index(public_keys: &[PublicKey], key: &PublicKey) -> usize {
-    assert!(public_keys.contains(key));
-    let mut sorted_keys = public_keys.to_vec();
-    sorted_keys.sort();
-    sorted_keys.iter().position(|k| k == key).unwrap()
 }
 
 /// Creates a collaborative 2-of-2 multisig P2WSH locking script ([`ScriptBuf`]) from 2 [`PublicKey`]s.
