@@ -69,7 +69,7 @@ pub fn combine_signatures(
     let mut transaction = tx;
     // Collaborative means 2-of-2 multisig
     if collaborative {
-        transaction.input[index].witness.push(&[]);
+        transaction.input[index].witness.push([]);
     }
     for signature in signatures.into_iter() {
         transaction.input[index].witness.push(signature.serialize());
