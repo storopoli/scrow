@@ -2,6 +2,7 @@ use wasm_bindgen::prelude::*;
 
 pub mod miniscript;
 pub mod network;
+pub mod psbt;
 pub mod util;
 
 #[wasm_bindgen]
