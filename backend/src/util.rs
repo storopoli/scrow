@@ -60,4 +60,13 @@ mod tests {
         let hex = convert_nsec_to_hex(nsec.to_string());
         assert_eq!(expected_hex, hex);
     }
+
+    #[test]
+    fn test_convert_nsec_to_secret_key() {
+        let nsec = "nsec1ezmlpxvhhjnqt9wf60tmshkye7xlwsf37dl0qlmrjuxeq7p3zahs2tukgx";
+        let secret_key = convert_nsec_to_secret_key(nsec.to_string());
+        let expected_hex = "c8b7f09997bca60595c9d3d7b85ec4cf8df74131f37ef07f63970d907831176f";
+        let hex: String = hex::BytesToHexIter::new(secret_key.secret_bytes().iter().copied()).collect();
+        assert_eq!(expected_hex, hex);
+    }
 }
