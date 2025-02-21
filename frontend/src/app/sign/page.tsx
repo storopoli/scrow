@@ -12,8 +12,9 @@ export default function SignEscrowPage() {
     try {
       // Handle signing logic here
       toast.success("Transaction signed successfully")
-    } catch (error) {
-      toast.error("Failed to sign transaction")
+    } catch (err) {
+      const error = err as Error
+      toast.error(`Failed to sign: ${error.message}`)
     }
   }
 
