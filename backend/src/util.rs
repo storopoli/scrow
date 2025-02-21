@@ -89,6 +89,7 @@ mod tests {
     fn test_convert_npub_to_public_key() {
         let npub = "npub10elfcs4fr0l0r8af98jlmgdh9c8tcxjvz9qkw038js35mp4dma8qzvjptg";
         let public_key: PublicKey = convert_npub_to_public_key(npub.to_string());
+        // NOTE: adding 02 for the even parity
         let expected_hex = "027e7e9c42a91bfef19fa929e5fda1b72e0ebc1a4c1141673e2794234d86addf4e";
         let hex: String = hex::BytesToHexIter::new(public_key.to_bytes().iter().copied()).collect();
         assert_eq!(expected_hex, hex);
