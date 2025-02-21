@@ -130,9 +130,11 @@ mod tests {
         let public_key2 = PublicKey::from_str(KEY_B).unwrap();
         let network = Network::Testnet;
 
-        let address = new_collaborative_address([public_key1, public_key2], network);
+        let address_1 = new_collaborative_address([public_key1, public_key2], network);
+        let address_2 = new_collaborative_address([public_key2, public_key1], network);
 
-        assert_eq!(address.address_type().unwrap(), AddressType::P2wsh);
+        assert_eq!(address_1, address_2);
+        assert_eq!(address_2.address_type().unwrap(), AddressType::P2wsh);
         assert_eq!(
             address_1.to_string(),
             "tb1q256vxujwapp655r3cdk30aq3unxacln2hmq2qtfyyd92ntu6yeasfknjse".to_string()
