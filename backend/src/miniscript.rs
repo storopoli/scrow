@@ -61,10 +61,11 @@ mod tests {
         let network = Network::Testnet;
 
         let address = new_collaborative_address([public_key1, public_key2], network);
+
         assert_eq!(address.address_type().unwrap(), AddressType::P2wsh);
         assert_eq!(
             address.to_string(),
-            "tb1qjw077s78d8uqswdsfrffex4926488npk88dkfanqd8ynx5c06urq7umjsq".to_string()
+            "tb1qnvcs444fr6tr56zy9tjqz6mw2whgs9f76gpt2hkw3fjwh4twlzhsc3lukl".to_string()
         );
     }
 
