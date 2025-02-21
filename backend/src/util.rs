@@ -1,6 +1,9 @@
-use bitcoin::Network;
-use bitcoin::{bech32, hex, secp256k1::SecretKey as SecpSecretKey, PrivateKey,PublicKey, XOnlyPublicKey, key::Parity};
 use bitcoin::secp256k1::PublicKey as SecpPublicKey;
+use bitcoin::Network;
+use bitcoin::{
+    bech32, hex, key::Parity, secp256k1::SecretKey as SecpSecretKey, PrivateKey, PublicKey,
+    XOnlyPublicKey,
+};
 const PREFIX_BECH32_PUBLIC_KEY: &str = "npub";
 const PREFIX_BECH32_SECRET_KEY: &str = "nsec";
 const HRP_PUBLIC_KEY: bech32::Hrp = bech32::Hrp::parse_unchecked(PREFIX_BECH32_PUBLIC_KEY);
@@ -76,10 +79,9 @@ mod tests {
     #[test]
     fn test_convert_nsec_to_secret_key() {
         let nsec = "nsec1vl029mgpspedva04g90vltkh6fvh240zqtv9k0t9af8935ke9laqsnlfe5";
-        let secret_key = convert_nsec_to_secret_key(nsec.to_string(),Network::Bitcoin);
+        let secret_key = convert_nsec_to_secret_key(nsec.to_string(), Network::Bitcoin);
         let expected_hex = "67dea2ed018072d675f5415ecfaed7d2597555e202d85b3d65ea4e58d2d92ffa";
-        let hex: String =
-            hex::BytesToHexIter::new(secret_key.to_bytes().iter().copied()).collect();
+        let hex: String = hex::BytesToHexIter::new(secret_key.to_bytes().iter().copied()).collect();
         assert_eq!(expected_hex, hex);
     }
 
@@ -88,8 +90,7 @@ mod tests {
         let npub = "npub10elfcs4fr0l0r8af98jlmgdh9c8tcxjvz9qkw038js35mp4dma8qzvjptg";
         let public_key: PublicKey = convert_npub_to_public_key(npub.to_string());
         let expected_hex = "027e7e9c42a91bfef19fa929e5fda1b72e0ebc1a4c1141673e2794234d86addf4e";
-        let hex: String =
-            hex::BytesToHexIter::new(public_key.to_bytes().iter().copied()).collect();
+        let hex: String = hex::BytesToHexIter::new(public_key.to_bytes().iter().copied()).collect();
         assert_eq!(expected_hex, hex);
     }
 }
