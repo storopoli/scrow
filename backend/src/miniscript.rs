@@ -8,8 +8,7 @@ use miniscript::Descriptor;
 pub fn new_collaborative_address(public_keys: [PublicKey; 2], network: Network) -> Address {
     let descriptor = Descriptor::<PublicKey>::from_str(&format!(
         "wsh(or_b(pk({}),s:pk({})))",
-        public_keys[0].to_string(),
-        public_keys[1].to_string()
+        public_keys[0], public_keys[1]
     ))
     .unwrap();
     descriptor.address(network).unwrap()
@@ -33,12 +32,12 @@ pub fn new_dispute_address(
     sorted_keys.sort();
     let descriptor = Descriptor::<PublicKey>::from_str(&format!(
         "wsh(andor(pk({}),pk({}),and_v(v:multi(2,{},{},{}),older({}))))",
-        public_keys[0].to_string(),
-        public_keys[1].to_string(),
-        sorted_keys[0].to_string(),
-        sorted_keys[1].to_string(),
-        sorted_keys[2].to_string(),
-        timelock_duration.to_string(),
+        public_keys[0],
+        public_keys[1],
+        sorted_keys[0],
+        sorted_keys[1],
+        sorted_keys[2],
+        timelock_duration,
     ))
     .unwrap();
     descriptor.address(network).unwrap()
