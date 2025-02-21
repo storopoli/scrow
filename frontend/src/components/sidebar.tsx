@@ -3,7 +3,7 @@
 import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
 import { navItems } from "@/config/nav"
-import { ChevronLeft, ChevronRight, Github } from "lucide-react"
+import { ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useState } from "react"
 import { cn } from "@/lib/utils"
