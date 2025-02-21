@@ -78,8 +78,7 @@ pub fn combine_signatures(
     }
 
     // Create pairs of PKs and signatures and sort by PK
-    let mut pairs: Vec<(PublicKey, ecdsa::Signature)> =
-        pks.into_iter().zip(signatures.into_iter()).collect();
+    let mut pairs: Vec<(PublicKey, ecdsa::Signature)> = pks.into_iter().zip(signatures).collect();
 
     // Sort pairs based on public keys
     pairs.sort_by(|a, b| a.0.cmp(&b.0));
@@ -141,7 +140,7 @@ mod tests {
             .parse::<SecretKey>()
             .expect("must parse secret key");
         let private_key = PrivateKey::new(sec_key, network);
-        let public_key = private_key.public_key(&SECP256K1);
+        let public_key = private_key.public_key(SECP256K1);
         assert_eq!(
             private_key.public_key(SECP256K1).to_string(),
             PUBLIC_KEY1_HEX
@@ -194,7 +193,7 @@ mod tests {
         println!("Unsigned PSBT: {psbt:?}");
 
         // Sign the Psbt.
-        let public_key = private_key.public_key(&SECP256K1);
+        let public_key = private_key.public_key(SECP256K1);
         let mut map: BTreeMap<PublicKey, PrivateKey> = BTreeMap::new();
         map.insert(public_key, private_key);
         // Get the Prevout.
@@ -251,7 +250,7 @@ mod tests {
             .parse::<SecretKey>()
             .expect("must parse secret key");
         let private_key = PrivateKey::new(sec_key, network);
-        let public_key = private_key.public_key(&SECP256K1);
+        let public_key = private_key.public_key(SECP256K1);
         assert_eq!(
             private_key.public_key(SECP256K1).to_string(),
             PUBLIC_KEY1_HEX
@@ -304,7 +303,7 @@ mod tests {
         // Sign the first input using Sighashes
         let spk = funded_address.script_pubkey();
         let coinbase_amount = Amount::from_btc(50.0).unwrap();
-        let sighash_type = EcdsaSighashType::All.into();
+        let sighash_type = EcdsaSighashType::All;
         let mut sighash_cache = SighashCache::new(unsigned);
         let sighash = sighash_cache
             .p2wpkh_signature_hash(0, &spk, coinbase_amount, sighash_type)
@@ -349,7 +348,7 @@ mod tests {
             .parse::<SecretKey>()
             .expect("must parse secret key");
         let private_key1 = PrivateKey::new(sec_key1, network);
-        let public_key1 = private_key1.public_key(&SECP256K1);
+        let public_key1 = private_key1.public_key(SECP256K1);
         assert_eq!(
             private_key1.public_key(SECP256K1).to_string(),
             PUBLIC_KEY1_HEX
@@ -358,7 +357,7 @@ mod tests {
             .parse::<SecretKey>()
             .expect("must parse secret key");
         let private_key2 = PrivateKey::new(sec_key2, network);
-        let public_key2 = private_key2.public_key(&SECP256K1);
+        let public_key2 = private_key2.public_key(SECP256K1);
         assert_eq!(
             private_key2.public_key(SECP256K1).to_string(),
             PUBLIC_KEY2_HEX
@@ -421,7 +420,7 @@ mod tests {
         // Sign the first input using Sighashes
         let spk = funded_address.script_pubkey();
         let coinbase_amount = Amount::from_btc(50.0).unwrap();
-        let sighash_type = EcdsaSighashType::All.into();
+        let sighash_type = EcdsaSighashType::All;
         let mut sighash_cache = SighashCache::new(unsigned);
         let sighash = sighash_cache
             .p2wpkh_signature_hash(0, &spk, coinbase_amount, sighash_type)

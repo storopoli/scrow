@@ -123,11 +123,11 @@ mod tests {
 
     #[test]
     fn find_key_index_works() {
-        let public_keys = vec![KEY_A, KEY_B, KEY_C]
+        let public_keys = [KEY_A, KEY_B, KEY_C]
             .iter()
             .map(|key| PublicKey::from_str(key).unwrap())
             .collect::<Vec<_>>();
-        let _sorted_keys = vec![KEY_B, KEY_C, KEY_A]
+        let _sorted_keys = [KEY_B, KEY_C, KEY_A]
             .iter()
             .map(|key| PublicKey::from_str(key).unwrap())
             .collect::<Vec<_>>();
