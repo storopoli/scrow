@@ -1,7 +1,7 @@
 use wasm_bindgen::prelude::*;
 
-pub mod miniscript;
 pub mod network;
+pub mod scripts;
 pub mod sign;
 pub mod util;
 

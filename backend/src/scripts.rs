@@ -1,7 +1,13 @@
 use std::str::FromStr;
 
-use bitcoin::{Address, Network, PublicKey, ScriptBuf};
+use bitcoin::{opcodes::all::*, Address, Network, PublicKey, ScriptBuf};
 use miniscript::Descriptor;
+
+/// Our homebrewed `OP_2` opcode.
+pub const OP_2: u8 = 0x52;
+
+/// Our homebrewed `OP_3` opcode.
+pub const OP_3: u8 = 0x53;
 
 /// Gives the key index given a list of [`PublicKey`]s and a [`PublicKey`] to find.
 ///
@@ -18,24 +24,30 @@ pub fn find_key_index(public_keys: &[PublicKey], key: &PublicKey) -> usize {
 pub fn new_collaborative_address(public_keys: [PublicKey; 2], network: Network) -> Address {
     let mut sorted_keys = public_keys.to_vec();
     sorted_keys.sort();
-    let descriptor = Descriptor::<PublicKey>::from_str(&format!(
-        "wsh(multi(2,{},{}))",
-        sorted_keys[0], sorted_keys[1]
-    ))
-    .unwrap();
-    descriptor.address(network).unwrap()
+
+    let mut script = ScriptBuf::new();
+    script.push_opcode(OP_2.into());
+    script.push_slice(sorted_keys[0].inner.serialize());
+    script.push_slice(sorted_keys[1].inner.serialize());
+    script.push_opcode(OP_2.into());
+    script.push_opcode(OP_CHECKMULTISIG);
+
+    Address::p2wsh(&script, network)
 }
 
 /// Creates a collaborative 2-of-2 multisig P2WSH locking script ([`ScriptBuf`]) from 2 [`PublicKey`]s.
 pub fn new_collaborative_unlocking_script(public_keys: [PublicKey; 2]) -> ScriptBuf {
     let mut sorted_keys = public_keys.to_vec();
     sorted_keys.sort();
-    let descriptor = Descriptor::<PublicKey>::from_str(&format!(
-        "wsh(and_v(v:pk({}),pk({})))",
-        sorted_keys[0], sorted_keys[1]
-    ))
-    .unwrap();
-    descriptor.explicit_script().unwrap()
+
+    let mut script = ScriptBuf::new();
+    script.push_opcode(OP_2.into());
+    script.push_slice(sorted_keys[0].inner.serialize());
+    script.push_slice(sorted_keys[1].inner.serialize());
+    script.push_opcode(OP_2.into());
+    script.push_opcode(OP_CHECKMULTISIG);
+
+    script
 }
 
 /// Creates a dispute-resolution 2-of-3 multisig P2WSH [`Address`] from 2 [`PublicKey`]s

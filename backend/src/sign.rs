@@ -64,10 +64,14 @@ pub fn combine_signatures(
     index: usize,
     signatures: Vec<ecdsa::Signature>,
     unlocking_script: ScriptBuf,
+    collaborative: bool,
 ) -> Transaction {
     let mut transaction = tx;
-    transaction.input[index].witness.push(&[]);
-    for (_, signature) in signatures.into_iter().enumerate() {
+    // Collaborative means 2-of-2 multisig
+    if collaborative {
+        transaction.input[index].witness.push(&[]);
+    }
+    for signature in signatures.into_iter() {
         transaction.input[index].witness.push(signature.serialize());
     }
     transaction.input[index].witness.push(&unlocking_script);
@@ -85,7 +89,7 @@ mod tests {
     use miniscript::ToPublicKey;
     use secp256k1::{Message, Parity, SecretKey};
 
-    use crate::miniscript::{new_collaborative_address, new_collaborative_unlocking_script};
+    use crate::scripts::{new_collaborative_address, new_collaborative_unlocking_script};
 
     use super::*;
 
@@ -368,6 +372,10 @@ mod tests {
         // We're sending 49.999 and 0.001 will be fees.
         let multisig_amount = Amount::from_btc(49.999).unwrap();
         let multisig_address = new_collaborative_address([public_key1, public_key2], network);
+        assert_eq!(
+            new_collaborative_address([public_key1, public_key2], network),
+            new_collaborative_address([public_key2, public_key1], network),
+        );
         println!("Multisig address: {}", multisig_address);
 
         // Create the transaction.
@@ -438,9 +446,14 @@ mod tests {
             lock_time: LockTime::ZERO,
         };
         let script_pubkey = multisig_address.script_pubkey();
+        assert!(script_pubkey.is_p2wsh());
         println!("ScriptPubKey: {}", script_pubkey);
 
         let unlocking_script = new_collaborative_unlocking_script([public_key1, public_key2]);
+        assert_eq!(
+            new_collaborative_unlocking_script([public_key1, public_key2]),
+            new_collaborative_unlocking_script([public_key2, public_key1]),
+        );
         println!("Unlocking Script: {}", unlocking_script);
         let sig_1 = sign_tx_collaborative(
             unsigned_tx.clone(),
@@ -456,7 +469,9 @@ mod tests {
             multisig_amount,
             script_pubkey,
         );
-        let signed_tx = combine_signatures(unsigned_tx, 0, vec![sig_2, sig_1], unlocking_script);
+        let signed_tx =
+            combine_signatures(unsigned_tx, 0, vec![sig_2, sig_1], unlocking_script, true);
+        assert!(signed_tx.input[0].witness.witness_script().is_some());
         println!(
             "Signed transaction: {}",
             consensus::serialize(&signed_tx).as_hex()
