@@ -1,28 +1,19 @@
 "use client"
 
-import { Download, Upload, FileUp } from "lucide-react"
+import { Download } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useState } from "react"
+import { toast } from "sonner"
 
 export default function SignEscrowPage() {
-  const [psbtFile, setPsbtFile] = useState<File | null>(null)
-  const [psbtText, setPsbtText] = useState("")
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      setPsbtFile(file)
-      // Read file content
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        const text = e.target?.result as string
-        setPsbtText(text)
-      }
-      reader.readAsText(file)
+  const handleSignTransaction = async () => {
+    try {
+      // Handle signing logic here
+      toast.success("Transaction signed successfully")
+    } catch (error) {
+      toast.error("Failed to sign transaction")
     }
   }
 
@@ -32,77 +23,29 @@ export default function SignEscrowPage() {
       <Card>
         <CardHeader>
           <CardTitle className="text-lg font-medium">
-            Upload or paste your PSBT (Partially Signed Bitcoin Transaction)
+            Sign Raw Transaction
           </CardTitle>
         </CardHeader>
-        <CardContent className="p-6 space-y-6">
-          <Tabs defaultValue="upload" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="upload">Upload File</TabsTrigger>
-              <TabsTrigger value="paste">Paste PSBT</TabsTrigger>
-            </TabsList>
+        <CardContent className="p-6 space-y-4">
+          <div className="space-y-2">
+            <Label>Raw Transaction</Label>
+            <Input 
+              placeholder="Enter raw transaction hex" 
+              className="font-mono"
+            />
+            <p className="text-sm text-muted-foreground">
+              Paste the raw transaction hex that needs to be signed
+            </p>
+          </div>
 
-            <TabsContent value="upload" className="space-y-4">
-              <div className="border-2 border-dashed border-zinc-800 rounded-lg p-6 text-center">
-                <Input
-                  type="file"
-                  accept=".psbt"
-                  onChange={handleFileUpload}
-                  className="hidden"
-                  id="psbt-upload"
-                />
-                <Label
-                  htmlFor="psbt-upload"
-                  className="flex flex-col items-center gap-2 cursor-pointer"
-                >
-                  <FileUp className="h-8 w-8 text-muted-foreground" />
-                  <span className="text-muted-foreground">
-                    {psbtFile ? psbtFile.name : "Click to upload PSBT file"}
-                  </span>
-                </Label>
-              </div>
-              {psbtFile && (
-                <div className="space-y-2">
-                  <Label>File Content Preview</Label>
-                  <div className="bg-zinc-900 p-3 rounded-lg font-mono text-sm break-all">
-                    {psbtText.slice(0, 100)}...
-                  </div>
-                </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="paste" className="space-y-4">
-              <div className="space-y-2">
-                <Label>PSBT Data</Label>
-                <Input
-                  placeholder="Paste your PSBT data here"
-                  value={psbtText}
-                  onChange={(e) => setPsbtText(e.target.value)}
-                  className="font-mono"
-                />
-              </div>
-            </TabsContent>
-          </Tabs>
-
-          <div className="space-y-4 pt-4 border-t border-zinc-800">
-            <div className="flex items-center gap-2">
-              <Button
-                className="w-full"
-                disabled={!psbtText}
-                onClick={() => {
-                  // Handle signing logic here
-                  console.log("Signing PSBT:", psbtText)
-                }}
-              >
-                <Download className="w-4 h-4 mr-2" />
-                Sign Transaction
-              </Button>
-            </div>
-            {psbtText && (
-              <div className="text-sm text-muted-foreground">
-                * Please review the transaction details carefully before signing
-              </div>
-            )}
+          <div className="pt-4 border-t border-zinc-800">
+            <Button 
+              className="w-full"
+              onClick={handleSignTransaction}
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Sign Transaction
+            </Button>
           </div>
         </CardContent>
       </Card>
