@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
 import { navItems } from "@/config/nav"
 
@@ -9,8 +10,17 @@ export function Sidebar() {
 
   return (
     <div className="w-[240px] bg-gradient-to-b from-zinc-900 to-black border-r border-zinc-800/40 text-white p-4 space-y-4">
-      <div className="text-2xl font-bold mb-8 bg-gradient-to-r from-orange-500 to-orange-600 text-transparent bg-clip-text">
-        scrow
+      <div className="flex items-center gap-2 mb-8">
+        <Image 
+          src="/SatoshiEscrowLogo 1.svg"
+          alt="Scrow Logo"
+          width={32}
+          height={32}
+          className="w-8 h-8"
+        />
+        <div className="text-2xl font-bold bg-gradient-to-r from-orange-500 to-orange-600 text-transparent bg-clip-text">
+          scrow
+        </div>
       </div>
       <nav className="space-y-2">
         {navItems.map((item) => (
