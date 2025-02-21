@@ -9,10 +9,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useState } from "react"
 import { toast } from "sonner"
 
+interface BroadcastResponse {
+  txid: string;
+}
+
 export default function BroadcastEscrowPage() {
   const [psbtFile, setPsbtFile] = useState<File | null>(null)
   const [psbtText, setPsbtText] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -28,7 +31,7 @@ export default function BroadcastEscrowPage() {
   }
 
   const handleBroadcast = async () => {
-    const promise = new Promise((resolve, reject) => {
+    const promise = new Promise<BroadcastResponse>((resolve, reject) => {
       setTimeout(() => {
         fetch('/api/broadcast', {
           method: 'POST',
@@ -41,7 +44,7 @@ export default function BroadcastEscrowPage() {
           if (!response.ok) throw new Error('Failed to broadcast transaction')
           return response.json()
         })
-        .then(data => {
+        .then((data: BroadcastResponse) => {
           setPsbtFile(null)
           setPsbtText("")
           resolve(data)
@@ -53,7 +56,7 @@ export default function BroadcastEscrowPage() {
     toast.promise(promise, {
       loading: 'Broadcasting transaction...',
       success: (data) => `Transaction broadcasted successfully! TXID: ${data.txid}`,
-      error: (err) => `Error: ${err.message || 'Failed to broadcast transaction'}`
+      error: (error: Error) => `Error: ${error.message || 'Failed to broadcast transaction'}`
     })
   }
 
@@ -118,7 +121,7 @@ export default function BroadcastEscrowPage() {
           <div className="space-y-4 pt-4 border-t border-zinc-800">
             <Button
               className="w-full"
-              disabled={!psbtText || isLoading}
+              disabled={!psbtText}
               onClick={handleBroadcast}
             >
               <Upload className="w-4 h-4 mr-2" />
