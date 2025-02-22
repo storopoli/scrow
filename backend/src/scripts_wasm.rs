@@ -1,8 +1,7 @@
-use bitcoin::{opcodes::all::*, Address, Network, PublicKey, ScriptBuf, Sequence};
 
 use wasm_bindgen::prelude::*;
 
-use crate::{scripts::{new_collaborative_unlocking_script, new_dispute_unlocking_script, OP_2}, util};
+use crate::{scripts::{new_collaborative_unlocking_script, new_dispute_unlocking_script}, util};
 /// Creates a collaborative 2-of-2 multisig P2WSH locking script ([`ScriptBuf`]) from 2 [`PublicKey`]s.
 #[wasm_bindgen]
 pub fn new_collaborative_unlocking_script_wasm(npub: Vec<String>) -> String {
