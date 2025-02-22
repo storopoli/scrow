@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 
-type Network = "mainnet" | "testnet" | "signet" | "mutinynet";
+type Network = "Mainnet" | "Testnet4" | "Signet" | "MutinyNet";
 
 interface SettingsState {
   mempoolEndpoint: string;
@@ -24,8 +24,8 @@ interface SettingsState {
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<SettingsState>({
-    mempoolEndpoint: "https://mempool.space",
-    network: "testnet",
+    mempoolEndpoint: "https://mutinynet.com",
+    network: "MutinyNet",
   });
 
   const handleSave = () => {
@@ -78,10 +78,10 @@ export default function SettingsPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="mainnet">Mainnet</SelectItem>
-                  <SelectItem value="testnet">Testnet</SelectItem>
-                  <SelectItem value="signet">Signet</SelectItem>
-                  <SelectItem value="mutinynet">Mutinynet</SelectItem>
+                  <SelectItem value="MutinyNet">MutinyNet</SelectItem>
+                  <SelectItem value="Testnet4">Testnet4</SelectItem>
+                  <SelectItem value="Signet">Signet</SelectItem>
+                  <SelectItem value="Mainnet">Mainnet</SelectItem>
                 </SelectContent>
               </Select>
               <p className="text-sm text-muted-foreground">

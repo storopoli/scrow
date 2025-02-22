@@ -16,25 +16,10 @@ export default function BroadcastEscrowPage() {
   const [signedTxText, setSignedTxText] = useState("");
 
   const handleBroadcast = async () => {
-    const promise = new Promise<BroadcastResponse>((resolve, reject) => {
+    const promise = new Promise<BroadcastResponse>((resolve) => {
       setTimeout(() => {
-        fetch("/api/broadcast", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ psbt: signedTxText }),
-        })
-          .then((response) => {
-            if (!response.ok)
-              throw new Error("Failed to broadcast transaction");
-            return response.json();
-          })
-          .then((data: BroadcastResponse) => {
-            setSignedTxText("");
-            resolve(data);
-          })
-          .catch((error) => reject(error));
+        const mockTxid = "";
+        resolve({ txid: mockTxid });
       }, 1000);
     });
 
@@ -42,8 +27,7 @@ export default function BroadcastEscrowPage() {
       loading: "Broadcasting transaction...",
       success: (data) =>
         `Transaction broadcasted successfully! TXID: ${data.txid}`,
-      error: (error: Error) =>
-        `Error: ${error.message || "Failed to broadcast transaction"}`,
+      error: "Failed to broadcast transaction", // This won't be called in our mock version
     });
   };
 
@@ -84,7 +68,6 @@ export default function BroadcastEscrowPage() {
           </div>
         </CardContent>
       </Card>
-      {/* Add GitHub link with circular background */}
       <a
         href="https://github.com/storopoli/scrow/"
         target="_blank"

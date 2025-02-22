@@ -155,14 +155,25 @@ export default function CreateEscrowPage() {
       console.log("Escrow Data:", escrowData);
 
       // Call your WASM function here
-      const collab_address = await wasm.create_collab_address(myNostrPubkey, counterpartyNostrPubkey, network);
-      const dispute_address = await wasm.create_dispute_address(myNostrPubkey, counterpartyNostrPubkey, thirdPartyNostrPubkey || "", Number(timelockPeriod) * 6 || 6, network);
+      const collab_address = await wasm.create_collab_address(
+        myNostrPubkey,
+        counterpartyNostrPubkey,
+        network,
+      );
+      const dispute_address = await wasm.create_dispute_address(
+        myNostrPubkey,
+        counterpartyNostrPubkey,
+        thirdPartyNostrPubkey || "",
+        Number(timelockPeriod) * 6 || 6,
+        network,
+      );
 
       console.log(collab_address);
       console.log(dispute_address);
 
       toast.success("Escrow created successfully");
     } catch (err) {
+      toast.success("Escrow created successfully");
       const error = err as Error;
       toast.error(`Failed to create escrow: ${error.message}`);
     }
@@ -211,6 +222,50 @@ export default function CreateEscrowPage() {
                 </Select>
               </div>
 
+              {/* Funding Transaction Details */}
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold">Funding Transaction</h2>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Info className="h-4 w-4 text-muted-foreground" />
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-[300px]">
+                      <p>
+                        The transaction details of the UTXO you want to spend
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+
+              <div className="space-y-4 p-4 rounded-lg border border-zinc-800">
+                <div className="space-y-2">
+                  <Label>Funding TXID</Label>
+                  <Input
+                    placeholder="Enter the funding transaction ID"
+                    className="font-mono"
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    The transaction ID of the UTXO you want to spend
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Vout</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    placeholder="0"
+                    className="font-mono"
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    The output index of the UTXO
+                  </p>
+                </div>
+              </div>
+
+              {/* My Details */}
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold">Participant Details</h2>
                 <TooltipProvider>
@@ -229,8 +284,6 @@ export default function CreateEscrowPage() {
                   </Tooltip>
                 </TooltipProvider>
               </div>
-
-              {/* My Details */}
               <div className="space-y-4 p-4 rounded-lg border border-zinc-800">
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-medium text-muted-foreground">
