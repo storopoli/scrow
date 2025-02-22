@@ -13,13 +13,17 @@ interface BroadcastResponse {
 }
 
 export default function BroadcastEscrowPage() {
-  const [signedTxText, setSignedTxText] = useState("");
+  const [signedTxText, setSignedTxText] = useState("14c63951b1308aafdf7fc3f78526a9768fd937a7c11700f69d9a89979e8c5845");
+  const [broadcastTxid, setBroadcastTxid] = useState("");
 
   const handleBroadcast = async () => {
     const promise = new Promise<BroadcastResponse>((resolve) => {
       setTimeout(() => {
-        const mockTxid = "";
+        // Generate a mock TXID that looks like a real Bitcoin transaction ID
+        const mockTxid = "b839ef663c8ec2dbd6eee4f49691a2159006f98d4f3d329c9c59af8013e8121f";
         resolve({ txid: mockTxid });
+        setBroadcastTxid(mockTxid); // Set the TXID in state
+        setSignedTxText(""); // Clear the input after successful broadcast
       }, 1000);
     });
 
@@ -66,6 +70,20 @@ export default function BroadcastEscrowPage() {
               </div>
             )}
           </div>
+
+          {broadcastTxid && (
+            <div className="space-y-2 pt-4 border-t border-zinc-800">
+              <Label>Transaction ID</Label>
+              <Input
+                value={broadcastTxid}
+                readOnly
+                className="font-mono bg-muted"
+              />
+              <p className="text-sm text-muted-foreground">
+                Your transaction has been successfully broadcast to the network
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
       <a
