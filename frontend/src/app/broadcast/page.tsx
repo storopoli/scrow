@@ -1,6 +1,6 @@
 "use client";
 
-import { Upload, FileUp } from "lucide-react";
+import { Upload, FileUp, Github } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -141,6 +141,15 @@ export default function BroadcastEscrowPage() {
           </div>
         </CardContent>
       </Card>
+      {/* Add GitHub link with circular background */}
+      <a
+        href="https://github.com/storopoli/scrow/"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="fixed bottom-4 right-4 p-2 bg-black rounded-full border border-zinc-800/40 text-zinc-400 hover:text-white transition-colors"
+      >
+        <Github className="w-6 h-6" />
+      </a>
     </div>
   );
 }

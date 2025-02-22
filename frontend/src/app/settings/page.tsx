@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Settings } from "lucide-react";
+import { Settings, Github } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -98,6 +98,15 @@ export default function SettingsPage() {
           </div>
         </CardContent>
       </Card>
+      {/* Add GitHub link with circular background */}
+      <a
+        href="https://github.com/storopoli/scrow/"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="fixed bottom-4 right-4 p-2 bg-black rounded-full border border-zinc-800/40 text-zinc-400 hover:text-white transition-colors"
+      >
+        <Github className="w-6 h-6" />
+      </a>
     </div>
   );
 }
