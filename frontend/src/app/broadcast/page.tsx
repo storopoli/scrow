@@ -1,11 +1,10 @@
 "use client"
 
-import { Upload, FileUp } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Upload, Check, Copy } from "lucide-react"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useState } from "react"
 import { toast } from "sonner"
 
@@ -14,42 +13,27 @@ interface BroadcastResponse {
 }
 
 export default function BroadcastEscrowPage() {
-  const [psbtFile, setPsbtFile] = useState<File | null>(null)
-  const [psbtText, setPsbtText] = useState("")
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      setPsbtFile(file)
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        const text = e.target?.result as string
-        setPsbtText(text)
-      }
-      reader.readAsText(file)
-    }
-  }
+  const [signedTx, setSignedTx] = useState("")
+  const [txid, setTxid] = useState("")
+  const [copied, setCopied] = useState(false)
 
   const handleBroadcast = async () => {
+    if (!signedTx) {
+      toast.error("Please enter the signed transaction")
+      return
+    }
+
     const promise = new Promise<BroadcastResponse>((resolve, reject) => {
       setTimeout(() => {
-        fetch('/api/broadcast', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ psbt: psbtText }),
-        })
-        .then(response => {
-          if (!response.ok) throw new Error('Failed to broadcast transaction')
-          return response.json()
-        })
-        .then((data: BroadcastResponse) => {
-          setPsbtFile(null)
-          setPsbtText("")
-          resolve(data)
-        })
-        .catch(error => reject(error))
+        // This will be replaced with actual broadcasting logic
+        if (signedTx.length < 10) {
+          reject(new Error("Invalid transaction format"))
+          return
+        }
+        
+        const mockTxid = "abc123..."
+        setTxid(mockTxid)
+        resolve({ txid: mockTxid })
       }, 1000)
     })
 
@@ -60,79 +44,79 @@ export default function BroadcastEscrowPage() {
     })
   }
 
+  const handleCopyTxid = () => {
+    navigator.clipboard.writeText(txid)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
   return (
     <div className="max-w-3xl mx-auto">
       <h1 className="text-2xl font-bold mb-6">Broadcast Escrow</h1>
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg font-medium">
-            Upload or paste your signed PSBT to broadcast
-          </CardTitle>
+          <CardTitle>Broadcast Transaction</CardTitle>
+          <CardDescription>
+            Broadcast your signed escrow transaction to the Bitcoin network
+          </CardDescription>
         </CardHeader>
-        <CardContent className="p-6 space-y-6">
-          <Tabs defaultValue="upload" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="upload">Upload File</TabsTrigger>
-              <TabsTrigger value="paste">Paste PSBT</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="upload" className="space-y-4">
-              <div className="border-2 border-dashed border-zinc-800 rounded-lg p-6 text-center">
-                <Input
-                  type="file"
-                  accept=".psbt"
-                  onChange={handleFileUpload}
-                  className="hidden"
-                  id="psbt-upload"
-                />
-                <Label
-                  htmlFor="psbt-upload"
-                  className="flex flex-col items-center gap-2 cursor-pointer"
-                >
-                  <FileUp className="h-8 w-8 text-muted-foreground" />
-                  <span className="text-muted-foreground">
-                    {psbtFile ? psbtFile.name : "Click to upload signed PSBT file"}
-                  </span>
-                </Label>
-              </div>
-              {psbtFile && (
-                <div className="space-y-2">
-                  <Label>File Content Preview</Label>
-                  <div className="bg-zinc-900 p-3 rounded-lg font-mono text-sm break-all">
-                    {psbtText.slice(0, 100)}...
-                  </div>
-                </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="paste" className="space-y-4">
-              <div className="space-y-2">
-                <Label>Signed PSBT Data</Label>
-                <Input
-                  placeholder="Paste your signed PSBT data here"
-                  value={psbtText}
-                  onChange={(e) => setPsbtText(e.target.value)}
-                  className="font-mono"
-                />
-              </div>
-            </TabsContent>
-          </Tabs>
-
-          <div className="space-y-4 pt-4 border-t border-zinc-800">
-            <Button
-              className="w-full"
-              disabled={!psbtText}
-              onClick={handleBroadcast}
-            >
-              <Upload className="w-4 h-4 mr-2" />
-              Broadcast Transaction
-            </Button>
-            {psbtText && (
-              <div className="text-sm text-muted-foreground">
-                * This action is irreversible. The transaction will be broadcasted to the Bitcoin network.
-              </div>
-            )}
+        <CardContent className="space-y-6">
+          <div className="space-y-2">
+            <Label>Signed Transaction</Label>
+            <Input
+              placeholder="Paste your signed transaction hex"
+              value={signedTx}
+              onChange={(e) => setSignedTx(e.target.value)}
+              className="font-mono"
+            />
+            <p className="text-sm text-muted-foreground">
+              * This should be the fully signed transaction from the previous step
+            </p>
           </div>
+
+          <Button
+            className="w-full"
+            disabled={!signedTx}
+            onClick={handleBroadcast}
+          >
+            <Upload className="w-4 h-4 mr-2" />
+            Broadcast Transaction
+          </Button>
+
+          {txid && (
+            <div className="space-y-4 pt-4 border-t border-zinc-800">
+              <div className="space-y-2">
+                <Label>Transaction ID</Label>
+                <div className="flex gap-2">
+                  <Input 
+                    value={txid}
+                    readOnly
+                    className="font-mono bg-zinc-900 text-white"
+                  />
+                  <Button 
+                    variant="outline" 
+                    size="icon"
+                    onClick={handleCopyTxid}
+                  >
+                    {copied ? (
+                      <Check className="h-4 w-4" />
+                    ) : (
+                      <Copy className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="bg-zinc-900 rounded-lg p-4 text-sm text-muted-foreground">
+                <p className="font-medium text-white mb-2">Next Steps:</p>
+                <ul className="list-disc list-inside space-y-1">
+                  <li>Transaction has been broadcasted to the network</li>
+                  <li>Wait for at least 1 confirmation before considering it final</li>
+                  <li>You can track the transaction status using the TXID above</li>
+                </ul>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

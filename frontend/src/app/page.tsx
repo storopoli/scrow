@@ -1,6 +1,6 @@
 "use client"
 
-import { Copy, Info, Github, Check } from "lucide-react"
+import { Copy, Info, Github, Check, ArrowRight, CheckCircle2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { useState } from "react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
+import confetti from 'canvas-confetti'
 
 export default function CreateEscrowPage() {
   const [useThirdParty, setUseThirdParty] = useState(false)
@@ -21,6 +22,10 @@ export default function CreateEscrowPage() {
   const [confirmationCount, setConfirmationCount] = useState<number>(0)
   const [canGenerateUnsigned, setCanGenerateUnsigned] = useState(false)
   const [showConfirmationInput, setShowConfirmationInput] = useState(false)
+  const [unsignedTx, setUnsignedTx] = useState("")
+  const [showUnsignedTxDialog, setShowUnsignedTxDialog] = useState(false)
+  const [txCopied, setTxCopied] = useState(false)
+  const [showConfirmation, setShowConfirmation] = useState(false)
 
   const handleCreateEscrow = async () => {
     try {
@@ -64,14 +69,39 @@ export default function CreateEscrowPage() {
   const handleGenerateUnsigned = () => {
     try {
       // This will be replaced with actual unsigned tx generation
+      const mockUnsignedTx = "0200000001f3a536afd4fb2baa0747ba25d96f34a4bb61f1c48b3992c9c1df8f4f8e8c4a1a0000000000feffffff0200e1f505000000001976a914b12366b839b006d2af39d5c218519ac7c3a3f8f888ac6a452f00000000001976a914b12366b839b006d2af39d5c218519ac7c3a3f8f888ac00000000"
+      setUnsignedTx(mockUnsignedTx)
+      setShowUnsignedTxDialog(true)
       toast.success("Unsigned transaction generated successfully")
-      // Here you would typically:
-      // 1. Generate the unsigned transaction
-      // 2. Save it or show it to the user
-      // 3. Redirect to signing page
     } catch (err) {
       toast.error("Failed to generate unsigned transaction")
     }
+  }
+
+  const handleCopyUnsignedTx = () => {
+    navigator.clipboard.writeText(unsignedTx)
+    setTxCopied(true)
+    setTimeout(() => setTxCopied(false), 2000)
+  }
+
+  const handleProceedToSign = () => {
+    setShowConfirmation(true)
+
+    // After showing confirmation, trigger confetti and navigate
+    setTimeout(() => {
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#f97316', '#ffffff', '#000000'],
+      })
+
+      setTimeout(() => {
+        setShowUnsignedTxDialog(false)
+        setShowConfirmation(false)
+        window.location.href = '/sign'
+      }, 500)
+    }, 1500) // Show confirmation for 1.5 seconds
   }
 
   return (
@@ -182,7 +212,7 @@ export default function CreateEscrowPage() {
                 <Input 
                   value={escrowAddress}
                   readOnly
-                  className="font-mono bg-zinc-900"
+                  className="font-mono bg-zinc-900 text-white"
                 />
                 <Button 
                   variant="outline" 
@@ -258,6 +288,78 @@ export default function CreateEscrowPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Add new Unsigned Transaction Dialog */}
+      <Dialog open={showUnsignedTxDialog} onOpenChange={setShowUnsignedTxDialog}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Unsigned Transaction Generated</DialogTitle>
+            <DialogDescription>
+              Copy this unsigned transaction and proceed to the Sign Escrow page. Both parties need to sign this transaction independently.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <Label>Unsigned Transaction Hex</Label>
+              <div className="bg-zinc-900 p-4 rounded-lg">
+                <div className="font-mono text-sm break-all text-white">
+                  {unsignedTx}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-4">
+              <Button 
+                variant="outline"
+                className="flex-1"
+                onClick={handleCopyUnsignedTx}
+              >
+                {txCopied ? (
+                  <>
+                    <Check className="w-4 h-4 mr-2" />
+                    Copied!
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-4 h-4 mr-2" />
+                    Copy Transaction
+                  </>
+                )}
+              </Button>
+              
+              <Button 
+                className="flex-1"
+                onClick={handleProceedToSign}
+              >
+                Proceed to Sign
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </div>
+
+            <div className="text-sm text-muted-foreground">
+              * Save this unsigned transaction. You&apos;ll need it in the Sign Escrow page to generate your signature.
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Confirmation Overlay */}
+      {showConfirmation && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-zinc-900 p-8 rounded-lg flex flex-col items-center gap-4 animate-in fade-in zoom-in duration-300">
+            <CheckCircle2 className="w-16 h-16 text-green-500 animate-bounce" />
+            <div className="text-center">
+              <h3 className="text-xl font-semibold text-white mb-2">
+                Transaction Ready for Signing
+              </h3>
+              <p className="text-zinc-400">
+                Redirecting you to the signature page...
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* GitHub link */}
       <a
