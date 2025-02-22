@@ -1,15 +1,12 @@
-use serde::Deserialize;
 use wasm_bindgen::prelude::*;
-use core::net;
-use std::{collections::BTreeMap, str::FromStr};
+use std::str::FromStr;
 
 use bitcoin::{
-    consensus, ecdsa, hex::{DisplayHex, FromHex}, sighash::SighashCache, Amount, EcdsaSighashType, PrivateKey, Psbt, PublicKey, ScriptBuf, Transaction, TxOut
+    consensus, ecdsa, hex::DisplayHex, Amount, PrivateKey, PublicKey, ScriptBuf, Transaction
 };
-use secp256k1::{Message, SECP256K1};
 
 use crate::{
-    scripts::{new_collaborative_address, new_dispute_address}, sign::{combine_signatures_collaborative, combine_signatures_dispute_arbitrator, combine_signatures_dispute_collaborative, sign_tx}, tx, util::{self, convert_network_to_typed, convert_npub_to_public_key}
+    sign::{combine_signatures_collaborative, combine_signatures_dispute_arbitrator, combine_signatures_dispute_collaborative, sign_tx}, util::{self, convert_network_to_typed}
 };
 
 /// Signs a [`Transaction`] input `index` using a [`PrivateKey`].
