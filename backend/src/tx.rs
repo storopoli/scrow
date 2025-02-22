@@ -11,6 +11,40 @@ use crate::{
     util::{convert_network_to_typed, convert_npub_to_public_key},
 };
 
+/// Creates a 2-of-2 multisig escrow address for collaboration between two users,
+/// and their respective Nostr public keys.
+#[wasm_bindgen]
+pub fn create_collab_address(npub_1: String, npub_2: String, network: String) -> String {
+    let network = convert_network_to_typed(network);
+    let public_key_1 = convert_npub_to_public_key(npub_1);
+    let public_key_2 = convert_npub_to_public_key(npub_2);
+    let address = new_collaborative_address([public_key_1, public_key_2], network);
+    address.to_string()
+}
+
+/// Creates a 2-of-2/2-of-3 multisig escrow address for collaboration/dispute between two/three users,
+/// the timelock duration,
+/// and their respective Nostr public keys.
+#[wasm_bindgen]
+pub fn create_dispute_address(
+    npub_1: String,
+    npub_2: String,
+    npub_arbiter: String,
+    timelock_duration: u32,
+    network: String,
+) -> String {
+    let network = convert_network_to_typed(network);
+    let public_key_1 = convert_npub_to_public_key(npub_1);
+    let public_key_2 = convert_npub_to_public_key(npub_2);
+    let public_key_arbiter = convert_npub_to_public_key(npub_arbiter);
+    let address = new_dispute_address(
+        [public_key_1, public_key_2],
+        public_key_arbiter,
+        timelock_duration,
+        network,
+    );
+    address.to_string()
+}
 /// Creates a 2-of-2 multisig transaction for collaboration between two users, given an escrow amount,
 /// their respective Nostr public keys; and their respective resolution addresses.
 ///
@@ -41,7 +75,7 @@ pub fn create_collab_tx(
     let prevout = OutPoint { txid, vout: 0 };
     let pk_1 = convert_npub_to_public_key(npub_1);
     let pk_2 = convert_npub_to_public_key(npub_2);
-    let escrow_address = new_collaborative_address([pk_1, pk_2], network);
+    let _escrow_address = new_collaborative_address([pk_1, pk_2], network);
     let escrow_amount = Amount::from_sat(escrow_amount);
     let fee = Amount::from_sat(fee);
 
@@ -65,10 +99,6 @@ pub fn create_collab_tx(
             ..Default::default()
         }],
         output: vec![
-            TxOut {
-                value: escrow_amount,
-                script_pubkey: escrow_address.script_pubkey(),
-            },
             TxOut {
                 value: liquid_amount_1p,
                 script_pubkey: resolution_address_1p.script_pubkey(),
@@ -117,7 +147,7 @@ pub fn create_dispute_tx(
     let pk_1 = convert_npub_to_public_key(npub_1);
     let pk_2 = convert_npub_to_public_key(npub_2);
     let pk_arbiter = convert_npub_to_public_key(npub_arbiter);
-    let escrow_address = new_dispute_address([pk_1, pk_2], pk_arbiter, timelock_duration, network);
+    let _escrow_address = new_dispute_address([pk_1, pk_2], pk_arbiter, timelock_duration, network);
     let escrow_amount = Amount::from_sat(escrow_amount);
     let fee = Amount::from_sat(fee);
 
@@ -141,10 +171,6 @@ pub fn create_dispute_tx(
             ..Default::default()
         }],
         output: vec![
-            TxOut {
-                value: escrow_amount,
-                script_pubkey: escrow_address.script_pubkey(),
-            },
             TxOut {
                 value: liquid_amount_1p,
                 script_pubkey: resolution_address_1p.script_pubkey(),
