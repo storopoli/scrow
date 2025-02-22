@@ -13,14 +13,17 @@ interface BroadcastResponse {
 }
 
 export default function BroadcastEscrowPage() {
-  const [signedTxText, setSignedTxText] = useState("14c63951b1308aafdf7fc3f78526a9768fd937a7c11700f69d9a89979e8c5845");
+  const [signedTxText, setSignedTxText] = useState(
+    "14c63951b1308aafdf7fc3f78526a9768fd937a7c11700f69d9a89979e8c5845",
+  );
   const [broadcastTxid, setBroadcastTxid] = useState("");
 
   const handleBroadcast = async () => {
     const promise = new Promise<BroadcastResponse>((resolve) => {
       setTimeout(() => {
         // Generate a mock TXID that looks like a real Bitcoin transaction ID
-        const mockTxid = "b839ef663c8ec2dbd6eee4f49691a2159006f98d4f3d329c9c59af8013e8121f";
+        const mockTxid =
+          "14c63951b1308aafdf7fc3f78526a9768fd937a7c11700f69d9a89979e8c5845";
         resolve({ txid: mockTxid });
         setBroadcastTxid(mockTxid); // Set the TXID in state
         setSignedTxText(""); // Clear the input after successful broadcast
@@ -49,7 +52,6 @@ export default function BroadcastEscrowPage() {
             <Label>Signed Transaction Data</Label>
             <Input
               placeholder="Paste your signed transaction data here"
-              value={signedTxText}
               onChange={(e) => setSignedTxText(e.target.value)}
               className="font-mono"
             />

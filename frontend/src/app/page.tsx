@@ -59,6 +59,8 @@ export default function CreateEscrowPage() {
   const [thirdPartyNostrPubkey, setThirdPartyNostrPubkey] = useState("");
   const [timelockPeriod, setTimelockPeriod] = useState("1h");
   const [showAddress, setShowAddress] = useState(false);
+  const [showFunding, setShowFunding] = useState(false);
+  const [showUnsigned, setUnsigned] = useState(false);
 
   useEffect(() => {
     const initAndFetchFees = async () => {
@@ -222,49 +224,6 @@ export default function CreateEscrowPage() {
                     <SelectItem value="Mainnet">Mainnet</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
-
-              {/* Funding Transaction Details */}
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold">Funding Transaction</h2>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <Info className="h-4 w-4 text-muted-foreground" />
-                    </TooltipTrigger>
-                    <TooltipContent className="max-w-[300px]">
-                      <p>
-                        The transaction details of the UTXO you want to spend
-                      </p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-
-              <div className="space-y-4 p-4 rounded-lg border border-zinc-800">
-                <div className="space-y-2">
-                  <Label>Funding TXID</Label>
-                  <Input
-                    placeholder="Enter the funding transaction ID"
-                    className="font-mono"
-                  />
-                  <p className="text-sm text-muted-foreground">
-                    The transaction ID of the UTXO you want to spend
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Vout</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    placeholder="0"
-                    className="font-mono"
-                  />
-                  <p className="text-sm text-muted-foreground">
-                    The output index of the UTXO
-                  </p>
-                </div>
               </div>
 
               {/* My Details */}
@@ -529,146 +488,266 @@ export default function CreateEscrowPage() {
             </div>
 
             {/* Amount Section */}
-            <div className="grid grid-cols-1 gap-4">
-              <div className="space-y-2">
+            <div className="space-y-4 p-4 rounded-lg border border-zinc-800">
+              <div className="flex items-center justify-between">
+                <div className="grid grid-cols-1 gap-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label>Amount</Label>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Info className="h-4 w-4 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-[300px]">
+                            <p>
+                              The amount of Bitcoin to be held in escrow. This
+                              will be locked until both parties agree on
+                              resolution.
+                              <br />
+                              <br />
+                              Real-time BTC/USD conversion rates are provided by
+                              CoinGecko and update every minute.
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="21,000"
+                        value={amount}
+                        onChange={(e) => handleAmountChange(e.target.value)}
+                      />
+                      <Select
+                        value={unit}
+                        onValueChange={(value: "sats" | "btc" | "usd") =>
+                          setUnit(value)
+                        }
+                      >
+                        <SelectTrigger className="w-[100px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="sats">sats</SelectItem>
+                          <SelectItem value="btc">BTC</SelectItem>
+                          <SelectItem value="usd">USD</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {loading ? (
+                      <p className="text-sm text-muted-foreground">
+                        Loading conversion...
+                      </p>
+                    ) : (
+                      amount && (
+                        <p className="text-sm text-muted-foreground">
+                          {getConversion()}
+                        </p>
+                      )
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Fee Settings Section */}
+              <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <Label>Amount</Label>
+                  <Label>Transaction Fee</Label>
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger>
                         <Info className="h-4 w-4 text-muted-foreground" />
                       </TooltipTrigger>
-                      <TooltipContent className="max-w-[300px]">
-                        <p>
-                          The amount of Bitcoin to be held in escrow. This will
-                          be locked until both parties agree on resolution.
-                          <br />
-                          <br />
-                          Real-time BTC/USD conversion rates are provided by
-                          CoinGecko and update every minute.
-                        </p>
+                      <TooltipContent>
+                        <p>Higher fees mean faster confirmation times</p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
                 </div>
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="21,000"
-                    value={amount}
-                    onChange={(e) => handleAmountChange(e.target.value)}
-                  />
-                  <Select
-                    value={unit}
-                    onValueChange={(value: "sats" | "btc" | "usd") =>
-                      setUnit(value)
-                    }
-                  >
-                    <SelectTrigger className="w-[100px]">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="sats">sats</SelectItem>
-                      <SelectItem value="btc">BTC</SelectItem>
-                      <SelectItem value="usd">USD</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                {loading ? (
-                  <p className="text-sm text-muted-foreground">
-                    Loading conversion...
-                  </p>
-                ) : (
-                  amount && (
-                    <p className="text-sm text-muted-foreground">
-                      {getConversion()}
-                    </p>
-                  )
-                )}
               </div>
-            </div>
-          </div>
 
-          {/* Fee Settings Section */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <Label>Transaction Fee</Label>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger>
-                    <Info className="h-4 w-4 text-muted-foreground" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Higher fees mean faster confirmation times</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-
-            <Tabs value={feePreset} onValueChange={handleFeePresetChange}>
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger
-                  value="economic"
-                  className={cn(minimumFee && "text-orange-500")}
-                >
-                  Economic
-                </TabsTrigger>
-                <TabsTrigger
-                  value="recommended"
-                  className={cn(economyFee && "text-orange-500")}
-                >
-                  Recommended
-                </TabsTrigger>
-                <TabsTrigger
-                  value="priority"
-                  className={cn(fastestFee && "text-orange-500")}
-                >
-                  Priority
-                </TabsTrigger>
-              </TabsList>
-              <TabsContent value={feePreset}>
-                <div className="py-4">
-                  <div className="flex justify-between mt-2 text-sm text-muted-foreground">
-                    <span>{feeRate} sat/vB</span>
+              <Tabs value={feePreset} onValueChange={handleFeePresetChange}>
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger
+                    value="economic"
+                    className={cn(minimumFee && "text-orange-500")}
+                  >
+                    Economic
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="recommended"
+                    className={cn(economyFee && "text-orange-500")}
+                  >
+                    Recommended
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="priority"
+                    className={cn(fastestFee && "text-orange-500")}
+                  >
+                    Priority
+                  </TabsTrigger>
+                </TabsList>
+                <TabsContent value={feePreset}>
+                  <div className="py-4">
+                    <div className="flex justify-between mt-2 text-sm text-muted-foreground">
+                      <span>{feeRate} sat/vB</span>
+                    </div>
                   </div>
-                </div>
-              </TabsContent>
-            </Tabs>
+                </TabsContent>
+              </Tabs>
+            </div>
           </div>
 
           <div className="pt-4 flex justify-end gap-4">
-            <Button variant="outline">Clear</Button>
-            <Button onClick={handleCreateEscrow}>
-              Create Escrow Transaction »
+            <Button onClick={handleCreateEscrow}>Create Escrow Address</Button>
+          </div>
+
+          {showAddress && (
+            <div className="space-y-4 p-4 rounded-lg border border-zinc-800">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-medium text-muted-foreground">
+                  Contract Address
+                </h3>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Info className="h-4 w-4 text-muted-foreground" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p></p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+              <div className="space-y-2">
+                <Label>
+                  Deposit {3 * Number(amount)} sats to this contract address via
+                  CoinJoin to start the escrow
+                </Label>
+                <div className="flex gap-2">
+                  <Input
+                    value="tb1qgp6pxn07lxe749n8lq9ns8kmzh5xgrgghpw3m4azq07vs0s9u0jq8ljcwe"
+                    readOnly
+                    className="font-mono"
+                  />
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => {
+                      navigator.clipboard.writeText(
+                        "tb1qgp6pxn07lxe749n8lq9ns8kmzh5xgrgghpw3m4azq07vs0s9u0jq8ljcwe",
+                      );
+                      toast.success("Address copied to clipboard");
+                    }}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Funding Transaction Details */}
+
+          <div className="flex justify-end">
+            <Button onClick={() => setShowFunding(true)} className="mt-4">
+              Address funded
             </Button>
           </div>
-        </CardContent>
+          {showFunding && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold">Funding Transaction</h2>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Info className="h-4 w-4 text-muted-foreground" />
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-[300px]">
+                      <p>
+                        The transaction details of the UTXO you want to spend
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
 
-        {showAddress && (
-          <div className="space-y-2">
-            <Label>
-              Escrow Address (deposit the contract amount to this address)
-            </Label>
-            <div className="flex gap-2">
-              <Input
-                value="tb1qgp6pxn07lxe749n8lq9ns8kmzh5xgrgghpw3m4azq07vs0s9u0jq8ljcwe"
-                readOnly
-                className="font-mono"
-              />
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => {
-                  navigator.clipboard.writeText(
-                    "tb1qgp6pxn07lxe749n8lq9ns8kmzh5xgrgghpw3m4azq07vs0s9u0jq8ljcwe",
-                  );
-                  toast.success("Address copied to clipboard");
-                }}
-              >
-                <Copy className="h-4 w-4" />
-              </Button>
+              <div className="space-y-4 p-4 rounded-lg border border-zinc-800">
+                <div className="space-y-2">
+                  <Label>Funding TXID</Label>
+                  <Input
+                    placeholder="Enter the funding transaction ID"
+                    className="font-mono"
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    The transaction ID of the UTXO you want to spend
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Vout</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    placeholder="0"
+                    className="font-mono"
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    The output index of the UTXO
+                  </p>
+                </div>
+              </div>
             </div>
+          )}
+
+          <div className="flex justify-end">
+            <Button onClick={() => setUnsigned(true)} className="mt-4">
+              Generate Unsigned Transaction
+            </Button>
           </div>
-        )}
+
+          {showUnsigned && (
+            <div className="space-y-4 p-4 rounded-lg border border-zinc-800">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-medium text-muted-foreground">
+                  Message to Sign
+                </h3>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Info className="h-4 w-4 text-muted-foreground" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Sign this message with your Nostr key</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+              <div className="space-y-2">
+                <div className="flex gap-2">
+                  <Input
+                    value="0200000001fe3ffdda67e167b87a762ab48837c8a45e47e1ab432d46718c78632bddc0d7570000000000ffffffff0220a10700000000001600142a457dd355e287c15f0b94647e707586ef5e7ba820d6130000000000160014863fbd727a4ee8a4141d1b5b8e7435c251cecd1800000000"
+                    readOnly
+                    className="font-mono"
+                  />
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => {
+                      navigator.clipboard.writeText(
+                        "I agree to lock these funds in escrow with counterparty npub1...",
+                      );
+                      toast.success("Message copied to clipboard");
+                    }}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </CardContent>
       </Card>
 
       {/* Add GitHub link with circular background */}

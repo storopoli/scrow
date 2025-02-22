@@ -4,7 +4,11 @@
 import { useEffect, useState } from "react";
 import { init } from "../lib/wasm";
 
-export function ClientWasmProvider({ children }: { children: React.ReactNode }) {
+export function ClientWasmProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const [wasmLoaded, setWasmLoaded] = useState(false);
 
   useEffect(() => {
