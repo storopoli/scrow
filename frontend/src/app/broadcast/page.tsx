@@ -14,21 +14,7 @@ interface BroadcastResponse {
 }
 
 export default function BroadcastEscrowPage() {
-  const [signedTxFile, setSignedTxFile] = useState<File | null>(null);
   const [signedTxText, setSignedTxText] = useState("");
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setSignedTxFile(file);
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const text = e.target?.result as string;
-        setSignedTxText(text);
-      };
-      reader.readAsText(file);
-    }
-  };
 
   const handleBroadcast = async () => {
     const promise = new Promise<BroadcastResponse>((resolve, reject) => {
@@ -46,7 +32,6 @@ export default function BroadcastEscrowPage() {
             return response.json();
           })
           .then((data: BroadcastResponse) => {
-            setSignedTxFile(null);
             setSignedTxText("");
             resolve(data);
           })
@@ -73,56 +58,15 @@ export default function BroadcastEscrowPage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="p-6 space-y-6">
-          <Tabs defaultValue="upload" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="upload">Upload File</TabsTrigger>
-              <TabsTrigger value="paste">Paste Signed Transaction</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="upload" className="space-y-4">
-              <div className="border-2 border-dashed border-zinc-800 rounded-lg p-6 text-center">
-                <Input
-                  type="file"
-                  accept=".psbt"
-                  onChange={handleFileUpload}
-                  className="hidden"
-                  id="psbt-upload"
-                />
-                <Label
-                  htmlFor="psbt-upload"
-                  className="flex flex-col items-center gap-2 cursor-pointer"
-                >
-                  <FileUp className="h-8 w-8 text-muted-foreground" />
-                  <span className="text-muted-foreground">
-                    {signedTxFile
-                      ? signedTxFile.name
-                      : "Click to upload signed transaction file"}
-                  </span>
-                </Label>
-              </div>
-              {signedTxFile && (
-                <div className="space-y-2">
-                  <Label>File Content Preview</Label>
-                  <div className="bg-zinc-900 p-3 rounded-lg font-mono text-sm break-all">
-                    {signedTxText.slice(0, 100)}...
-                  </div>
-                </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="paste" className="space-y-4">
-              <div className="space-y-2">
-                <Label>Signed Transaction Data</Label>
-                <Input
-                  placeholder="Paste your signed transaction data here"
-                  value={signedTxText}
-                  onChange={(e) => setSignedTxText(e.target.value)}
-                  className="font-mono"
-                />
-              </div>
-            </TabsContent>
-          </Tabs>
-
+          <div className="space-y-2">
+            <Label>Signed Transaction Data</Label>
+            <Input
+              placeholder="Paste your signed transaction data here"
+              value={signedTxText}
+              onChange={(e) => setSignedTxText(e.target.value)}
+              className="font-mono"
+            />
+          </div>
           <div className="space-y-4 pt-4 border-t border-zinc-800">
             <Button
               className="w-full"
