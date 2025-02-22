@@ -7,10 +7,6 @@ backend/target/
 frontend/.next 
 frontend/node_modules
 
-=======
-.next 
-node_modules
->>>>>>> 582419c (created bitcoin and nostr services with static website compatibility)
 # dependencies
 /node_modules
 /.pnp
@@ -25,8 +21,8 @@ node_modules
 /coverage
 
 # next.js
-frontend/.next/
-frontend/out/
+frontend/.next/*
+frontend/out/*
 
 # production
 /build
