@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+
 "use client";
 
 import { Copy, Camera, Info, Github } from "lucide-react";
@@ -21,20 +23,26 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Switch } from "@/components/ui/switch";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useBitcoinPrice } from "@/hooks/useBitcoinPrice";
 import { cn } from "@/lib/utils";
 
-// wasm loader and functions
+
 // call rust functions via wasm.<function name>
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { init } from "../lib/wasm";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
 import wasm from "../lib/wasm";
 
-type FeePreset = "economic" | "recommended" | "priority";
+type FeePreset = "minimum" | "economic" | "fastest";
 type NetworkType = "MutinyNet" | "Signet" | "Mainnet" | "Testnet4";
+type FeeMap = Map<string, number>;
+
+const MAINNET_HOST = "https://mempool.space";
+const MUTINY_HOST = "https://mutinynet.com";
+const MUTINY_FEE_ENDPOINT = "/api/v1/fees/recommended";
 
 export default function CreateEscrowPage() {
   const [useThirdParty, setUseThirdParty] = useState(false);
@@ -46,8 +54,26 @@ export default function CreateEscrowPage() {
   const [network, setNetwork] = useState<NetworkType>("MutinyNet");
 
   const { price, loading } = useBitcoinPrice();
-  const [feeRate, setFeeRate] = useState(16);
-  const [feePreset, setFeePreset] = useState<FeePreset>("recommended");
+  const [feeRate, setFeeRate] = useState(1);
+  const [feePreset, setFeePreset] = useState<FeePreset>("economic");
+  const [fees, setFees] = useState<FeeMap | null>(null);
+
+  useEffect(() => {
+    const initAndFetchFees = async () => {
+      try {
+        const feesMap = await wasm.fetch_fees(MAINNET_HOST, MUTINY_FEE_ENDPOINT);
+        setFees(feesMap);
+      } catch (error) {
+        console.error('Error:', error);
+      }
+    };
+
+    initAndFetchFees();
+  }, []);
+
+  const minimumFee = fees?.get('minimumFee') ?? 1;
+  const economyFee = fees?.get('economyFee') ?? 2;
+  const fastestFee = fees?.get('fastestFee') ?? 3;
 
   const handleCreateEscrow = async () => {
     try {
@@ -83,39 +109,22 @@ export default function CreateEscrowPage() {
     }
   };
 
-  const handleFeeChange = (value: number[]) => {
-    const newFee = value[0];
-    setFeeRate(newFee);
 
-    if (newFee < 24) {
-      setFeePreset("economic");
-    } else if (newFee <= 32) {
-      setFeePreset("recommended");
-    } else {
-      setFeePreset("priority");
-    }
-  };
 
   const handleFeePresetChange = (value: string) => {
     const preset = value as FeePreset;
     setFeePreset(preset);
     switch (preset) {
+      case "minimum":
+        setFeeRate(minimumFee);
+        break;
       case "economic":
-        setFeeRate(16);
+        setFeeRate(economyFee);
         break;
-      case "recommended":
-        setFeeRate(28);
-        break;
-      case "priority":
-        setFeeRate(40);
+      case "fastest":
+        setFeeRate(fastestFee);
         break;
     }
-  };
-
-  const getConfirmationTime = (fee: number) => {
-    if (fee < 24) return "~30 min";
-    if (fee <= 32) return "~10 min";
-    return "< 5 min";
   };
 
   return (
@@ -156,7 +165,7 @@ export default function CreateEscrowPage() {
                     <SelectItem value="MutinyNet">MutinyNet</SelectItem>
                     <SelectItem value="Signet">Signet</SelectItem>
                     <SelectItem value="Testnet4">Testnet4</SelectItem>
-                    <SelectItem value="Testnet4">Mainnet</SelectItem>
+                    <SelectItem value="Mainnet">Mainnet</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -467,38 +476,31 @@ export default function CreateEscrowPage() {
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger
                   value="economic"
-                  className={cn(feePreset === "economic" && "text-orange-500")}
+                  className={cn(minimumFee && "text-orange-500")}
                 >
                   Economic
                 </TabsTrigger>
                 <TabsTrigger
                   value="recommended"
                   className={cn(
-                    feePreset === "recommended" && "text-orange-500",
+                    economyFee && "text-orange-500",
                   )}
                 >
                   Recommended
                 </TabsTrigger>
                 <TabsTrigger
                   value="priority"
-                  className={cn(feePreset === "priority" && "text-orange-500")}
+                  className={cn(fastestFee && "text-orange-500")}
                 >
                   Priority
                 </TabsTrigger>
               </TabsList>
               <TabsContent value={feePreset}>
                 <div className="py-4">
-                  <Slider
-                    value={[feeRate]}
-                    onValueChange={handleFeeChange}
-                    min={1}
-                    max={50}
-                    step={1}
-                    className="my-4"
-                  />
+   
                   <div className="flex justify-between mt-2 text-sm text-muted-foreground">
                     <span>{feeRate} sat/vB</span>
-                    <span>{getConfirmationTime(feeRate)}</span>
+                    
                   </div>
                 </div>
               </TabsContent>
