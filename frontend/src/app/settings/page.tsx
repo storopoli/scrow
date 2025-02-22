@@ -47,7 +47,7 @@ export default function SettingsPage() {
         <CardContent className="p-6 space-y-6">
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Mempool Endpoint</Label>
+              <Label>Mempool/Esplora API Endpoint</Label>
               <Input
                 placeholder="Enter mempool endpoint URL"
                 value={settings.mempoolEndpoint}
@@ -59,7 +59,7 @@ export default function SettingsPage() {
                 }
               />
               <p className="text-sm text-muted-foreground">
-                The endpoint used to interact with Bitcoin mempool
+                The endpoint used to interact with Bitcoin network
               </p>
             </div>
 
