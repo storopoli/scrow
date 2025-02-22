@@ -1,6 +1,6 @@
 "use client";
 
-import { Bitcoin } from "lucide-react";
+import { Bitcoin, Github } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 
 export default function EscrowsPage() {
@@ -15,6 +15,15 @@ export default function EscrowsPage() {
           </div>
         </CardContent>
       </Card>
+      {/* Add GitHub link with circular background */}
+      <a
+        href="https://github.com/storopoli/scrow/"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="fixed bottom-4 right-4 p-2 bg-black rounded-full border border-zinc-800/40 text-zinc-400 hover:text-white transition-colors"
+      >
+        <Github className="w-6 h-6" />
+      </a>
     </div>
   );
 }
