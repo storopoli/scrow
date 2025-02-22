@@ -15,6 +15,10 @@ import { toast } from "sonner"
 import { useBitcoinPrice } from "@/hooks/useBitcoinPrice"
 import { cn } from "@/lib/utils"
 
+// wasm loader and functions
+import { init } from "../lib/wasm";
+import wasm from "../lib/wasm";
+
 type FeePreset = "economic" | "recommended" | "priority"
 
 export default function CreateEscrowPage() {
