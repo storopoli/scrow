@@ -14,17 +14,17 @@ interface BroadcastResponse {
 }
 
 export default function BroadcastEscrowPage() {
-  const [psbtFile, setPsbtFile] = useState<File | null>(null);
-  const [psbtText, setPsbtText] = useState("");
+  const [signedTxFile, setSignedTxFile] = useState<File | null>(null);
+  const [signedTxText, setSignedTxText] = useState("");
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setPsbtFile(file);
+      setSignedTxFile(file);
       const reader = new FileReader();
       reader.onload = (e) => {
         const text = e.target?.result as string;
-        setPsbtText(text);
+        setSignedTxText(text);
       };
       reader.readAsText(file);
     }
@@ -38,7 +38,7 @@ export default function BroadcastEscrowPage() {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ psbt: psbtText }),
+          body: JSON.stringify({ psbt: signedTxText }),
         })
           .then((response) => {
             if (!response.ok)
@@ -46,8 +46,8 @@ export default function BroadcastEscrowPage() {
             return response.json();
           })
           .then((data: BroadcastResponse) => {
-            setPsbtFile(null);
-            setPsbtText("");
+            setSignedTxFile(null);
+            setSignedTxText("");
             resolve(data);
           })
           .catch((error) => reject(error));
@@ -69,14 +69,14 @@ export default function BroadcastEscrowPage() {
       <Card>
         <CardHeader>
           <CardTitle className="text-lg font-medium">
-            Upload or paste your signed PSBT to broadcast
+            Upload or paste your signed transaction to broadcast
           </CardTitle>
         </CardHeader>
         <CardContent className="p-6 space-y-6">
           <Tabs defaultValue="upload" className="space-y-4">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="upload">Upload File</TabsTrigger>
-              <TabsTrigger value="paste">Paste PSBT</TabsTrigger>
+              <TabsTrigger value="paste">Paste Signed Transaction</TabsTrigger>
             </TabsList>
 
             <TabsContent value="upload" className="space-y-4">
@@ -94,17 +94,17 @@ export default function BroadcastEscrowPage() {
                 >
                   <FileUp className="h-8 w-8 text-muted-foreground" />
                   <span className="text-muted-foreground">
-                    {psbtFile
-                      ? psbtFile.name
-                      : "Click to upload signed PSBT file"}
+                    {signedTxFile
+                      ? signedTxFile.name
+                      : "Click to upload signed transaction file"}
                   </span>
                 </Label>
               </div>
-              {psbtFile && (
+              {signedTxFile && (
                 <div className="space-y-2">
                   <Label>File Content Preview</Label>
                   <div className="bg-zinc-900 p-3 rounded-lg font-mono text-sm break-all">
-                    {psbtText.slice(0, 100)}...
+                    {signedTxText.slice(0, 100)}...
                   </div>
                 </div>
               )}
@@ -112,11 +112,11 @@ export default function BroadcastEscrowPage() {
 
             <TabsContent value="paste" className="space-y-4">
               <div className="space-y-2">
-                <Label>Signed PSBT Data</Label>
+                <Label>Signed Transaction Data</Label>
                 <Input
-                  placeholder="Paste your signed PSBT data here"
-                  value={psbtText}
-                  onChange={(e) => setPsbtText(e.target.value)}
+                  placeholder="Paste your signed transaction data here"
+                  value={signedTxText}
+                  onChange={(e) => setSignedTxText(e.target.value)}
                   className="font-mono"
                 />
               </div>
@@ -126,13 +126,13 @@ export default function BroadcastEscrowPage() {
           <div className="space-y-4 pt-4 border-t border-zinc-800">
             <Button
               className="w-full"
-              disabled={!psbtText}
+              disabled={!signedTxText}
               onClick={handleBroadcast}
             >
               <Upload className="w-4 h-4 mr-2" />
               Broadcast Transaction
             </Button>
-            {psbtText && (
+            {signedTxText && (
               <div className="text-sm text-muted-foreground">
                 * This action is irreversible. The transaction will be
                 broadcasted to the Bitcoin network.
