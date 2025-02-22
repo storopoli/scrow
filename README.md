@@ -27,9 +27,9 @@ The third-party as for now would have a social interest to solve the dispute as 
 1. Collaborative resolution: 2-of-2 Buyer + Seller.
 1. Timelocked dispute resolution: 2-of-3 (Buyer or Seller) + Third Party.
 
-Satoshi Escrow is a static webpage that can be used offline
+Satoshi Escrow is a static webpage that can be used offline (or online)
 in an air gapped computer for you to generate, sign,
-and broadcast raw transactions. The users fund an escrow address that was generated using the parties npubs. As for now the users need to fund the address trhough an coinjoin.
+and broadcast raw transactions directly through the webpage or using a wallet of choice. The main working principle is the users use coinjoin to fund an escrow address that was generated using the parties npubs and they can resolve the escrow using a collaborative or a dispute approach with respectively 2-of-2 and 2-of-3 multisig with timelock.
 
 ## State of the Art
 
