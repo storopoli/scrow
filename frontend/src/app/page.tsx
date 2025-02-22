@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-
 "use client";
 
 import { Copy, Camera, Info, Github } from "lucide-react";
