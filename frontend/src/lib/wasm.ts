@@ -1,4 +1,4 @@
-import initWasm, * as wasm from "../../../backend/pkg/scrow_backend";
+import initWasm, * as wasm from "../pkg/scrow_backend";
 
 let initialized = false;
 
