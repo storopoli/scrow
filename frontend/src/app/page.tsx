@@ -28,7 +28,9 @@ import { cn } from "@/lib/utils";
 
 // wasm loader and functions
 // call rust functions via wasm.<function name>
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { init } from "../lib/wasm";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import wasm from "../lib/wasm";
 
 type FeePreset = "economic" | "recommended" | "priority";
@@ -36,6 +38,7 @@ type NetworkType = "MutinyNet" | "Signet" | "Mainnet" | "Testnet4";
 
 export default function CreateEscrowPage() {
   const [useThirdParty, setUseThirdParty] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [includeThirdPartyAddress, setIncludeThirdPartyAddress] =
     useState(false);
   const [amount, setAmount] = useState("");
@@ -343,8 +346,8 @@ export default function CreateEscrowPage() {
                         <div className="space-y-2">
                           <Label>Third Party Resolution Address</Label>
                           <div className="flex gap-2">
-                            <Input 
-                              placeholder="bc1..." 
+                            <Input
+                              placeholder="bc1..."
                               className="font-mono"
                             />
                             <Button variant="outline" size="icon">
@@ -355,7 +358,7 @@ export default function CreateEscrowPage() {
                             </Button>
                           </div>
                         </div>
-                        
+
 
                         <div className="space-y-2">
                           <Label>Resolution Fee</Label>
