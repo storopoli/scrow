@@ -186,26 +186,33 @@ pub fn create_dispute_tx(
 }
 
 #[cfg(test)]
-mod tests{
+mod tests {
     use super::*;
 
     #[test]
-    fn test_create_collab_address(){
+    fn test_create_collab_address() {
         let npub_1 = "npub1lfsec9a40ntx0hjr9wtuchclar7xcyhrf0gngaz3vt5dhnqdndaq099v6c";
         let npub_2 = "npub1ykkf8j4mt0z4hfz5eesqck6a9qcearxq2mlk6f78k3yxhjkpqnxqanyg69";
         let network = "Mainnet";
-        let address = create_collab_address(npub_1.to_string(), npub_2.to_string(), network.to_string());
+        let address =
+            create_collab_address(npub_1.to_string(), npub_2.to_string(), network.to_string());
         println!("Collaborative Address: {}", address);
     }
 
     #[test]
-    fn test_create_dispute_address(){
+    fn test_create_dispute_address() {
         let npub_1 = "npub1lfsec9a40ntx0hjr9wtuchclar7xcyhrf0gngaz3vt5dhnqdndaq099v6c";
         let npub_2 = "npub1ykkf8j4mt0z4hfz5eesqck6a9qcearxq2mlk6f78k3yxhjkpqnxqanyg69";
         let npub_arbiter = "npub1gwpya6nnvsrf6ghkjfu4vt8ccypmqazcupjwtkejzlfwezfye6kqett000";
         let timelock_duration = 100;
         let network = "Mainnet";
-        let address = create_dispute_address(npub_1.to_string(), npub_2.to_string(), npub_arbiter.to_string(), timelock_duration, network.to_string());
+        let address = create_dispute_address(
+            npub_1.to_string(),
+            npub_2.to_string(),
+            npub_arbiter.to_string(),
+            timelock_duration,
+            network.to_string(),
+        );
         println!("Dispute Address: {}", address);
     }
 
@@ -215,27 +222,49 @@ mod tests{
         let npub_2 = "npub1ykkf8j4mt0z4hfz5eesqck6a9qcearxq2mlk6f78k3yxhjkpqnxqanyg69";
         let escrow_amount = 100_000_000;
         let resolution_address_1p = "bc1q38tw7nazd0qg8kypv4erk90hqlgwxcu6pn0htk";
-        let resolution_address_2p = "bc1qtnt0x2qt24qgq5xhtslswp598r9vus38ptyq4nrysf022w8x7dhslv9rna";
+        let resolution_address_2p =
+            "bc1qtnt0x2qt24qgq5xhtslswp598r9vus38ptyq4nrysf022w8x7dhslv9rna";
         let funding_txid = "602ae1accd9626bde16d19cbe8663cbe37a4e95839d0cddb10b84dcc82f07799";
         let fee = 1000;
         let network = "Mainnet";
-        let tx = create_collab_tx(npub_1.to_string(), npub_2.to_string(), escrow_amount, resolution_address_1p.to_string(), resolution_address_2p.to_string(), funding_txid.to_string(), fee, network.to_string());
+        let tx = create_collab_tx(
+            npub_1.to_string(),
+            npub_2.to_string(),
+            escrow_amount,
+            resolution_address_1p.to_string(),
+            resolution_address_2p.to_string(),
+            funding_txid.to_string(),
+            fee,
+            network.to_string(),
+        );
         println!("Collaborative Transaction: {}", tx);
     }
 
     #[test]
-    fn test_dispute_tx(){
+    fn test_dispute_tx() {
         let npub_1 = "npub1lfsec9a40ntx0hjr9wtuchclar7xcyhrf0gngaz3vt5dhnqdndaq099v6c";
         let npub_2 = "npub1ykkf8j4mt0z4hfz5eesqck6a9qcearxq2mlk6f78k3yxhjkpqnxqanyg69";
         let npub_arbiter = "npub1gwpya6nnvsrf6ghkjfu4vt8ccypmqazcupjwtkejzlfwezfye6kqett000";
         let escrow_amount = 100_000_000;
         let resolution_address_1p = "bc1q38tw7nazd0qg8kypv4erk90hqlgwxcu6pn0htk";
-        let resolution_address_2p = "bc1qtnt0x2qt24qgq5xhtslswp598r9vus38ptyq4nrysf022w8x7dhslv9rna";
+        let resolution_address_2p =
+            "bc1qtnt0x2qt24qgq5xhtslswp598r9vus38ptyq4nrysf022w8x7dhslv9rna";
         let funding_txid = "602ae1accd9626bde16d19cbe8663cbe37a4e95839d0cddb10b84dcc82f07799";
         let fee = 1000;
         let timelock_duration = 100;
         let network = "Mainnet";
-        let tx = create_dispute_tx(npub_1.to_string(), npub_2.to_string(), npub_arbiter.to_string(), escrow_amount, resolution_address_1p.to_string(), resolution_address_2p.to_string(), funding_txid.to_string(), fee, timelock_duration, network.to_string());
+        let tx = create_dispute_tx(
+            npub_1.to_string(),
+            npub_2.to_string(),
+            npub_arbiter.to_string(),
+            escrow_amount,
+            resolution_address_1p.to_string(),
+            resolution_address_2p.to_string(),
+            funding_txid.to_string(),
+            fee,
+            timelock_duration,
+            network.to_string(),
+        );
         println!("Dispute Transaction: {}", tx);
     }
 }
