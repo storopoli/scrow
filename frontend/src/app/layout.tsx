@@ -11,18 +11,18 @@ import { init } from "../lib/wasm";
 const inter = Inter({ subsets: ["latin"] });
 
 export default function RootLayout({
-    children,
-  }: {
-    children: React.ReactNode;
-  }) {
-    const [wasmLoaded, setWasmLoaded] = useState(false);
-  
-    useEffect(() => {
-      init().then(() => setWasmLoaded(true));
-      console.log("WASM is active!");
-    }, []);
-  
-    if (!wasmLoaded) return <div>Loading WASM...</div>;
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const [wasmLoaded, setWasmLoaded] = useState(false);
+
+  useEffect(() => {
+    init().then(() => setWasmLoaded(true));
+    console.log("WASM is active!");
+  }, []);
+
+  if (!wasmLoaded) return <div>Loading WASM...</div>;
   return (
     <html lang="en">
       <body className={inter.className}>

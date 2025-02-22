@@ -28,11 +28,8 @@ import { toast } from "sonner";
 import { useBitcoinPrice } from "@/hooks/useBitcoinPrice";
 import { cn } from "@/lib/utils";
 
-
 // call rust functions via wasm.<function name>
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { init } from "../lib/wasm";
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 
 import wasm from "../lib/wasm";
 
@@ -46,7 +43,6 @@ const MUTINY_FEE_ENDPOINT = "/api/v1/fees/recommended";
 
 export default function CreateEscrowPage() {
   const [useThirdParty, setUseThirdParty] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [includeThirdPartyAddress, setIncludeThirdPartyAddress] =
     useState(false);
   const [amount, setAmount] = useState("");
@@ -57,33 +53,33 @@ export default function CreateEscrowPage() {
   const [feeRate, setFeeRate] = useState(1);
   const [feePreset, setFeePreset] = useState<FeePreset>("economic");
   const [fees, setFees] = useState<FeeMap | null>(null);
+  const [myNostrPubkey, setMyNostrPubkey] = useState("");
+  const [myBitcoinAddress, setMyBitcoinAddress] = useState("");
+  const [counterpartyNostrPubkey, setCounterpartyNostrPubkey] = useState("");
+  const [counterpartyBitcoinAddress, setCounterpartyBitcoinAddress] =
+    useState("");
+  const [thirdPartyNostrPubkey, setThirdPartyNostrPubkey] = useState("");
+  const [timelockPeriod, setTimelockPeriod] = useState("1h");
 
   useEffect(() => {
     const initAndFetchFees = async () => {
       try {
-        const feesMap = await wasm.fetch_fees(MAINNET_HOST, MUTINY_FEE_ENDPOINT);
+        const feesMap = await wasm.fetch_fees(
+          MAINNET_HOST,
+          MUTINY_FEE_ENDPOINT,
+        );
         setFees(feesMap);
       } catch (error) {
-        console.error('Error:', error);
+        console.error("Error:", error);
       }
     };
 
     initAndFetchFees();
   }, []);
 
-  const minimumFee = fees?.get('minimumFee') ?? 1;
-  const economyFee = fees?.get('economyFee') ?? 2;
-  const fastestFee = fees?.get('fastestFee') ?? 3;
-
-  const handleCreateEscrow = async () => {
-    try {
-      // Handle signing logic here
-      toast.success("Escrow created successfully");
-    } catch (err) {
-      const error = err as Error;
-      toast.error(`Failed to create escrow: ${error.message}`);
-    }
-  };
+  const minimumFee = fees?.get("minimumFee") ?? 1;
+  const economyFee = fees?.get("economyFee") ?? 2;
+  const fastestFee = fees?.get("fastestFee") ?? 3;
 
   const handleAmountChange = (value: string) => {
     setAmount(value);
@@ -109,8 +105,6 @@ export default function CreateEscrowPage() {
     }
   };
 
-
-
   const handleFeePresetChange = (value: string) => {
     const preset = value as FeePreset;
     setFeePreset(preset);
@@ -124,6 +118,54 @@ export default function CreateEscrowPage() {
       case "fastest":
         setFeeRate(fastestFee);
         break;
+    }
+  };
+
+  const handleCreateEscrow = async () => {
+    try {
+      // Collect all input values
+      const escrowData = {
+        // Network
+        network,
+
+        // Amount details
+        amount: Number(amount),
+        unit,
+
+        // My details
+        myNostrPubkey,
+        myBitcoinAddress,
+
+        // Counterparty details
+        counterpartyNostrPubkey,
+        counterpartyBitcoinAddress,
+
+        // Fee details
+        feeRate,
+        feePreset,
+
+        // Third party details (if enabled)
+        useThirdParty,
+        ...(useThirdParty && {
+          thirdPartyNostrPubkey,
+          timelockPeriod,
+        }),
+      };
+
+      console.log("Escrow Data:", escrowData);
+
+      // Call your WASM function here
+      const collab_address = await wasm.create_collab_address(myNostrPubkey, counterpartyNostrPubkey, network);
+
+      const dispute_address = await wasm.create_dispute_address(myNostrPubkey, counterpartyNostrPubkey, thirdPartyNostrPubkey || "", Number(timelockPeriod) * 6 || 6, network);
+
+      console.log(collab_address);
+      console.log(dispute_address);
+
+      toast.success("Escrow created successfully");
+    } catch (err) {
+      const error = err as Error;
+      toast.error(`Failed to create escrow: ${error.message}`);
     }
   };
 
@@ -213,7 +255,13 @@ export default function CreateEscrowPage() {
                 <div className="space-y-2">
                   <Label>My Nostr Public Key</Label>
                   <div className="flex gap-2">
-                    <Input placeholder="npub1..." className="font-mono" />
+                    <Input
+                      placeholder="npub1..."
+                      className="font-mono"
+                      value={myNostrPubkey}
+                      onChange={(e) => setMyNostrPubkey(e.target.value)}
+                    />
+
                     <Button variant="outline" size="icon">
                       <Copy className="h-4 w-4" />
                     </Button>
@@ -222,7 +270,12 @@ export default function CreateEscrowPage() {
                 <div className="space-y-2">
                   <Label>My Resolution Bitcoin Address</Label>
                   <div className="flex gap-2">
-                    <Input placeholder="bc1..." className="font-mono" />
+                    <Input
+                      placeholder="bc1..."
+                      className="font-mono"
+                      value={myBitcoinAddress}
+                      onChange={(e) => setMyBitcoinAddress(e.target.value)}
+                    />
                     <Button variant="outline" size="icon">
                       <Copy className="h-4 w-4" />
                     </Button>
@@ -257,7 +310,14 @@ export default function CreateEscrowPage() {
                 <div className="space-y-2">
                   <Label>Counterparty Nostr Public Key</Label>
                   <div className="flex gap-2">
-                    <Input placeholder="npub1..." className="font-mono" />
+                    <Input
+                      placeholder="npub1..."
+                      className="font-mono"
+                      value={counterpartyNostrPubkey}
+                      onChange={(e) =>
+                        setCounterpartyNostrPubkey(e.target.value)
+                      }
+                    />
                     <Button variant="outline" size="icon">
                       <Copy className="h-4 w-4" />
                     </Button>
@@ -266,7 +326,14 @@ export default function CreateEscrowPage() {
                 <div className="space-y-2">
                   <Label>Counterparty Resolution Bitcoin Address</Label>
                   <div className="flex gap-2">
-                    <Input placeholder="bc1..." className="font-mono" />
+                    <Input
+                      placeholder="bc1..."
+                      className="font-mono"
+                      value={counterpartyBitcoinAddress}
+                      onChange={(e) =>
+                        setCounterpartyBitcoinAddress(e.target.value)
+                      }
+                    />
                     <Button variant="outline" size="icon">
                       <Copy className="h-4 w-4" />
                     </Button>
@@ -312,7 +379,11 @@ export default function CreateEscrowPage() {
                   <div className="space-y-4 pl-4">
                     <div className="space-y-2">
                       <Label>Timelock Period</Label>
-                      <Select defaultValue="1h">
+                      <Select
+                        defaultValue="1h"
+                        value={timelockPeriod}
+                        onValueChange={setTimelockPeriod}
+                      >
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
@@ -332,7 +403,14 @@ export default function CreateEscrowPage() {
                     <div className="space-y-2">
                       <Label>Third Party Nostr Public Key</Label>
                       <div className="flex gap-2">
-                        <Input placeholder="npub1..." className="font-mono" />
+                        <Input
+                          placeholder="npub1..."
+                          className="font-mono"
+                          value={thirdPartyNostrPubkey}
+                          onChange={(e) =>
+                            setThirdPartyNostrPubkey(e.target.value)
+                          }
+                        />
                         <Button variant="outline" size="icon">
                           <Copy className="h-4 w-4" />
                         </Button>
@@ -482,9 +560,7 @@ export default function CreateEscrowPage() {
                 </TabsTrigger>
                 <TabsTrigger
                   value="recommended"
-                  className={cn(
-                    economyFee && "text-orange-500",
-                  )}
+                  className={cn(economyFee && "text-orange-500")}
                 >
                   Recommended
                 </TabsTrigger>
@@ -497,10 +573,8 @@ export default function CreateEscrowPage() {
               </TabsList>
               <TabsContent value={feePreset}>
                 <div className="py-4">
-   
                   <div className="flex justify-between mt-2 text-sm text-muted-foreground">
                     <span>{feeRate} sat/vB</span>
-                    
                   </div>
                 </div>
               </TabsContent>
