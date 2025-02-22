@@ -8,9 +8,7 @@ use crate::{
     },
     util::{self, convert_network_to_typed},
 };
-use bitcoin::{
-    consensus, ecdsa, hex::DisplayHex, Amount, PrivateKey, ScriptBuf, Transaction,
-};
+use bitcoin::{consensus, ecdsa, hex::DisplayHex, Amount, PrivateKey, ScriptBuf, Transaction};
 
 /// This module provides functionality for signing transactions and combining signatures
 /// in various collaborative and dispute scenarios.
