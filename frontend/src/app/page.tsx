@@ -156,7 +156,6 @@ export default function CreateEscrowPage() {
 
       // Call your WASM function here
       const collab_address = await wasm.create_collab_address(myNostrPubkey, counterpartyNostrPubkey, network);
-
       const dispute_address = await wasm.create_dispute_address(myNostrPubkey, counterpartyNostrPubkey, thirdPartyNostrPubkey || "", Number(timelockPeriod) * 6 || 6, network);
 
       console.log(collab_address);
