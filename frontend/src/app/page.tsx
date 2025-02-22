@@ -1,111 +1,125 @@
-"use client"
+"use client";
 
-import { Copy, Camera, Info, Github } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Slider } from "@/components/ui/slider"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Card, CardContent } from "@/components/ui/card"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Switch } from "@/components/ui/switch"
-import { useState } from "react"
-import { toast } from "sonner"
-import { useBitcoinPrice } from "@/hooks/useBitcoinPrice"
-import { cn } from "@/lib/utils"
+import { Copy, Camera, Info, Github } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Switch } from "@/components/ui/switch";
+import { useState } from "react";
+import { toast } from "sonner";
+import { useBitcoinPrice } from "@/hooks/useBitcoinPrice";
+import { cn } from "@/lib/utils";
 
 // wasm loader and functions
 // call rust functions via wasm.<function name>
 import { init } from "../lib/wasm";
 import wasm from "../lib/wasm";
 
-type FeePreset = "economic" | "recommended" | "priority"
+type FeePreset = "economic" | "recommended" | "priority";
+type NetworkType = "MutinyNet" | "Signet" | "Mainnet" | "Testnet4";
 
 export default function CreateEscrowPage() {
-  const [useThirdParty, setUseThirdParty] = useState(false)
-  const [includeThirdPartyAddress, setIncludeThirdPartyAddress] = useState(false)
-  const [amount, setAmount] = useState("")
-  const [unit, setUnit] = useState<"sats" | "btc" | "usd">("sats")
-  const { price, loading } = useBitcoinPrice()
-  const [feeRate, setFeeRate] = useState(16)
-  const [feePreset, setFeePreset] = useState<FeePreset>("recommended")
+  const [useThirdParty, setUseThirdParty] = useState(false);
+  const [includeThirdPartyAddress, setIncludeThirdPartyAddress] =
+    useState(false);
+  const [amount, setAmount] = useState("");
+  const [unit, setUnit] = useState<"sats" | "btc" | "usd">("sats");
+  const [network, setNetwork] = useState<NetworkType>("MutinyNet");
+
+  const { price, loading } = useBitcoinPrice();
+  const [feeRate, setFeeRate] = useState(16);
+  const [feePreset, setFeePreset] = useState<FeePreset>("recommended");
 
   const handleCreateEscrow = async () => {
     try {
       // Handle signing logic here
-      toast.success("Escrow created successfully")
+      toast.success("Escrow created successfully");
     } catch (err) {
-      const error = err as Error
-      toast.error(`Failed to create escrow: ${error.message}`)
+      const error = err as Error;
+      toast.error(`Failed to create escrow: ${error.message}`);
     }
-  }
+  };
 
   const handleAmountChange = (value: string) => {
-    setAmount(value)
-  }
+    setAmount(value);
+  };
 
   const getConversion = () => {
-    if (!price?.usd || !amount || isNaN(Number(amount))) return null
+    if (!price?.usd || !amount || isNaN(Number(amount))) return null;
 
-    const btcPrice = price.usd
-    const satsToBtc = 1e-8
-    const btcToSats = 1e8
+    const btcPrice = price.usd;
+    const satsToBtc = 1e-8;
+    const btcToSats = 1e8;
 
     switch (unit) {
       case "sats":
-        const satsAmount = Number(amount)
-        return `≈ $${(satsAmount * satsToBtc * btcPrice).toFixed(2)} USD`
+        const satsAmount = Number(amount);
+        return `≈ $${(satsAmount * satsToBtc * btcPrice).toFixed(2)} USD`;
       case "btc":
-        const btcAmount = Number(amount)
-        return `≈ $${(btcAmount * btcPrice).toFixed(2)} USD`
+        const btcAmount = Number(amount);
+        return `≈ $${(btcAmount * btcPrice).toFixed(2)} USD`;
       case "usd":
-        const usdAmount = Number(amount)
-        return `≈ ${((usdAmount / btcPrice) * btcToSats).toFixed(0)} sats`
+        const usdAmount = Number(amount);
+        return `≈ ${((usdAmount / btcPrice) * btcToSats).toFixed(0)} sats`;
     }
-  }
+  };
 
   const handleFeeChange = (value: number[]) => {
-    const newFee = value[0]
-    setFeeRate(newFee)
-    
+    const newFee = value[0];
+    setFeeRate(newFee);
+
     if (newFee < 24) {
-      setFeePreset("economic")
+      setFeePreset("economic");
     } else if (newFee <= 32) {
-      setFeePreset("recommended")
+      setFeePreset("recommended");
     } else {
-      setFeePreset("priority")
+      setFeePreset("priority");
     }
-  }
+  };
 
   const handleFeePresetChange = (value: string) => {
-    const preset = value as FeePreset
-    setFeePreset(preset)
+    const preset = value as FeePreset;
+    setFeePreset(preset);
     switch (preset) {
       case "economic":
-        setFeeRate(16)
-        break
+        setFeeRate(16);
+        break;
       case "recommended":
-        setFeeRate(28)
-        break
+        setFeeRate(28);
+        break;
       case "priority":
-        setFeeRate(40)
-        break
+        setFeeRate(40);
+        break;
     }
-  }
+  };
 
   const getConfirmationTime = (fee: number) => {
-    if (fee < 24) return "~30 min"
-    if (fee <= 32) return "~10 min"
-    return "< 5 min"
-  }
+    if (fee < 24) return "~30 min";
+    if (fee <= 32) return "~10 min";
+    return "< 5 min";
+  };
 
   return (
     <div className="max-w-3xl mx-auto relative pb-16">
       <h1 className="text-2xl font-bold mb-6">Create Escrow</h1>
       <Card>
         <CardContent className="p-6 space-y-6">
-          {/* Participants Section */}
           <div className="space-y-6">
             <div className="space-y-4">
               <div className="flex items-center justify-between">
@@ -152,23 +166,34 @@ export default function CreateEscrowPage() {
                       <Info className="h-4 w-4 text-muted-foreground" />
                     </TooltipTrigger>
                     <TooltipContent className="max-w-[300px]">
-                      <p>Both parties need to provide their Nostr public key for communication and a Bitcoin address for fund resolution. The escrow will be locked until both parties agree or the timelock expires.</p>
+                      <p>
+                        Both parties need to provide their Nostr public key for
+                        communication and a Bitcoin address for fund resolution.
+                        The escrow will be locked until both parties agree or
+                        the timelock expires.
+                      </p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
               </div>
-              
+
               {/* My Details */}
               <div className="space-y-4 p-4 rounded-lg border border-zinc-800">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-medium text-muted-foreground">My Details</h3>
+                  <h3 className="text-sm font-medium text-muted-foreground">
+                    My Details
+                  </h3>
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger>
                         <Info className="h-4 w-4 text-muted-foreground" />
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>Your Nostr key will be used to sign messages and your Bitcoin address will receive the funds if the escrow resolves in your favor.</p>
+                        <p>
+                          Your Nostr key will be used to sign messages and your
+                          Bitcoin address will receive the funds if the escrow
+                          resolves in your favor.
+                        </p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
@@ -176,10 +201,7 @@ export default function CreateEscrowPage() {
                 <div className="space-y-2">
                   <Label>My Nostr Public Key</Label>
                   <div className="flex gap-2">
-                    <Input 
-                      placeholder="npub1..." 
-                      className="font-mono"
-                    />
+                    <Input placeholder="npub1..." className="font-mono" />
                     <Button variant="outline" size="icon">
                       <Copy className="h-4 w-4" />
                     </Button>
@@ -188,10 +210,7 @@ export default function CreateEscrowPage() {
                 <div className="space-y-2">
                   <Label>My Resolution Bitcoin Address</Label>
                   <div className="flex gap-2">
-                    <Input 
-                      placeholder="bc1..." 
-                      className="font-mono"
-                    />
+                    <Input placeholder="bc1..." className="font-mono" />
                     <Button variant="outline" size="icon">
                       <Copy className="h-4 w-4" />
                     </Button>
@@ -205,14 +224,20 @@ export default function CreateEscrowPage() {
               {/* Counterparty Details */}
               <div className="space-y-4 p-4 rounded-lg border border-zinc-800">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-medium text-muted-foreground">Counterparty Details</h3>
+                  <h3 className="text-sm font-medium text-muted-foreground">
+                    Counterparty Details
+                  </h3>
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger>
                         <Info className="h-4 w-4 text-muted-foreground" />
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>The other party&apos;s Nostr key for communication and Bitcoin address where they&apos;ll receive funds if the escrow resolves in their favor.</p>
+                        <p>
+                          The other party&apos;s Nostr key for communication and
+                          Bitcoin address where they&apos;ll receive funds if
+                          the escrow resolves in their favor.
+                        </p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
@@ -220,10 +245,7 @@ export default function CreateEscrowPage() {
                 <div className="space-y-2">
                   <Label>Counterparty Nostr Public Key</Label>
                   <div className="flex gap-2">
-                    <Input 
-                      placeholder="npub1..." 
-                      className="font-mono"
-                    />
+                    <Input placeholder="npub1..." className="font-mono" />
                     <Button variant="outline" size="icon">
                       <Copy className="h-4 w-4" />
                     </Button>
@@ -232,10 +254,7 @@ export default function CreateEscrowPage() {
                 <div className="space-y-2">
                   <Label>Counterparty Resolution Bitcoin Address</Label>
                   <div className="flex gap-2">
-                    <Input 
-                      placeholder="bc1..." 
-                      className="font-mono"
-                    />
+                    <Input placeholder="bc1..." className="font-mono" />
                     <Button variant="outline" size="icon">
                       <Copy className="h-4 w-4" />
                     </Button>
@@ -249,14 +268,21 @@ export default function CreateEscrowPage() {
               {/* Third Party Resolution Section */}
               <div className="space-y-4 p-4 rounded-lg border border-zinc-800">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-medium text-muted-foreground">Third Party Resolution</h3>
+                  <h3 className="text-sm font-medium text-muted-foreground">
+                    Third Party Resolution
+                  </h3>
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger>
                         <Info className="h-4 w-4 text-muted-foreground" />
                       </TooltipTrigger>
                       <TooltipContent className="max-w-[300px]">
-                        <p>A trusted third party can help resolve disputes. They can only intervene after the timelock period, if both parties disagree. The trusted third party can sign the transaction with one of the participants</p>
+                        <p>
+                          A trusted third party can help resolve disputes. They
+                          can only intervene after the timelock period, if both
+                          parties disagree. The trusted third party can sign the
+                          transaction with one of the participants
+                        </p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
@@ -294,10 +320,7 @@ export default function CreateEscrowPage() {
                     <div className="space-y-2">
                       <Label>Third Party Nostr Public Key</Label>
                       <div className="flex gap-2">
-                        <Input 
-                          placeholder="npub1..." 
-                          className="font-mono"
-                        />
+                        <Input placeholder="npub1..." className="font-mono" />
                         <Button variant="outline" size="icon">
                           <Copy className="h-4 w-4" />
                         </Button>
@@ -356,7 +379,6 @@ export default function CreateEscrowPage() {
                         */}
                       </div>
                     )}
-                    
                   </div>
                 )}
               </div>
@@ -374,23 +396,28 @@ export default function CreateEscrowPage() {
                       </TooltipTrigger>
                       <TooltipContent className="max-w-[300px]">
                         <p>
-                          The amount of Bitcoin to be held in escrow. This will be locked until both parties agree on resolution.
-                          <br /><br />
-                          Real-time BTC/USD conversion rates are provided by CoinGecko and update every minute.
+                          The amount of Bitcoin to be held in escrow. This will
+                          be locked until both parties agree on resolution.
+                          <br />
+                          <br />
+                          Real-time BTC/USD conversion rates are provided by
+                          CoinGecko and update every minute.
                         </p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
                 </div>
                 <div className="flex gap-2">
-                  <Input 
-                    placeholder="21,000" 
+                  <Input
+                    placeholder="21,000"
                     value={amount}
                     onChange={(e) => handleAmountChange(e.target.value)}
                   />
-                  <Select 
-                    value={unit} 
-                    onValueChange={(value: "sats" | "btc" | "usd") => setUnit(value)}
+                  <Select
+                    value={unit}
+                    onValueChange={(value: "sats" | "btc" | "usd") =>
+                      setUnit(value)
+                    }
                   >
                     <SelectTrigger className="w-[100px]">
                       <SelectValue />
@@ -403,9 +430,15 @@ export default function CreateEscrowPage() {
                   </Select>
                 </div>
                 {loading ? (
-                  <p className="text-sm text-muted-foreground">Loading conversion...</p>
+                  <p className="text-sm text-muted-foreground">
+                    Loading conversion...
+                  </p>
                 ) : (
-                  amount && <p className="text-sm text-muted-foreground">{getConversion()}</p>
+                  amount && (
+                    <p className="text-sm text-muted-foreground">
+                      {getConversion()}
+                    </p>
+                  )
                 )}
               </div>
             </div>
@@ -429,19 +462,21 @@ export default function CreateEscrowPage() {
 
             <Tabs value={feePreset} onValueChange={handleFeePresetChange}>
               <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger 
+                <TabsTrigger
                   value="economic"
                   className={cn(feePreset === "economic" && "text-orange-500")}
                 >
                   Economic
                 </TabsTrigger>
-                <TabsTrigger 
+                <TabsTrigger
                   value="recommended"
-                  className={cn(feePreset === "recommended" && "text-orange-500")}
+                  className={cn(
+                    feePreset === "recommended" && "text-orange-500",
+                  )}
                 >
                   Recommended
                 </TabsTrigger>
-                <TabsTrigger 
+                <TabsTrigger
                   value="priority"
                   className={cn(feePreset === "priority" && "text-orange-500")}
                 >
@@ -450,8 +485,8 @@ export default function CreateEscrowPage() {
               </TabsList>
               <TabsContent value={feePreset}>
                 <div className="py-4">
-                  <Slider 
-                    value={[feeRate]} 
+                  <Slider
+                    value={[feeRate]}
                     onValueChange={handleFeeChange}
                     min={1}
                     max={50}
@@ -469,7 +504,9 @@ export default function CreateEscrowPage() {
 
           <div className="pt-4 flex justify-end gap-4">
             <Button variant="outline">Clear</Button>
-            <Button onClick={handleCreateEscrow}>Create Escrow Transaction »</Button>
+            <Button onClick={handleCreateEscrow}>
+              Create Escrow Transaction »
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -484,6 +521,5 @@ export default function CreateEscrowPage() {
         <Github className="w-6 h-6" />
       </a>
     </div>
-  )
+  );
 }
-

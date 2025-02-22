@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import { Bitcoin } from "lucide-react"
-import { Card, CardContent } from "@/components/ui/card"
+import { Bitcoin } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 
 export default function EscrowsPage() {
   return (
@@ -16,5 +16,5 @@ export default function EscrowsPage() {
         </CardContent>
       </Card>
     </div>
-  )
-} 
+  );
+}

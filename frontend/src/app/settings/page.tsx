@@ -1,33 +1,39 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Settings } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { toast } from "sonner"
+import { useState } from "react";
+import { Settings } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { toast } from "sonner";
 
-type Network = "mainnet" | "testnet" | "signet" | "mutinynet"
+type Network = "mainnet" | "testnet" | "signet" | "mutinynet";
 
 interface SettingsState {
-  mempoolEndpoint: string
-  network: Network
+  mempoolEndpoint: string;
+  network: Network;
 }
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<SettingsState>({
     mempoolEndpoint: "https://mempool.space",
-    network: "testnet"
-  })
+    network: "testnet",
+  });
 
   const handleSave = () => {
     // Here you would typically save to localStorage or your backend
-    localStorage.setItem("settings", JSON.stringify(settings))
-    
-    toast.success("Settings saved successfully")
-  }
+    localStorage.setItem("settings", JSON.stringify(settings));
+
+    toast.success("Settings saved successfully");
+  };
 
   return (
     <div className="max-w-3xl mx-auto">
@@ -45,10 +51,12 @@ export default function SettingsPage() {
               <Input
                 placeholder="Enter mempool endpoint URL"
                 value={settings.mempoolEndpoint}
-                onChange={(e) => setSettings({
-                  ...settings,
-                  mempoolEndpoint: e.target.value
-                })}
+                onChange={(e) =>
+                  setSettings({
+                    ...settings,
+                    mempoolEndpoint: e.target.value,
+                  })
+                }
               />
               <p className="text-sm text-muted-foreground">
                 The endpoint used to interact with Bitcoin mempool
@@ -59,10 +67,10 @@ export default function SettingsPage() {
               <Label>Network</Label>
               <Select
                 value={settings.network}
-                onValueChange={(value: Network) => 
+                onValueChange={(value: Network) =>
                   setSettings({
                     ...settings,
-                    network: value
+                    network: value,
                   })
                 }
               >
@@ -70,18 +78,10 @@ export default function SettingsPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="mainnet">
-                    Mainnet
-                  </SelectItem>
-                  <SelectItem value="testnet">
-                    Testnet
-                  </SelectItem>
-                  <SelectItem value="signet">
-                    Signet
-                  </SelectItem>
-                  <SelectItem value="mutinynet">
-                    Mutinynet
-                  </SelectItem>
+                  <SelectItem value="mainnet">Mainnet</SelectItem>
+                  <SelectItem value="testnet">Testnet</SelectItem>
+                  <SelectItem value="signet">Signet</SelectItem>
+                  <SelectItem value="mutinynet">Mutinynet</SelectItem>
                 </SelectContent>
               </Select>
               <p className="text-sm text-muted-foreground">
@@ -90,10 +90,7 @@ export default function SettingsPage() {
             </div>
 
             <div className="pt-4 border-t border-zinc-800">
-              <Button 
-                className="w-full"
-                onClick={handleSave}
-              >
+              <Button className="w-full" onClick={handleSave}>
                 <Settings className="w-4 h-4 mr-2" />
                 Save Settings
               </Button>
@@ -102,5 +99,5 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
     </div>
-  )
-} 
+  );
+}

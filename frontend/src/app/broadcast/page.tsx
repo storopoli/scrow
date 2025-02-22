@@ -1,64 +1,67 @@
-"use client"
+"use client";
 
-import { Upload, FileUp } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useState } from "react"
-import { toast } from "sonner"
+import { Upload, FileUp } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useState } from "react";
+import { toast } from "sonner";
 
 interface BroadcastResponse {
   txid: string;
 }
 
 export default function BroadcastEscrowPage() {
-  const [psbtFile, setPsbtFile] = useState<File | null>(null)
-  const [psbtText, setPsbtText] = useState("")
+  const [psbtFile, setPsbtFile] = useState<File | null>(null);
+  const [psbtText, setPsbtText] = useState("");
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
+    const file = e.target.files?.[0];
     if (file) {
-      setPsbtFile(file)
-      const reader = new FileReader()
+      setPsbtFile(file);
+      const reader = new FileReader();
       reader.onload = (e) => {
-        const text = e.target?.result as string
-        setPsbtText(text)
-      }
-      reader.readAsText(file)
+        const text = e.target?.result as string;
+        setPsbtText(text);
+      };
+      reader.readAsText(file);
     }
-  }
+  };
 
   const handleBroadcast = async () => {
     const promise = new Promise<BroadcastResponse>((resolve, reject) => {
       setTimeout(() => {
-        fetch('/api/broadcast', {
-          method: 'POST',
+        fetch("/api/broadcast", {
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({ psbt: psbtText }),
         })
-        .then(response => {
-          if (!response.ok) throw new Error('Failed to broadcast transaction')
-          return response.json()
-        })
-        .then((data: BroadcastResponse) => {
-          setPsbtFile(null)
-          setPsbtText("")
-          resolve(data)
-        })
-        .catch(error => reject(error))
-      }, 1000)
-    })
+          .then((response) => {
+            if (!response.ok)
+              throw new Error("Failed to broadcast transaction");
+            return response.json();
+          })
+          .then((data: BroadcastResponse) => {
+            setPsbtFile(null);
+            setPsbtText("");
+            resolve(data);
+          })
+          .catch((error) => reject(error));
+      }, 1000);
+    });
 
     toast.promise(promise, {
-      loading: 'Broadcasting transaction...',
-      success: (data) => `Transaction broadcasted successfully! TXID: ${data.txid}`,
-      error: (error: Error) => `Error: ${error.message || 'Failed to broadcast transaction'}`
-    })
-  }
+      loading: "Broadcasting transaction...",
+      success: (data) =>
+        `Transaction broadcasted successfully! TXID: ${data.txid}`,
+      error: (error: Error) =>
+        `Error: ${error.message || "Failed to broadcast transaction"}`,
+    });
+  };
 
   return (
     <div className="max-w-3xl mx-auto">
@@ -91,7 +94,9 @@ export default function BroadcastEscrowPage() {
                 >
                   <FileUp className="h-8 w-8 text-muted-foreground" />
                   <span className="text-muted-foreground">
-                    {psbtFile ? psbtFile.name : "Click to upload signed PSBT file"}
+                    {psbtFile
+                      ? psbtFile.name
+                      : "Click to upload signed PSBT file"}
                   </span>
                 </Label>
               </div>
@@ -129,12 +134,13 @@ export default function BroadcastEscrowPage() {
             </Button>
             {psbtText && (
               <div className="text-sm text-muted-foreground">
-                * This action is irreversible. The transaction will be broadcasted to the Bitcoin network.
+                * This action is irreversible. The transaction will be
+                broadcasted to the Bitcoin network.
               </div>
             )}
           </div>
         </CardContent>
       </Card>
     </div>
-  )
-} 
+  );
+}

@@ -1,22 +1,22 @@
-"use client"
+"use client";
 
-import { Download } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
-import { toast } from "sonner"
+import { Download } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 
 export default function SignEscrowPage() {
   const handleSignTransaction = async () => {
     try {
       // Handle signing logic here
-      toast.success("Transaction signed successfully")
+      toast.success("Transaction signed successfully");
     } catch (err) {
-      const error = err as Error
-      toast.error(`Failed to sign: ${error.message}`)
+      const error = err as Error;
+      toast.error(`Failed to sign: ${error.message}`);
     }
-  }
+  };
 
   return (
     <div className="max-w-3xl mx-auto">
@@ -30,8 +30,8 @@ export default function SignEscrowPage() {
         <CardContent className="p-6 space-y-4">
           <div className="space-y-2">
             <Label>Raw Transaction</Label>
-            <Input 
-              placeholder="Enter raw transaction hex" 
+            <Input
+              placeholder="Enter raw transaction hex"
               className="font-mono"
             />
             <p className="text-sm text-muted-foreground">
@@ -40,10 +40,7 @@ export default function SignEscrowPage() {
           </div>
 
           <div className="pt-4 border-t border-zinc-800">
-            <Button 
-              className="w-full"
-              onClick={handleSignTransaction}
-            >
+            <Button className="w-full" onClick={handleSignTransaction}>
               <Download className="w-4 h-4 mr-2" />
               Sign Transaction
             </Button>
@@ -51,5 +48,5 @@ export default function SignEscrowPage() {
         </CardContent>
       </Card>
     </div>
-  )
-} 
+  );
+}
