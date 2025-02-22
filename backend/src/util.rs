@@ -68,8 +68,19 @@ pub fn convert_nsec_to_hex_wasm(nsec: String, network: String) -> String {
     convert_nsec_to_hex(nsec, network)
 }
 
+/// Convert a network to a typed [`Network`]
+pub fn convert_network_to_typed(network: String) -> Network {
+    match network.as_str() {
+        "Mainnet" => Network::Bitcoin,
+        "Testnet" => Network::Testnet,
+        "Signet" => Network::Signet,
+        "Mutinynet" => Network::Signet,
+        _ => panic!("Invalid network"),
+    }
+}
+
 /// Convert a `npub` to a [`PublicKey`]
-fn convert_npub_to_public_key(npub: String) -> PublicKey {
+pub fn convert_npub_to_public_key(npub: String) -> PublicKey {
     let (hrp, data) = bech32::decode(&npub).expect("Invalid bech32 string");
     if hrp != HRP_PUBLIC_KEY {
         panic!("Wrong prefix for npub");
