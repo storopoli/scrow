@@ -1,98 +1,77 @@
 "use client"
 
-import { Copy, Camera, Info, Github } from "lucide-react"
+import { Copy, Info, Github, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Slider } from "@/components/ui/slider"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent } from "@/components/ui/card"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Switch } from "@/components/ui/switch"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { useState } from "react"
 import { toast } from "sonner"
-import { useBitcoinPrice } from "@/hooks/useBitcoinPrice"
 import { cn } from "@/lib/utils"
-
-type FeePreset = "economic" | "recommended" | "priority"
 
 export default function CreateEscrowPage() {
   const [useThirdParty, setUseThirdParty] = useState(false)
-  const [includeThirdPartyAddress, setIncludeThirdPartyAddress] = useState(false)
-  const [amount, setAmount] = useState("")
-  const [unit, setUnit] = useState<"sats" | "btc" | "usd">("sats")
-  const { price, loading } = useBitcoinPrice()
-  const [feeRate, setFeeRate] = useState(16)
-  const [feePreset, setFeePreset] = useState<FeePreset>("recommended")
+  const [showEscrowDialog, setShowEscrowDialog] = useState(false)
+  const [escrowAddress, setEscrowAddress] = useState("")
+  const [fundingTxId, setFundingTxId] = useState("")
+  const [copied, setCopied] = useState(false)
+  const [confirmationCount, setConfirmationCount] = useState<number>(0)
+  const [canGenerateUnsigned, setCanGenerateUnsigned] = useState(false)
+  const [showConfirmationInput, setShowConfirmationInput] = useState(false)
 
   const handleCreateEscrow = async () => {
     try {
-      // Handle signing logic here
-      toast.success("Escrow created successfully")
+      // This will be replaced with actual address generation
+      setEscrowAddress("bc1q...") 
+      setShowEscrowDialog(true)
+      toast.success("Escrow address generated successfully")
     } catch (err) {
       const error = err as Error
       toast.error(`Failed to create escrow: ${error.message}`)
     }
   }
 
-  const handleAmountChange = (value: string) => {
-    setAmount(value)
+  const handleCopyAddress = () => {
+    navigator.clipboard.writeText(escrowAddress)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
   }
 
-  const getConversion = () => {
-    if (!price?.usd || !amount || isNaN(Number(amount))) return null
-
-    const btcPrice = price.usd
-    const satsToBtc = 1e-8
-    const btcToSats = 1e8
-
-    switch (unit) {
-      case "sats":
-        const satsAmount = Number(amount)
-        return `≈ $${(satsAmount * satsToBtc * btcPrice).toFixed(2)} USD`
-      case "btc":
-        const btcAmount = Number(amount)
-        return `≈ $${(btcAmount * btcPrice).toFixed(2)} USD`
-      case "usd":
-        const usdAmount = Number(amount)
-        return `≈ ${((usdAmount / btcPrice) * btcToSats).toFixed(0)} sats`
+  const handleSubmitTxId = () => {
+    if (!fundingTxId) {
+      toast.error("Please enter the transaction ID")
+      return
     }
+    // Show confirmation input after txid is submitted
+    setShowConfirmationInput(true)
+    toast.success("Transaction ID submitted successfully")
   }
 
-  const handleFeeChange = (value: number[]) => {
-    const newFee = value[0]
-    setFeeRate(newFee)
-    
-    if (newFee < 24) {
-      setFeePreset("economic")
-    } else if (newFee <= 32) {
-      setFeePreset("recommended")
+  const handleConfirmationUpdate = (value: string) => {
+    const count = parseInt(value)
+    setConfirmationCount(count)
+    if (count >= 6) {
+      setCanGenerateUnsigned(true)
+      toast.success("Transaction has enough confirmations")
     } else {
-      setFeePreset("priority")
+      setCanGenerateUnsigned(false)
     }
   }
 
-  const handleFeePresetChange = (value: string) => {
-    const preset = value as FeePreset
-    setFeePreset(preset)
-    switch (preset) {
-      case "economic":
-        setFeeRate(16)
-        break
-      case "recommended":
-        setFeeRate(28)
-        break
-      case "priority":
-        setFeeRate(40)
-        break
+  const handleGenerateUnsigned = () => {
+    try {
+      // This will be replaced with actual unsigned tx generation
+      toast.success("Unsigned transaction generated successfully")
+      // Here you would typically:
+      // 1. Generate the unsigned transaction
+      // 2. Save it or show it to the user
+      // 3. Redirect to signing page
+    } catch (err) {
+      toast.error("Failed to generate unsigned transaction")
     }
-  }
-
-  const getConfirmationTime = (fee: number) => {
-    if (fee < 24) return "~30 min"
-    if (fee <= 32) return "~10 min"
-    return "< 5 min"
   }
 
   return (
@@ -103,47 +82,8 @@ export default function CreateEscrowPage() {
           {/* Participants Section */}
           <div className="space-y-6">
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold">Participant Details</h2>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <Info className="h-4 w-4 text-muted-foreground" />
-                    </TooltipTrigger>
-                    <TooltipContent className="max-w-[300px]">
-                      <p>Both parties need to provide their Nostr public key for communication and a Bitcoin address for fund resolution. The escrow will be locked until both parties agree or the timelock expires.</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-              
               {/* My Details */}
               <div className="space-y-4 p-4 rounded-lg border border-zinc-800">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-medium text-muted-foreground">My Details</h3>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger>
-                        <Info className="h-4 w-4 text-muted-foreground" />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Your Nostr key will be used to sign messages and your Bitcoin address will receive the funds if the escrow resolves in your favor.</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-                <div className="space-y-2">
-                  <Label>My Nostr Public Key</Label>
-                  <div className="flex gap-2">
-                    <Input 
-                      placeholder="npub1..." 
-                      className="font-mono"
-                    />
-                    <Button variant="outline" size="icon">
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
                 <div className="space-y-2">
                   <Label>My Resolution Bitcoin Address</Label>
                   <div className="flex gap-2">
@@ -154,40 +94,12 @@ export default function CreateEscrowPage() {
                     <Button variant="outline" size="icon">
                       <Copy className="h-4 w-4" />
                     </Button>
-                    <Button variant="outline" size="icon">
-                      <Camera className="h-4 w-4" />
-                    </Button>
                   </div>
                 </div>
               </div>
 
               {/* Counterparty Details */}
               <div className="space-y-4 p-4 rounded-lg border border-zinc-800">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-medium text-muted-foreground">Counterparty Details</h3>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger>
-                        <Info className="h-4 w-4 text-muted-foreground" />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>The other party&apos;s Nostr key for communication and Bitcoin address where they&apos;ll receive funds if the escrow resolves in their favor.</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-                <div className="space-y-2">
-                  <Label>Counterparty Nostr Public Key</Label>
-                  <div className="flex gap-2">
-                    <Input 
-                      placeholder="npub1..." 
-                      className="font-mono"
-                    />
-                    <Button variant="outline" size="icon">
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
                 <div className="space-y-2">
                   <Label>Counterparty Resolution Bitcoin Address</Label>
                   <div className="flex gap-2">
@@ -197,9 +109,6 @@ export default function CreateEscrowPage() {
                     />
                     <Button variant="outline" size="icon">
                       <Copy className="h-4 w-4" />
-                    </Button>
-                    <Button variant="outline" size="icon">
-                      <Camera className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
@@ -215,7 +124,7 @@ export default function CreateEscrowPage() {
                         <Info className="h-4 w-4 text-muted-foreground" />
                       </TooltipTrigger>
                       <TooltipContent className="max-w-[300px]">
-                        <p>A trusted third party can help resolve disputes. They can only intervene after the timelock period if both parties disagree.</p>
+                        <p>A trusted third party can help resolve disputes after the timelock period.</p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
@@ -232,25 +141,6 @@ export default function CreateEscrowPage() {
                 {useThirdParty && (
                   <div className="space-y-4 pl-4">
                     <div className="space-y-2">
-                      <Label>Timelock Period</Label>
-                      <Select defaultValue="1h">
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="1h">1 hour</SelectItem>
-                          <SelectItem value="2h">2 hours</SelectItem>
-                          <SelectItem value="4h">4 hours</SelectItem>
-                          <SelectItem value="8h">8 hours</SelectItem>
-                          <SelectItem value="24h">24 hours</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <p className="text-sm text-muted-foreground">
-                        Time before third party can intervene
-                      </p>
-                    </div>
-
-                    <div className="space-y-2">
                       <Label>Third Party Nostr Public Key</Label>
                       <div className="flex gap-2">
                         <Input 
@@ -262,172 +152,114 @@ export default function CreateEscrowPage() {
                         </Button>
                       </div>
                     </div>
-
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        checked={includeThirdPartyAddress}
-                        onCheckedChange={setIncludeThirdPartyAddress}
-                      />
-                      <Label>Include Resolution Address & Collateral</Label>
-                    </div>
-
-                    {includeThirdPartyAddress && (
-                      <div className="space-y-4">
-                        <div className="space-y-2">
-                          <Label>Third Party Resolution Address</Label>
-                          <div className="flex gap-2">
-                            <Input 
-                              placeholder="bc1..." 
-                              className="font-mono"
-                            />
-                            <Button variant="outline" size="icon">
-                              <Copy className="h-4 w-4" />
-                            </Button>
-                            <Button variant="outline" size="icon">
-                              <Camera className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label>Resolution Fee</Label>
-                          <div className="flex gap-2">
-                            <Input placeholder="1000" />
-                            <Select defaultValue="sats">
-                              <SelectTrigger className="w-[100px]">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="sats">sats</SelectItem>
-                                <SelectItem value="btc">BTC</SelectItem>
-                                <SelectItem value="usd">USD</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <p className="text-sm text-muted-foreground">
-                            Amount the third party receives for resolution
-                          </p>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 )}
               </div>
             </div>
-
-            {/* Amount Section */}
-            <div className="grid grid-cols-1 gap-4">
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label>Amount</Label>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger>
-                        <Info className="h-4 w-4 text-muted-foreground" />
-                      </TooltipTrigger>
-                      <TooltipContent className="max-w-[300px]">
-                        <p>
-                          The amount of Bitcoin to be held in escrow. This will be locked until both parties agree on resolution.
-                          <br /><br />
-                          Real-time BTC/USD conversion rates are provided by CoinGecko and update every minute.
-                        </p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-                <div className="flex gap-2">
-                  <Input 
-                    placeholder="21,000" 
-                    value={amount}
-                    onChange={(e) => handleAmountChange(e.target.value)}
-                  />
-                  <Select 
-                    value={unit} 
-                    onValueChange={(value: "sats" | "btc" | "usd") => setUnit(value)}
-                  >
-                    <SelectTrigger className="w-[100px]">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="sats">sats</SelectItem>
-                      <SelectItem value="btc">BTC</SelectItem>
-                      <SelectItem value="usd">USD</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                {loading ? (
-                  <p className="text-sm text-muted-foreground">Loading conversion...</p>
-                ) : (
-                  amount && <p className="text-sm text-muted-foreground">{getConversion()}</p>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Fee Settings Section */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <Label>Transaction Fee</Label>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger>
-                    <Info className="h-4 w-4 text-muted-foreground" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Higher fees mean faster confirmation times</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-
-            <Tabs value={feePreset} onValueChange={handleFeePresetChange}>
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger 
-                  value="economic"
-                  className={cn(feePreset === "economic" && "text-orange-500")}
-                >
-                  Economic
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="recommended"
-                  className={cn(feePreset === "recommended" && "text-orange-500")}
-                >
-                  Recommended
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="priority"
-                  className={cn(feePreset === "priority" && "text-orange-500")}
-                >
-                  Priority
-                </TabsTrigger>
-              </TabsList>
-              <TabsContent value={feePreset}>
-                <div className="py-4">
-                  <Slider 
-                    value={[feeRate]} 
-                    onValueChange={handleFeeChange}
-                    min={1}
-                    max={50}
-                    step={1}
-                    className="my-4"
-                  />
-                  <div className="flex justify-between mt-2 text-sm text-muted-foreground">
-                    <span>{feeRate} sat/vB</span>
-                    <span>{getConfirmationTime(feeRate)}</span>
-                  </div>
-                </div>
-              </TabsContent>
-            </Tabs>
           </div>
 
           <div className="pt-4 flex justify-end gap-4">
             <Button variant="outline">Clear</Button>
-            <Button onClick={handleCreateEscrow}>Create Escrow Transaction »</Button>
+            <Button onClick={handleCreateEscrow}>Generate Escrow Address »</Button>
           </div>
         </CardContent>
       </Card>
 
-      {/* Add GitHub link with circular background */}
+      {/* Escrow Address Dialog */}
+      <Dialog open={showEscrowDialog} onOpenChange={setShowEscrowDialog}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Fund Your Escrow</DialogTitle>
+            <DialogDescription>
+              This is your escrow address. Please create a collaborative transaction with your escrow counterpart that funds this address as the first output in the transaction.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <Label>Escrow Address</Label>
+              <div className="flex gap-2">
+                <Input 
+                  value={escrowAddress}
+                  readOnly
+                  className="font-mono bg-zinc-900"
+                />
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  onClick={handleCopyAddress}
+                >
+                  {copied ? (
+                    <Check className="h-4 w-4" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Transaction ID</Label>
+              <div className="flex gap-2">
+                <Input 
+                  value={fundingTxId}
+                  onChange={(e) => setFundingTxId(e.target.value)}
+                  placeholder="Enter the transaction ID that funds this address"
+                  className="font-mono"
+                />
+                <Button 
+                  onClick={handleSubmitTxId}
+                >
+                  Submit
+                </Button>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                * The transaction must fund this address as its first output (vout 0)
+              </p>
+            </div>
+
+            {showConfirmationInput && (
+              <div className="space-y-2 border-t border-zinc-800 pt-4">
+                <Label>Block Confirmations</Label>
+                <div className="flex gap-2">
+                  <Input 
+                    type="number"
+                    min="0"
+                    value={confirmationCount}
+                    onChange={(e) => handleConfirmationUpdate(e.target.value)}
+                    placeholder="Enter number of confirmations"
+                    className="font-mono"
+                  />
+                </div>
+                <div className="flex items-center gap-2 mt-2">
+                  <div className={`h-2 w-2 rounded-full ${confirmationCount >= 6 ? 'bg-green-500' : 'bg-orange-500'}`} />
+                  <p className="text-sm text-muted-foreground">
+                    {confirmationCount >= 6 
+                      ? "Transaction has enough confirmations" 
+                      : `Waiting for ${6 - confirmationCount} more confirmations`}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {canGenerateUnsigned && (
+              <div className="border-t border-zinc-800 pt-4">
+                <Button 
+                  className="w-full"
+                  onClick={handleGenerateUnsigned}
+                >
+                  Generate Unsigned Transaction »
+                </Button>
+                <p className="text-sm text-muted-foreground mt-2">
+                  * This will create the unsigned transaction for both parties to sign
+                </p>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* GitHub link */}
       <a
         href="https://github.com/storopoli/scrow/"
         target="_blank"
