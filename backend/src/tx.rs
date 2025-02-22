@@ -15,6 +15,7 @@ use crate::{
 /// their respective Nostr public keys; and their respective resolution addresses.
 ///
 /// The user should also specify the funding [`Txid`] that assumes the vout is always 0.
+#[allow(clippy::too_many_arguments)]
 #[wasm_bindgen]
 pub fn create_collab_tx(
     npub_1: String,
@@ -87,6 +88,7 @@ pub fn create_collab_tx(
 /// and their respective resolution addresses.
 ///
 /// The user should also specify the funding [`Txid`] that assumes the vout is always 0.
+#[allow(clippy::too_many_arguments)]
 #[wasm_bindgen]
 pub fn create_dispute_tx(
     npub_1: String,
