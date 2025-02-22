@@ -22,21 +22,14 @@ the game-theoretic incentives to try an alternate solution between themselves.
 
 Additionally, both Buyer and Seller can optionally choose a third party that they both trust
 that can spend the Escrow address timelocked to $N$ day(s) together with one of them.
-The third-party would have an incentive to resolve then dispute
-since a part of the escrow will be sent to him as well.
-Then the user would have two PSBTs:
+The third-party as for now would have a social interest to solve the dispute as he can use the escrow in the future and need a dispute solution. So now there are two possible ways to refund the users addresses:
 
 1. Collaborative resolution: 2-of-2 Buyer + Seller.
-1. Timelocked dispute resolution: 2-of-3 Buyer + Seller + Third Party.
+1. Timelocked dispute resolution: 2-of-3 (Buyer or Seller) + Third Party.
 
 Satoshi Escrow is a static webpage that can be used offline
 in an air gapped computer for you to generate, sign,
-and broadcast Partially Signed Bitcoin Transactions (PSBT),
-a standard that all software and hardware wallets can reason about.
-The PSBT can be shared between the seller and buyer and they can access sign
-the PSBT and send it amongst themselves. Users input the seller and buyer Bitcoin
-address and the escrow percentage (default is 100% $P$);
-and optionally a trusted third party address.
+and broadcast raw transactions. The users fund an escrow address that was generated using the parties npubs. As for now the users need to fund the address trhough an coinjoin.
 
 ## State of the Art
 
@@ -51,4 +44,4 @@ See: [Bisq Trading Rules](https://docs.bisq.network/trading-rules#dispute-resolu
 [Private Law Society](https://privatelawsociety.net/)
 (PLS) also does escrow dispute resolution with third-parties,
 but assumes that the third-party needs to be onboarded
-and does not provide Nostr easy npub/nsec signing PSBTs.
+and does not provide Nostr easy npub/nsec signing.
