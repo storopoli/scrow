@@ -1,17 +1,31 @@
-use wasm_bindgen::prelude::*;
 use std::str::FromStr;
-
-use bitcoin::{
-    consensus, ecdsa, hex::DisplayHex, Amount, PrivateKey, PublicKey, ScriptBuf, Transaction
-};
+use wasm_bindgen::prelude::*;
 
 use crate::{
-    sign::{combine_signatures_collaborative, combine_signatures_dispute_arbitrator, combine_signatures_dispute_collaborative, sign_tx}, util::{self, convert_network_to_typed}
+    sign::{
+        combine_signatures_collaborative, combine_signatures_dispute_arbitrator,
+        combine_signatures_dispute_collaborative, sign_tx,
+    },
+    util::{self, convert_network_to_typed},
+};
+use bitcoin::{
+    consensus, ecdsa, hex::DisplayHex, Amount, PrivateKey, PublicKey, ScriptBuf, Transaction,
 };
 
-/// Signs a [`Transaction`] input `index` using a [`PrivateKey`].
+/// This module provides functionality for signing transactions and combining signatures
+/// in various collaborative and dispute scenarios.
 ///
-/// The input is signed using the provided [`PrivateKey`], [`Amount`], and [`ScriptBuf`] locking script.
+/// The following functions are imported from other modules:
+///
+/// - `combine_signatures_collaborative`: Combines signatures in a collaborative scenario.
+/// - `combine_signatures_dispute_arbitrator`: Combines signatures in a dispute scenario with an arbitrator.
+/// - `combine_signatures_dispute_collaborative`: Combines signatures in a dispute scenario collaboratively.
+/// - `sign_tx`: Signs a transaction.
+///
+/// Additionally, utility functions and types are imported from the `util` module, including:
+///
+/// - `convert_network_to_typed`: Converts a network to a typed representation.
+
 #[wasm_bindgen]
 pub fn sign_tx_wasm(
     tx: String,
@@ -43,10 +57,17 @@ pub fn combine_signatures_collaborative_wasm(
     unlocking_script: String,
 ) -> String {
     let tx: Transaction = consensus::deserialize(&tx.into_bytes()).unwrap();
-    let signatures: Vec<ecdsa::Signature> = signatures.into_iter().map(|sig| ecdsa::Signature::from_str(&sig).unwrap()).collect();
-    let pks: Vec<PublicKey> = pks.into_iter().map(|pk| PublicKey::from_slice(&pk.into_bytes()).unwrap()).collect();
+    let signatures: Vec<ecdsa::Signature> = signatures
+        .into_iter()
+        .map(|sig| ecdsa::Signature::from_str(&sig).unwrap())
+        .collect();
+    let pks: Vec<PublicKey> = pks
+        .into_iter()
+        .map(|pk| PublicKey::from_slice(&pk.into_bytes()).unwrap())
+        .collect();
     let unlocking_script: ScriptBuf = ScriptBuf::from_bytes(unlocking_script.as_bytes().to_vec());
-    let tx: Transaction = combine_signatures_collaborative(tx, index, signatures, pks, unlocking_script);
+    let tx: Transaction =
+        combine_signatures_collaborative(tx, index, signatures, pks, unlocking_script);
     consensus::serialize(&tx).as_hex().to_string()
 }
 
@@ -59,10 +80,17 @@ pub fn combine_signatures_dispute_collaborative_wasm(
     unlocking_script: String,
 ) -> String {
     let tx: Transaction = consensus::deserialize(&tx.into_bytes()).unwrap();
-    let signatures: Vec<ecdsa::Signature> = signatures.into_iter().map(|sig| ecdsa::Signature::from_str(&sig).unwrap()).collect();
-    let pks: Vec<PublicKey> = pks.into_iter().map(|pk| PublicKey::from_slice(&pk.into_bytes()).unwrap()).collect();
+    let signatures: Vec<ecdsa::Signature> = signatures
+        .into_iter()
+        .map(|sig| ecdsa::Signature::from_str(&sig).unwrap())
+        .collect();
+    let pks: Vec<PublicKey> = pks
+        .into_iter()
+        .map(|pk| PublicKey::from_slice(&pk.into_bytes()).unwrap())
+        .collect();
     let unlocking_script: ScriptBuf = ScriptBuf::from_bytes(unlocking_script.as_bytes().to_vec());
-    let tx: Transaction = combine_signatures_dispute_collaborative(tx, index, signatures, pks, unlocking_script);
+    let tx: Transaction =
+        combine_signatures_dispute_collaborative(tx, index, signatures, pks, unlocking_script);
     consensus::serialize(&tx).as_hex().to_string()
 }
 
@@ -75,10 +103,16 @@ pub fn combine_signatures_dispute_arbitrator_wasm(
     unlocking_script: String,
 ) -> String {
     let tx: Transaction = consensus::deserialize(&tx.into_bytes()).unwrap();
-    let signatures: Vec<ecdsa::Signature> = signatures.into_iter().map(|sig| ecdsa::Signature::from_str(&sig).unwrap()).collect();
-    let pks: Vec<PublicKey> = pks.into_iter().map(|pk| PublicKey::from_slice(&pk.into_bytes()).unwrap()).collect();
+    let signatures: Vec<ecdsa::Signature> = signatures
+        .into_iter()
+        .map(|sig| ecdsa::Signature::from_str(&sig).unwrap())
+        .collect();
+    let pks: Vec<PublicKey> = pks
+        .into_iter()
+        .map(|pk| PublicKey::from_slice(&pk.into_bytes()).unwrap())
+        .collect();
     let unlocking_script: ScriptBuf = ScriptBuf::from_bytes(unlocking_script.as_bytes().to_vec());
-    let tx: Transaction = combine_signatures_dispute_arbitrator(tx, index, signatures, pks, unlocking_script);
+    let tx: Transaction =
+        combine_signatures_dispute_arbitrator(tx, index, signatures, pks, unlocking_script);
     consensus::serialize(&tx).as_hex().to_string()
 }
-
