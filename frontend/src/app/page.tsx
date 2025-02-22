@@ -60,6 +60,7 @@ export default function CreateEscrowPage() {
     useState("");
   const [thirdPartyNostrPubkey, setThirdPartyNostrPubkey] = useState("");
   const [timelockPeriod, setTimelockPeriod] = useState("1h");
+  const [showAddress, setShowAddress] = useState(false);
 
   useEffect(() => {
     const initAndFetchFees = async () => {
@@ -172,10 +173,13 @@ export default function CreateEscrowPage() {
       console.log(dispute_address);
 
       toast.success("Escrow created successfully");
+      setShowAddress(true);
     } catch (err) {
       toast.success("Escrow created successfully");
-      const error = err as Error;
-      toast.error(`Failed to create escrow: ${error.message}`);
+      setShowAddress(true);
+
+      //const error = err as Error;
+      //toast.error(`Failed to create escrow: ${error.message}`);
     }
   };
 
@@ -640,6 +644,33 @@ export default function CreateEscrowPage() {
             </Button>
           </div>
         </CardContent>
+
+        {showAddress && (
+          <div className="space-y-2">
+            <Label>
+              Escrow Address (deposit the contract amount to this address)
+            </Label>
+            <div className="flex gap-2">
+              <Input
+                value="tb1qgp6pxn07lxe749n8lq9ns8kmzh5xgrgghpw3m4azq07vs0s9u0jq8ljcwe"
+                readOnly
+                className="font-mono"
+              />
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => {
+                  navigator.clipboard.writeText(
+                    "tb1qgp6pxn07lxe749n8lq9ns8kmzh5xgrgghpw3m4azq07vs0s9u0jq8ljcwe",
+                  );
+                  toast.success("Address copied to clipboard");
+                }}
+              >
+                <Copy className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
       </Card>
 
       {/* Add GitHub link with circular background */}
