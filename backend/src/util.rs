@@ -40,7 +40,7 @@ pub fn check_npub_wasm(input: String) -> bool {
 }
 
 /// Converts a `nsec` string to a [`SecretKey`]
-fn convert_nsec_to_secret_key(nsec: String, network: Network) -> PrivateKey {
+pub fn convert_nsec_to_secret_key(nsec: String, network: Network) -> PrivateKey {
     let (hrp, data) = bech32::decode(&nsec).expect("Invalid bech32 string");
     if hrp != HRP_SECRET_KEY {
         panic!("Wrong prefix for nsec");
