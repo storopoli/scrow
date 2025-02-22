@@ -8,9 +8,7 @@ use crate::{
     },
     util::{self, convert_network_to_typed},
 };
-use bitcoin::{
-    consensus, ecdsa, hex::DisplayHex, Amount, PrivateKey, PublicKey, ScriptBuf, Transaction,
-};
+use bitcoin::{consensus, ecdsa, hex::DisplayHex, Amount, PrivateKey, ScriptBuf, Transaction};
 
 /// This module provides functionality for signing transactions and combining signatures
 /// in various collaborative and dispute scenarios.
@@ -53,7 +51,7 @@ pub fn combine_signatures_collaborative_wasm(
     tx: String,
     index: usize,
     signatures: Vec<String>,
-    pks: Vec<String>,
+    npubs: Vec<String>,
     unlocking_script: String,
 ) -> String {
     let tx: Transaction = consensus::deserialize(&tx.into_bytes()).unwrap();
@@ -61,9 +59,9 @@ pub fn combine_signatures_collaborative_wasm(
         .into_iter()
         .map(|sig| ecdsa::Signature::from_str(&sig).unwrap())
         .collect();
-    let pks: Vec<PublicKey> = pks
+    let pks = npubs
         .into_iter()
-        .map(|pk| PublicKey::from_slice(&pk.into_bytes()).unwrap())
+        .map(util::convert_npub_to_public_key)
         .collect();
     let unlocking_script: ScriptBuf = ScriptBuf::from_bytes(unlocking_script.as_bytes().to_vec());
     let tx: Transaction =
@@ -76,7 +74,7 @@ pub fn combine_signatures_dispute_collaborative_wasm(
     tx: String,
     index: usize,
     signatures: Vec<String>,
-    pks: Vec<String>,
+    npubs: Vec<String>,
     unlocking_script: String,
 ) -> String {
     let tx: Transaction = consensus::deserialize(&tx.into_bytes()).unwrap();
@@ -84,9 +82,9 @@ pub fn combine_signatures_dispute_collaborative_wasm(
         .into_iter()
         .map(|sig| ecdsa::Signature::from_str(&sig).unwrap())
         .collect();
-    let pks: Vec<PublicKey> = pks
+    let pks = npubs
         .into_iter()
-        .map(|pk| PublicKey::from_slice(&pk.into_bytes()).unwrap())
+        .map(util::convert_npub_to_public_key)
         .collect();
     let unlocking_script: ScriptBuf = ScriptBuf::from_bytes(unlocking_script.as_bytes().to_vec());
     let tx: Transaction =
@@ -99,7 +97,7 @@ pub fn combine_signatures_dispute_arbitrator_wasm(
     tx: String,
     index: usize,
     signatures: Vec<String>,
-    pks: Vec<String>,
+    npubs: Vec<String>,
     unlocking_script: String,
 ) -> String {
     let tx: Transaction = consensus::deserialize(&tx.into_bytes()).unwrap();
@@ -107,9 +105,9 @@ pub fn combine_signatures_dispute_arbitrator_wasm(
         .into_iter()
         .map(|sig| ecdsa::Signature::from_str(&sig).unwrap())
         .collect();
-    let pks: Vec<PublicKey> = pks
+    let pks = npubs
         .into_iter()
-        .map(|pk| PublicKey::from_slice(&pk.into_bytes()).unwrap())
+        .map(util::convert_npub_to_public_key)
         .collect();
     let unlocking_script: ScriptBuf = ScriptBuf::from_bytes(unlocking_script.as_bytes().to_vec());
     let tx: Transaction =
