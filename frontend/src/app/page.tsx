@@ -16,6 +16,7 @@ import { useBitcoinPrice } from "@/hooks/useBitcoinPrice"
 import { cn } from "@/lib/utils"
 
 // wasm loader and functions
+// call rust functions via wasm.<function name>
 import { init } from "../lib/wasm";
 import wasm from "../lib/wasm";
 
@@ -107,6 +108,42 @@ export default function CreateEscrowPage() {
           {/* Participants Section */}
           <div className="space-y-6">
             <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold">Bitcoin Network</h2>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Info className="h-4 w-4 text-muted-foreground" />
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-[300px]">
+                      <p>
+                        This is the Bitcoin network used for the transaction.
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+
+              {/* Bitcoin Network Section */}
+              <div className="space-y-4 p-4 rounded-lg border border-zinc-800">
+                <Select
+                  value={network}
+                  onValueChange={(
+                    value: "MutinyNet" | "Signet" | "Testnet4" | "Mainnet",
+                  ) => setNetwork(value)}
+                >
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="MutinyNet">MutinyNet</SelectItem>
+                    <SelectItem value="Signet">Signet</SelectItem>
+                    <SelectItem value="Testnet4">Testnet4</SelectItem>
+                    <SelectItem value="Testnet4">Mainnet</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold">Participant Details</h2>
                 <TooltipProvider>
@@ -219,7 +256,7 @@ export default function CreateEscrowPage() {
                         <Info className="h-4 w-4 text-muted-foreground" />
                       </TooltipTrigger>
                       <TooltipContent className="max-w-[300px]">
-                        <p>A trusted third party can help resolve disputes. They can only intervene after the timelock period if both parties disagree.</p>
+                        <p>A trusted third party can help resolve disputes. They can only intervene after the timelock period, if both parties disagree. The trusted third party can sign the transaction with one of the participants</p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
@@ -267,6 +304,7 @@ export default function CreateEscrowPage() {
                       </div>
                     </div>
 
+                    {/*
                     <div className="flex items-center space-x-2">
                       <Switch
                         checked={includeThirdPartyAddress}
@@ -274,9 +312,11 @@ export default function CreateEscrowPage() {
                       />
                       <Label>Include Resolution Address & Collateral</Label>
                     </div>
+                    */}
 
                     {includeThirdPartyAddress && (
                       <div className="space-y-4">
+                        {/*
                         <div className="space-y-2">
                           <Label>Third Party Resolution Address</Label>
                           <div className="flex gap-2">
@@ -292,6 +332,7 @@ export default function CreateEscrowPage() {
                             </Button>
                           </div>
                         </div>
+                        
 
                         <div className="space-y-2">
                           <Label>Resolution Fee</Label>
@@ -312,8 +353,10 @@ export default function CreateEscrowPage() {
                             Amount the third party receives for resolution
                           </p>
                         </div>
+                        */}
                       </div>
                     )}
+                    
                   </div>
                 )}
               </div>
