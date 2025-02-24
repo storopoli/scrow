@@ -14,11 +14,6 @@ license = "MIT"
 crate-type = ["cdylib"]
 
 [dependencies]
-miniscript = { version = "12.3.0", default-features = false, features = [
-    "std",
-    "rand",
-    "serde",
-] }
 bitcoin = { version = "0.32.5", default-features = false, features = [
     "std",
     "serde",

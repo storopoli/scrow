@@ -43,7 +43,7 @@ pub fn sign_tx_wasm(
 
 pub fn convert_nsec_to_secret_key_wasm(nsec: String, network: String) -> PrivateKey {
     let network = convert_network_to_typed(network);
-    util::convert_nsec_to_secret_key(nsec, network)
+    util::nsec_to_secret_key(nsec, network)
 }
 
 #[wasm_bindgen]
@@ -59,10 +59,7 @@ pub fn combine_signatures_collaborative_wasm(
         .into_iter()
         .map(|sig| ecdsa::Signature::from_str(&sig).unwrap())
         .collect();
-    let pks = npubs
-        .into_iter()
-        .map(util::convert_npub_to_public_key)
-        .collect();
+    let pks = npubs.into_iter().map(util::npub_to_public_key).collect();
     let unlocking_script: ScriptBuf = ScriptBuf::from_bytes(unlocking_script.as_bytes().to_vec());
     let tx: Transaction =
         combine_signatures_collaborative(tx, index, signatures, pks, unlocking_script);
@@ -82,10 +79,7 @@ pub fn combine_signatures_dispute_collaborative_wasm(
         .into_iter()
         .map(|sig| ecdsa::Signature::from_str(&sig).unwrap())
         .collect();
-    let pks = npubs
-        .into_iter()
-        .map(util::convert_npub_to_public_key)
-        .collect();
+    let pks = npubs.into_iter().map(util::npub_to_public_key).collect();
     let unlocking_script: ScriptBuf = ScriptBuf::from_bytes(unlocking_script.as_bytes().to_vec());
     let tx: Transaction =
         combine_signatures_dispute_collaborative(tx, index, signatures, pks, unlocking_script);
@@ -105,10 +99,7 @@ pub fn combine_signatures_dispute_arbitrator_wasm(
         .into_iter()
         .map(|sig| ecdsa::Signature::from_str(&sig).unwrap())
         .collect();
-    let pks = npubs
-        .into_iter()
-        .map(util::convert_npub_to_public_key)
-        .collect();
+    let pks = npubs.into_iter().map(util::npub_to_public_key).collect();
     let unlocking_script: ScriptBuf = ScriptBuf::from_bytes(unlocking_script.as_bytes().to_vec());
     let tx: Transaction =
         combine_signatures_dispute_arbitrator(tx, index, signatures, pks, unlocking_script);
