@@ -8,7 +8,7 @@ on:
 
 jobs:
   check_formatting:
-    name: Check Formatting
+    name: Check formatting
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
@@ -34,6 +34,34 @@ jobs:
         working-directory: backend
         run: |
           cargo fmt -- --check
+
+  tests:
+    name: Run tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: cargo-${{ runner.os }}-formatting-v2-${{ hashFiles('**/Cargo.toml', '**/Cargo.lock') }}
+          restore-keys: |
+            cargo-${{ runner.os }}-formatting-v2-
+            cargo-${{ runner.os }}-
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+
+      - name: Run tests
+        working-directory: backend
+        run: |
+          cargo test --all-features --all-targets
 
   website:
     name: Build WASM binary
@@ -66,7 +94,7 @@ jobs:
         run: wasm-pack build ./backend --release --weak-refs --target web
 
   wasm_checks:
-    name: Rust Wasm Checks
+    name: Rust WASM lints
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
@@ -93,6 +121,6 @@ jobs:
             cargo-${{ runner.os }}-rust-wasm-checks-v2-
             cargo-${{ runner.os }}-
 
-      - name: Check clippy
+      - name: Clippy lints
         working-directory: backend
         run: cargo clippy --all-features --tests -- -D warnings
