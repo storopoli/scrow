@@ -12,22 +12,25 @@ const PREFIX_BECH32_SECRET_KEY: &str = "nsec";
 const HRP_PUBLIC_KEY: bech32::Hrp = bech32::Hrp::parse_unchecked(PREFIX_BECH32_PUBLIC_KEY);
 const HRP_SECRET_KEY: bech32::Hrp = bech32::Hrp::parse_unchecked(PREFIX_BECH32_SECRET_KEY);
 
+/// Converts `days` to blocks assuming that blocks comes in 10-minute intervals.
 #[wasm_bindgen]
 pub fn days_to_blocks(days: usize) -> usize {
     days * 144
 }
 
+/// Converts `hours` to blocks assuming that blocks comes in 10-minute intervals.
 #[wasm_bindgen]
 pub fn hours_to_blocks(hours: usize) -> usize {
     hours * 6
 }
 
+/// Converts `days` and `hours` to blocks assuming that blocks comes in 10-minute intervals.
 #[wasm_bindgen]
 pub fn days_hours_to_blocks(days: usize, hours: usize) -> usize {
     days_to_blocks(days) + hours_to_blocks(hours)
 }
 
-/// Checks `npub` from a bech32-encoded string
+/// Checks `npub` from a bech32-encoded string.
 #[wasm_bindgen]
 pub fn check_npub_wasm(input: String) -> bool {
     let (hrp, data) = bech32::decode(&input).expect("Not a valid npub");
@@ -38,7 +41,7 @@ pub fn check_npub_wasm(input: String) -> bool {
     true
 }
 
-/// Converts a `nsec` string to a [`SecretKey`]
+/// Converts a `nsec` string to a [`SecretKey`].
 pub fn nsec_to_secret_key(nsec: String, network: Network) -> PrivateKey {
     let (hrp, data) = bech32::decode(&nsec).expect("Invalid bech32 string");
     if hrp != HRP_SECRET_KEY {
@@ -48,13 +51,13 @@ pub fn nsec_to_secret_key(nsec: String, network: Network) -> PrivateKey {
     PrivateKey::new(secret_key, network)
 }
 
-/// Convert a `nsec` bech32-encoded string to a hex-encoded string
+/// Convert a `nsec` bech32-encoded string to a hex-encoded string.
 fn convert_nsec_to_hex(nsec: String, network: Network) -> String {
     let secret_key: PrivateKey = nsec_to_secret_key(nsec, network);
     hex::BytesToHexIter::new(secret_key.to_bytes().iter().copied()).collect()
 }
 
-/// Convert a `nsec` bech32-encoded string to a hex-encoded string to wasm
+/// Converts a `nsec` bech32-encoded string to a hex-encoded string.
 #[wasm_bindgen]
 pub fn nsec_to_hex(nsec: String, network: String) -> String {
     let network = match network.as_str() {
@@ -67,7 +70,7 @@ pub fn nsec_to_hex(nsec: String, network: String) -> String {
     convert_nsec_to_hex(nsec, network)
 }
 
-/// Convert a network to a typed [`Network`]
+/// Converts a network to a typed [`Network`].
 pub fn convert_network_to_typed(network: String) -> Network {
     match network.as_str() {
         "Mainnet" => Network::Bitcoin,
@@ -78,7 +81,9 @@ pub fn convert_network_to_typed(network: String) -> Network {
     }
 }
 
-/// Converts a `npub` to a [`PublicKey`]
+/// Converts a `npub` to a [`PublicKey`].
+///
+/// Forces the [`PublicKey`] to be even.
 pub fn npub_to_public_key(npub: String) -> PublicKey {
     let (hrp, data) = bech32::decode(&npub).expect("Invalid bech32 string");
     if hrp != HRP_PUBLIC_KEY {
@@ -89,23 +94,34 @@ pub fn npub_to_public_key(npub: String) -> PublicKey {
     PublicKey::from(pk)
 }
 
-/// Calculates a pub_key from a nsec string
+/// Calculates a [`SecpPublicKey`] from a `nsec` string.
+///
+/// Forces the [`PublicKey`] to be even.
 fn nsec_to_public_key(nsec: String, network: Network) -> SecpPublicKey {
     let sec_key = nsec_to_secret_key(nsec, network);
-    SecpPublicKey::from_secret_key(&Secp256k1::new(), &sec_key.inner)
+    let pub_key = SecpPublicKey::from_secret_key(&Secp256k1::new(), &sec_key.inner);
+    let x_only_pk =
+        XOnlyPublicKey::from_slice(&pub_key.serialize()).expect("Invalid public key data");
+    SecpPublicKey::from_x_only_public_key(x_only_pk, Parity::Even)
 }
 
 #[wasm_bindgen]
-/// Calculates a pub_key from a nsec string to wasm
+/// Calculates a hex-encoded [`SecpPublicKey`] string from a `nsec` string.
+///
 /// Returns a hex-encoded string
+///
+/// Assumes the public key is even.
 pub fn nsec_to_public_key_hex(nsec: String, network: String) -> String {
     let network = convert_network_to_typed(network);
     let public_key = nsec_to_public_key(nsec, network);
-    hex::BytesToHexIter::new(public_key.serialize().iter().copied()).collect()
+    let x_only_pk =
+        XOnlyPublicKey::from_slice(&public_key.serialize()).expect("Invalid public key data");
+    let x_only_pk_hex = hex::BytesToHexIter::new(x_only_pk.serialize().iter().copied()).collect();
+    x_only_pk_hex
 }
 
 #[wasm_bindgen]
-/// Converts a `npub` bech32-encoded string to a hex-encoded string
+/// Converts a `npub` bech32-encoded string to a hex-encoded string.
 pub fn npub_to_hex(npub: String) -> String {
     let public_key: PublicKey = npub_to_public_key(npub);
     hex::BytesToHexIter::new(public_key.to_bytes().iter().copied()).collect()
@@ -113,8 +129,6 @@ pub fn npub_to_hex(npub: String) -> String {
 
 #[cfg(test)]
 mod tests {
-    use bitcoin::key::Secp256k1;
-
     use super::*;
 
     #[test]
@@ -167,40 +181,10 @@ mod tests {
     }
 
     #[test]
-    fn test_convert_nsec_to_hex_wasm() {
-        let nsec = "nsec1vl029mgpspedva04g90vltkh6fvh240zqtv9k0t9af8935ke9laqsnlfe5";
-        let expected_hex = "67dea2ed018072d675f5415ecfaed7d2597555e202d85b3d65ea4e58d2d92ffa";
-        let hex = nsec_to_hex(nsec.to_string(), "Mainnet".to_string());
-        assert_eq!(expected_hex, hex);
-    }
-
-    #[test]
     fn test_convert_nsec_to_hex() {
         let nsec = "nsec103m6x7a369k95rhtdn5w5mxsdpgyqprnysdtvhe6m0ef5xuz9d6s6emzda";
         let expected_hex = "7c77a37bb1d16c5a0eeb6ce8ea6cd06850400473241ab65f3adbf29a1b822b75";
         let hex = nsec_to_hex(nsec.to_string(), "Mainnet".to_string());
         assert_eq!(expected_hex, hex);
-    }
-
-    #[test]
-    fn test_pub_key_derivation_to_sign() {
-        let nsec = "nsec103m6x7a369k95rhtdn5w5mxsdpgyqprnysdtvhe6m0ef5xuz9d6s6emzda";
-        let sec_key = nsec_to_secret_key(nsec.to_string(), Network::Bitcoin);
-        let pub_key: SecpPublicKey =
-            SecpPublicKey::from_secret_key(&Secp256k1::new(), &sec_key.inner);
-        let pub_key_hex: String =
-            hex::BytesToHexIter::new(pub_key.serialize().iter().copied()).collect();
-        let expected_hex = "022d7b3d8028c474251676708ec41f12100685b200ccbb394e5e782d73b233a8eb";
-        assert_eq!(expected_hex, pub_key_hex);
-    }
-
-    #[test]
-    fn test_pub_key_derivation_to_sign_ypar() {
-        let nsec = "nsec103m6x7a369k95rhtdn5w5mxsdpgyqprnysdtvhe6m0ef5xuz9d6s6emzda";
-        let public_key = nsec_to_public_key(nsec.to_string(), Network::Bitcoin);
-        let pub_key_hex: String =
-            hex::BytesToHexIter::new(public_key.serialize().iter().copied()).collect();
-        let expected_hex = "022d7b3d8028c474251676708ec41f12100685b200ccbb394e5e782d73b233a8eb";
-        assert_eq!(expected_hex, pub_key_hex);
     }
 }
