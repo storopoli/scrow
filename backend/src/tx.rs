@@ -8,7 +8,7 @@ use wasm_bindgen::prelude::*;
 
 use crate::{
     scripts::{new_collaborative_address, new_dispute_address},
-    util::{convert_network_to_typed, convert_npub_to_public_key},
+    util::{convert_network_to_typed, npub_to_public_key},
 };
 
 /// Creates a 2-of-2 multisig escrow address for collaboration between two users,
@@ -16,8 +16,8 @@ use crate::{
 #[wasm_bindgen]
 pub fn create_collab_address(npub_1: String, npub_2: String, network: String) -> String {
     let network = convert_network_to_typed(network);
-    let public_key_1 = convert_npub_to_public_key(npub_1);
-    let public_key_2 = convert_npub_to_public_key(npub_2);
+    let public_key_1 = npub_to_public_key(npub_1);
+    let public_key_2 = npub_to_public_key(npub_2);
     let address = new_collaborative_address([public_key_1, public_key_2], network);
     address.to_string()
 }
@@ -34,9 +34,9 @@ pub fn create_dispute_address(
     network: String,
 ) -> String {
     let network = convert_network_to_typed(network);
-    let public_key_1 = convert_npub_to_public_key(npub_1);
-    let public_key_2 = convert_npub_to_public_key(npub_2);
-    let public_key_arbiter = convert_npub_to_public_key(npub_arbiter);
+    let public_key_1 = npub_to_public_key(npub_1);
+    let public_key_2 = npub_to_public_key(npub_2);
+    let public_key_arbiter = npub_to_public_key(npub_arbiter);
     let address = new_dispute_address(
         [public_key_1, public_key_2],
         public_key_arbiter,
@@ -73,8 +73,8 @@ pub fn create_collab_tx(
         .require_network(network)
         .unwrap();
     let prevout = OutPoint { txid, vout: 0 };
-    let pk_1 = convert_npub_to_public_key(npub_1);
-    let pk_2 = convert_npub_to_public_key(npub_2);
+    let pk_1 = npub_to_public_key(npub_1);
+    let pk_2 = npub_to_public_key(npub_2);
     let _escrow_address = new_collaborative_address([pk_1, pk_2], network);
     let escrow_amount = Amount::from_sat(escrow_amount);
     let fee = Amount::from_sat(fee);
@@ -144,9 +144,9 @@ pub fn create_dispute_tx(
         .require_network(network)
         .unwrap();
     let prevout = OutPoint { txid, vout: 0 };
-    let pk_1 = convert_npub_to_public_key(npub_1);
-    let pk_2 = convert_npub_to_public_key(npub_2);
-    let pk_arbiter = convert_npub_to_public_key(npub_arbiter);
+    let pk_1 = npub_to_public_key(npub_1);
+    let pk_2 = npub_to_public_key(npub_2);
+    let pk_arbiter = npub_to_public_key(npub_arbiter);
     let _escrow_address = new_dispute_address([pk_1, pk_2], pk_arbiter, timelock_duration, network);
     let escrow_amount = Amount::from_sat(escrow_amount);
     let fee = Amount::from_sat(fee);

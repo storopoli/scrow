@@ -1073,17 +1073,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "miniscript"
-version = "12.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5bd3c9608217b0d6fa9c9c8ddd875b85ab72bd4311cfc8db35e1b5a08fc11f4d"
-dependencies = [
- "bech32",
- "bitcoin",
- "serde",
-]
-
-[[package]]
 name = "miniz_oxide"
 version = "0.8.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1500,7 +1489,6 @@ dependencies = [
  "corepc-node",
  "env_logger",
  "getrandom 0.2.15",
- "miniscript",
  "reqwest",
  "secp256k1",
  "serde",
