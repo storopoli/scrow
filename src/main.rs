@@ -1,6 +1,7 @@
 //! Satoshi Escrow Dixous App
 
 use dioxus::prelude::*;
+use scripts::UNSPENDABLE_PUBLIC_KEY;
 
 pub mod error;
 // pub mod network;
@@ -39,6 +40,7 @@ fn App() -> Element {
 
 #[component]
 pub fn Hero() -> Element {
+    let unspendable_pk = *UNSPENDABLE_PUBLIC_KEY;
     rsx! {
         div {
             id: "hero",
@@ -50,6 +52,7 @@ pub fn Hero() -> Element {
                 a { href: "https://github.com/DioxusLabs/sdk", "⚙️ Dioxus Development Kit" }
                 a { href: "https://marketplace.visualstudio.com/items?itemName=DioxusLabs.dioxus", "💫 VSCode Extension" }
                 a { href: "https://discord.gg/XgGxMSkvUM", "👋 Community Discord" }
+                "unspendable_pk: {unspendable_pk}"
             }
         }
     }
