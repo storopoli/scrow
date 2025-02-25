@@ -3,13 +3,11 @@
 use reqwest::Client;
 use std::collections::HashMap;
 use url::Url;
-use wasm_bindgen::prelude::*;
 
 /// Fetches recommended transaction fees in sat/vB from a `mempool.space` compliant API
 /// and returns a [`HashMap<String, u32>`]
 ///
 /// If using MutinyNet, the host MUST be `https://mutinynet.com`
-#[wasm_bindgen]
 pub async fn fetch_fees(host: &str, endpoint: &str) -> Result<JsValue, JsError> {
     // build full URL
     let url = format!("{}{}", host, endpoint);
@@ -46,7 +44,6 @@ pub async fn fetch_fees(host: &str, endpoint: &str) -> Result<JsValue, JsError> 
 /// "The transaction should be provided as hex in the request body. The txid will be returned on success."
 ///
 /// If using MutinyNet, the host MUST be `https://mutinynet.com`
-#[wasm_bindgen]
 pub async fn push_transaction(
     host: &str,
     endpoint: &str,

@@ -45,3 +45,11 @@ See: [Bisq Trading Rules](https://docs.bisq.network/trading-rules#dispute-resolu
 (PLS) also does escrow dispute resolution with third-parties,
 but assumes that the third-party needs to be onboarded
 and does not provide Nostr easy npub/nsec signing.
+
+## Development
+
+This uses Dioxus Bla Bla
+
+```bash
+npx tailwindcss -i ./input.css -o ./assets/tailwind.css --watch
+```

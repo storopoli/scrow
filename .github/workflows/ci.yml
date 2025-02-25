@@ -31,7 +31,6 @@ jobs:
           components: rustfmt
 
       - name: Check formatting
-        working-directory: backend
         run: |
           cargo fmt -- --check
 
@@ -48,53 +47,20 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             target
-          key: cargo-${{ runner.os }}-formatting-v2-${{ hashFiles('**/Cargo.toml', '**/Cargo.lock') }}
-          restore-keys: |
-            cargo-${{ runner.os }}-formatting-v2-
-            cargo-${{ runner.os }}-
-
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          components: rustfmt
-
-      - name: Run tests
-        working-directory: backend
-        run: |
-          cargo test --all-features --all-targets
-
-  website:
-    name: Build WASM binary
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          target: wasm32-unknown-unknown
-          override: true
-
-      - uses: jetli/wasm-pack-action@v0.4.0
-        with:
-          version: "v0.12.1"
-
-      - uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
           key: cargo-${{ runner.os }}-tests-v2-${{ hashFiles('**/Cargo.toml', '**/Cargo.lock') }}
           restore-keys: |
             cargo-${{ runner.os }}-tests-v2-
             cargo-${{ runner.os }}-
 
-      - name: Build wasm package
-        run: wasm-pack build ./backend --release --weak-refs --target web
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
 
-  wasm_checks:
-    name: Rust WASM lints
+      - name: Run tests
+        run: |
+          cargo test --all-features --all-targets
+
+  clippy:
+    name: Clippy lints
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
@@ -102,13 +68,6 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
-          target: wasm32-unknown-unknown
-          override: true
-
-      - name: Setup trunk
-        uses: jetli/trunk-action@v0.1.0
-        with:
-          version: "latest"
 
       - uses: actions/cache@v4
         with:
@@ -116,11 +75,10 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             target
-          key: cargo-${{ runner.os }}-rust-wasm-checks-v2-${{ hashFiles('**/Cargo.toml', '**/Cargo.lock') }}
+          key: cargo-${{ runner.os }}-rust-clippy-v2-${{ hashFiles('**/Cargo.toml', '**/Cargo.lock') }}
           restore-keys: |
-            cargo-${{ runner.os }}-rust-wasm-checks-v2-
+            cargo-${{ runner.os }}-rust-clippy-v2-
             cargo-${{ runner.os }}-
 
       - name: Clippy lints
-        working-directory: backend
         run: cargo clippy --all-features --tests -- -D warnings

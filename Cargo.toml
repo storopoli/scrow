@@ -1,7 +1,7 @@
 [package]
 name = "scrow-backend"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 authors = [
     "Jose Storopoli <jose@storopoli.com>",
     "Luis Schwab <luisschwab@protonmail.com>",
@@ -10,34 +10,28 @@ authors = [
 ]
 license = "MIT"
 
-[lib]
-crate-type = ["cdylib"]
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+# NOTE: keep bitcoin and secp256k1 versions in sync.
 bitcoin = { version = "0.32.5", default-features = false, features = [
     "std",
     "serde",
     "secp-recovery",
     "rand",
 ] }
-# NOTE: keep bitcoin and secp256k1 versions in sync.
 secp256k1 = { version = "0.29.0", features = ["global-context"] }
-wasm-bindgen = "0.2.100"
+nostr = "0.39.0"
 serde = { version = "1.0.218", features = ["derive"] }
-serde-wasm-bindgen = "0.6.5"
-getrandom = { version = "0.2", features = ["js"] }
-reqwest = { version = "0.12.12", features = ["json"] }
-url = "2.5.4"
-serde_json = "1.0.139"
-wasm-bindgen-futures = "0.4.50"
-tokio = "1.43.0"
-web-sys = { version = "0.3.77", features = ["console"] }
+thiserror = "2.0.11"
+dioxus = { version = "0.6.3", features = ["router"] }
 
 [dev-dependencies]
-tokio = { version = "1.43.0", features = ["test-util", "macros", "rt"] }
-wasm-bindgen-test = "0.3"
 corepc-node = { version = "0.5.0", features = ["28_0", "download"] }
 env_logger = "0.11.6"
 
-[package.metadata.wasm-pack.profile.release]
-wasm-opt = true
+[features]
+default = ["web"]
+web = ["dioxus/web"]
+desktop = ["dioxus/desktop"]
+mobile = ["dioxus/mobile"]
