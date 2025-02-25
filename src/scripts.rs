@@ -1,91 +1,174 @@
-use bitcoin::{opcodes::all::*, Address, Network, PublicKey, ScriptBuf, Sequence};
+//! Creates Tapscripts using Nostr keys.
 
-/// Our homebrewed `OP_2` opcode.
-pub const OP_2: u8 = 0x52;
+use std::sync::LazyLock;
 
-/// Our homebrewed `OP_3` opcode.
-pub const OP_3: u8 = 0x53;
+use bitcoin::{
+    Address, Network, ScriptBuf, Sequence, XOnlyPublicKey,
+    hashes::{Hash, sha256},
+    opcodes::all::*,
+    taproot::{TaprootBuilder, TaprootBuilderError, TaprootSpendInfo},
+};
+use nostr::key::PublicKey as NostrPublicKey;
+use secp256k1::SECP256K1;
 
-/// Creates a collaborative 2-of-2 multisig P2WSH locking script ([`ScriptBuf`]) from 2 [`PublicKey`]s.
-pub fn new_collaborative_unlocking_script(public_keys: [PublicKey; 2]) -> ScriptBuf {
-    let mut sorted_keys = public_keys.to_vec();
-    sorted_keys.sort();
+use crate::{error::Error, util::npub_to_x_only_public_key};
 
-    let mut script = ScriptBuf::new();
-    script.push_opcode(OP_2.into());
-    script.push_slice(sorted_keys[0].inner.serialize());
-    script.push_slice(sorted_keys[1].inner.serialize());
-    script.push_opcode(OP_2.into());
-    script.push_opcode(OP_CHECKMULTISIG);
-
-    script
-}
-
-/// Creates a collaborative 2-of-2 multisig P2WSH [`Address`] from 2 [`PublicKey`]s
-/// given a [`Network`].
-pub fn new_collaborative_address(public_keys: [PublicKey; 2], network: Network) -> Address {
-    let script = new_collaborative_unlocking_script(public_keys);
-
-    Address::p2wsh(&script, network)
-}
-
-/// Creates a dispute-resolution 2-of-3 multisig P2WSH locking script ([`ScriptBuf`]) from 2 [`PublicKey`]s
-/// an arbitrator [`PublicKey`] and a timelock duration in blocks.
+/// A verifiably unspendable public key, produced by hashing a fixed string to a curve group
+/// generator.
 ///
-/// The policy is as follows. Either:
+/// This is related to the technique used in
+/// [BIP-341](https://github.com/bitcoin/bips/blob/master/bip-0341.mediawiki#constructing-and-spending-taproot-outputs).
 ///
-/// - 2-of-2 multisig between the two parties without timelocks.
-/// - 2-of-3 multisig between the one of the parties and the arbitrator with a timelock.
-pub fn new_dispute_unlocking_script(
-    public_keys: [PublicKey; 2],
-    arbitrator: PublicKey,
-    timelock_duration: u32,
-) -> ScriptBuf {
-    let mut sorted_keys = public_keys.to_vec();
-    sorted_keys.sort();
-    let mut sorted_keys_all = [public_keys.to_vec(), vec![arbitrator]].concat();
-    sorted_keys_all.sort();
-
-    let sequence = Sequence::from_consensus(timelock_duration);
-
-    ScriptBuf::builder()
-        .push_opcode(OP_IF)
-        .push_opcode(OP_2.into())
-        .push_slice(sorted_keys[0].inner.serialize())
-        .push_slice(sorted_keys[1].inner.serialize())
-        .push_opcode(OP_2.into())
-        .push_opcode(OP_CHECKMULTISIG)
-        .push_opcode(OP_ELSE)
-        .push_opcode(OP_2.into())
-        .push_slice(sorted_keys_all[0].inner.serialize())
-        .push_slice(sorted_keys_all[1].inner.serialize())
-        .push_slice(sorted_keys_all[2].inner.serialize())
-        .push_opcode(OP_3.into())
-        .push_opcode(OP_CHECKMULTISIG)
-        .push_sequence(sequence)
-        .push_opcode(OP_CSV)
-        .push_opcode(OP_DROP)
-        .push_opcode(OP_ENDIF)
-        .into_script()
-}
-
-/// Creates a dispute-resolution 2-of-3 multisig P2WSH [`Address`] from 2 [`PublicKey`]s
-/// an arbitrator [`PublicKey`] and a timelock duration in blocks
-/// given a [`Network`].
+/// Note that this is _not_ necessarily a uniformly-sampled curve point!
 ///
-/// The policy is as follows. Either:
+/// But this is fine; we only need a generator with no efficiently-computable discrete logarithm
+/// relation against the standard generator.
+pub const UNSPENDABLE_PUBLIC_KEY_INPUT: &[u8] = b"X-only-PK unspendable";
+pub static UNSPENDABLE_PUBLIC_KEY: LazyLock<XOnlyPublicKey> = LazyLock::new(|| {
+    XOnlyPublicKey::from_slice(sha256::Hash::hash(UNSPENDABLE_PUBLIC_KEY_INPUT).as_byte_array())
+        .expect("valid xonly public key")
+});
+
+/// Creates an escrow-resolution 2-of-3 multisig P2TR [`TaprootSpendInfo`] from 2 [`NostrPublicKey`]s,
+/// an optional arbitrator [`NostrPublicKey`] and an optional timelock duration in blocks.
+///
+/// # Spending Conditions
 ///
 /// - 2-of-2 multisig between the two parties without timelocks.
-/// - 2-of-3 multisig between the one of the parties and the arbitrator with a timelock.
-pub fn new_dispute_address(
-    public_keys: [PublicKey; 2],
-    arbitrator: PublicKey,
-    timelock_duration: u32,
+/// - 2-of-3 multisig between the one of the parties and the arbitrator with a timelock
+///   (if using an arbitrator).
+///
+/// # Merkle Tree Layout
+///
+/// 1. `A`: 2-of-2 multisig between the two parties without timelocks.
+/// 2. `B`: 2-of-3 multisig between the first of the parties and the arbitrator with a timelock
+///    (if using an arbitrator).
+/// 3. `C`: 2-of-3 multisig between the second of the parties and the arbitrator with a timelock
+///    (if using an arbitrator).
+///
+/// `A` is at depth 1, and `B` and `C` are at depth 2.
+///
+/// ```text
+///     root
+///        \
+///        /\
+///       /  \
+///      A    *
+///          / \
+///         /   \
+///        B     C
+/// ```
+pub fn escrow_spend_info(
+    npub_1: &NostrPublicKey,
+    npub_2: &NostrPublicKey,
+    npub_arbitrator: Option<&NostrPublicKey>,
+    timelock_duration: Option<u32>,
+) -> Result<TaprootSpendInfo, Error> {
+    // Parse npubs to bitcoin public keys.
+    let pk_1 = npub_to_x_only_public_key(npub_1)?;
+    let pk_2 = npub_to_x_only_public_key(npub_2)?;
+
+    let script_1 = ScriptBuf::builder()
+        .push_x_only_key(&pk_2)
+        .push_opcode(OP_CHECKSIGVERIFY)
+        .push_x_only_key(&pk_1)
+        .push_opcode(OP_CHECKSIGVERIFY)
+        .into_script();
+
+    // Arbitrator path.
+    if npub_arbitrator.is_some() && timelock_duration.is_some() {
+        // Safe to unwrap
+        let pk_arbitrator = npub_to_x_only_public_key(npub_arbitrator.unwrap())?;
+
+        // Timelock.
+        let sequence = Sequence::from_consensus(timelock_duration.unwrap());
+
+        let script_2 = ScriptBuf::builder()
+            .push_x_only_key(&pk_arbitrator)
+            .push_opcode(OP_CHECKSIGVERIFY)
+            .push_x_only_key(&pk_1)
+            .push_opcode(OP_CHECKSIGVERIFY)
+            .push_sequence(sequence)
+            .push_opcode(OP_CSV)
+            .push_opcode(OP_DROP)
+            .into_script();
+
+        let script_3 = ScriptBuf::builder()
+            .push_x_only_key(&pk_arbitrator)
+            .push_opcode(OP_CHECKSIGVERIFY)
+            .push_x_only_key(&pk_2)
+            .push_opcode(OP_CHECKSIGVERIFY)
+            .push_sequence(sequence)
+            .push_opcode(OP_CSV)
+            .push_opcode(OP_DROP)
+            .into_script();
+
+        TaprootBuilder::new()
+            .add_leaf(1, script_1)?
+            .add_leaf(2, script_2)?
+            .add_leaf(2, script_3)?
+            .finalize(SECP256K1, *UNSPENDABLE_PUBLIC_KEY)
+            // FIXME(@storopoli): better error here.
+            .map_err(|_| Error::TaprootBuilder(TaprootBuilderError::EmptyTree))
+    }
+    // Collaborative Path
+    else if npub_arbitrator.is_none() && timelock_duration.is_none() {
+        TaprootBuilder::new()
+            .add_leaf(0, script_1)?
+            .finalize(SECP256K1, *UNSPENDABLE_PUBLIC_KEY)
+            // FIXME(@storopoli): better error here.
+            .map_err(|_| Error::TaprootBuilder(TaprootBuilderError::EmptyTree))
+    }
+    // If the match arm failed, means that the inputs to this functions are wrong.
+    else {
+        Err(Error::WrongInputs(format!(
+            "Wrong inputs. Either pass npub_arbitrator and timelock_duration as Some or None. Got npub_arbitrator: {npub_arbitrator:?}. Got timelock_duration: {timelock_duration:?}"
+        )))
+    }
+}
+
+/// Creates an escrow-resolution 2-of-3 multisig P2TR [`Address`] from 2 [`NostrPublicKey`]s,
+/// an optional arbitrator [`NostrPublicKey`] and an optional timelock duration in blocks.
+///
+/// # Spending Conditions
+///
+/// - 2-of-2 multisig between the two parties without timelocks.
+/// - 2-of-3 multisig between the one of the parties and the arbitrator with a timelock
+///   (if using an arbitrator).
+///
+/// # Merkle Tree Layout
+///
+/// 1. `A`: 2-of-2 multisig between the two parties without timelocks.
+/// 2. `B`: 2-of-3 multisig between the first of the parties and the arbitrator with a timelock
+///    (if using an arbitrator).
+/// 3. `C`: 2-of-3 multisig between the second of the parties and the arbitrator with a timelock
+///    (if using an arbitrator).
+///
+/// `A` is at depth 1, and `B` and `C` are at depth 2.
+///
+/// ```text
+///     root
+///        \
+///        /\
+///       /  \
+///      A    *
+///          / \
+///         /   \
+///        B     C
+/// ```
+pub fn escrow_address(
+    npub_1: &NostrPublicKey,
+    npub_2: &NostrPublicKey,
+    npub_arbitrator: Option<&NostrPublicKey>,
+    timelock_duration: Option<u32>,
     network: Network,
-) -> Address {
-    let script = new_dispute_unlocking_script(public_keys, arbitrator, timelock_duration);
+) -> Result<Address, Error> {
+    let taproot_spend_info = escrow_spend_info(npub_1, npub_2, npub_arbitrator, timelock_duration)?;
 
-    Address::p2wsh(&script, network)
+    let internal_key = taproot_spend_info.internal_key();
+    let merkle_root = taproot_spend_info.merkle_root();
+
+    Ok(Address::p2tr(SECP256K1, internal_key, merkle_root, network))
 }
 
 #[cfg(test)]
@@ -97,84 +180,51 @@ mod tests {
     use super::*;
 
     // Taken from https://docs.rs/bitcoin/latest/bitcoin/struct.PublicKey.html
-    const KEY_A: &str = "038f47dcd43ba6d97fc9ed2e3bba09b175a45fac55f0683e8cf771e8ced4572354";
-    const KEY_B: &str = "028bde91b10013e08949a318018fedbd896534a549a278e220169ee2a36517c7aa";
-    const KEY_C: &str = "032b8324c93575034047a52e9bca05a46d8347046b91a032eff07d5de8d3f2730b";
+    const KEY_A: &str = "8f47dcd43ba6d97fc9ed2e3bba09b175a45fac55f0683e8cf771e8ced4572354";
+    const KEY_B: &str = "8bde91b10013e08949a318018fedbd896534a549a278e220169ee2a36517c7aa";
+    const KEY_C: &str = "2b8324c93575034047a52e9bca05a46d8347046b91a032eff07d5de8d3f2730b";
 
     #[test]
-    fn collaborative_address_works() {
-        let public_key1 = PublicKey::from_str(KEY_A).unwrap();
-        let public_key2 = PublicKey::from_str(KEY_B).unwrap();
+    fn test_unspendable() {
+        // Check that construction of the unspendable key succeeds
+        let _ = *UNSPENDABLE_PUBLIC_KEY;
+    }
+
+    #[test]
+    fn collaborative_address() {
+        let npub_1 = NostrPublicKey::from_str(KEY_A).unwrap();
+        let npub_2 = NostrPublicKey::from_str(KEY_B).unwrap();
         let network = Network::Testnet;
 
-        let address_1 = new_collaborative_address([public_key1, public_key2], network);
-        let address_2 = new_collaborative_address([public_key2, public_key1], network);
+        let address = escrow_address(&npub_1, &npub_2, None, None, network).unwrap();
 
-        assert_eq!(address_1, address_2);
-        assert_eq!(address_2.address_type().unwrap(), AddressType::P2wsh);
+        assert_eq!(address.address_type().unwrap(), AddressType::P2tr);
         assert_eq!(
-            address_1.to_string(),
-            "tb1q256vxujwapp655r3cdk30aq3unxacln2hmq2qtfyyd92ntu6yeasfknjse".to_string()
+            address.to_string(),
+            "tb1pvy4tvkm7prje88w2r7rgdq36jwjh2yzzjrgdvx6fhkaa53cxkqas50w49k".to_string()
         );
     }
 
     #[test]
-    fn collaborative_unlocking_script_works() {
-        let public_key1 = PublicKey::from_str(KEY_A).unwrap();
-        let public_key2 = PublicKey::from_str(KEY_B).unwrap();
-
-        let unlocking_script_1 = new_collaborative_unlocking_script([public_key1, public_key2]);
-        let unlocking_script_2 = new_collaborative_unlocking_script([public_key1, public_key2]);
-        assert_eq!(unlocking_script_1, unlocking_script_2);
-        assert_eq!(
-            unlocking_script_1.to_asm_string(),
-            "OP_PUSHNUM_2 OP_PUSHBYTES_33 028bde91b10013e08949a318018fedbd896534a549a278e220169ee2a36517c7aa OP_PUSHBYTES_33 038f47dcd43ba6d97fc9ed2e3bba09b175a45fac55f0683e8cf771e8ced4572354 OP_PUSHNUM_2 OP_CHECKMULTISIG".to_string()
-        );
-    }
-
-    #[test]
-    fn dispute_address_works() {
-        let public_key1 = PublicKey::from_str(KEY_A).unwrap();
-        let public_key2 = PublicKey::from_str(KEY_B).unwrap();
-        let arbitrator = PublicKey::from_str(KEY_C).unwrap();
+    fn dispute_address() {
+        let npub_1 = NostrPublicKey::from_str(KEY_A).unwrap();
+        let npub_2 = NostrPublicKey::from_str(KEY_B).unwrap();
+        let npub_arb = NostrPublicKey::from_str(KEY_C).unwrap();
         let timelock_duration = 100;
         let network = Network::Testnet;
 
-        let address_1 = new_dispute_address(
-            [public_key1, public_key2],
-            arbitrator,
-            timelock_duration,
+        let address = escrow_address(
+            &npub_1,
+            &npub_2,
+            Some(&npub_arb),
+            Some(timelock_duration),
             network,
-        );
-        let address_2 = new_dispute_address(
-            [public_key2, public_key1],
-            arbitrator,
-            timelock_duration,
-            network,
-        );
-        assert_eq!(address_1, address_2);
-        assert_eq!(address_1.address_type().unwrap(), AddressType::P2wsh);
+        )
+        .unwrap();
+        assert_eq!(address.address_type().unwrap(), AddressType::P2tr);
         assert_eq!(
-            address_1.to_string(),
-            "tb1q2g57akwgzmhmrrfseafr3nre4fs0l0a7hsf7nsj3wqeltcqehycskvfxtr".to_string()
-        );
-    }
-
-    #[test]
-    fn dispute_unlocking_script_works() {
-        let public_key1 = PublicKey::from_str(KEY_A).unwrap();
-        let public_key2 = PublicKey::from_str(KEY_B).unwrap();
-        let arbitrator = PublicKey::from_str(KEY_C).unwrap();
-        let timelock_duration = 100;
-
-        let unlocking_script_1 =
-            new_dispute_unlocking_script([public_key1, public_key2], arbitrator, timelock_duration);
-        let unlocking_script_2 =
-            new_dispute_unlocking_script([public_key2, public_key1], arbitrator, timelock_duration);
-        assert_eq!(unlocking_script_1, unlocking_script_2);
-        assert_eq!(
-            unlocking_script_1.to_asm_string(),
-            "OP_IF OP_PUSHNUM_2 OP_PUSHBYTES_33 028bde91b10013e08949a318018fedbd896534a549a278e220169ee2a36517c7aa OP_PUSHBYTES_33 038f47dcd43ba6d97fc9ed2e3bba09b175a45fac55f0683e8cf771e8ced4572354 OP_PUSHNUM_2 OP_CHECKMULTISIG OP_ELSE OP_PUSHNUM_2 OP_PUSHBYTES_33 028bde91b10013e08949a318018fedbd896534a549a278e220169ee2a36517c7aa OP_PUSHBYTES_33 032b8324c93575034047a52e9bca05a46d8347046b91a032eff07d5de8d3f2730b OP_PUSHBYTES_33 038f47dcd43ba6d97fc9ed2e3bba09b175a45fac55f0683e8cf771e8ced4572354 OP_PUSHNUM_3 OP_CHECKMULTISIG OP_PUSHBYTES_1 64 OP_CSV OP_DROP OP_ENDIF".to_string()
+            address.to_string(),
+            "tb1ppaserrmvjv93sc409pmcp8zswjyx99jrjfdsv55pyymekrfqugrqz3ul78".to_string()
         );
     }
 }
