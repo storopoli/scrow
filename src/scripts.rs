@@ -8,6 +8,7 @@ use bitcoin::{
     opcodes::all::*,
     taproot::{TaprootBuilder, TaprootBuilderError, TaprootSpendInfo},
 };
+use dioxus::logger::tracing::trace;
 use nostr::key::PublicKey as NostrPublicKey;
 use secp256k1::SECP256K1;
 
@@ -64,16 +65,36 @@ pub fn escrow_spend_info(
     npub_arbitrator: Option<&NostrPublicKey>,
     timelock_duration: Option<u32>,
 ) -> Result<TaprootSpendInfo, Error> {
-    let script_1 = escrow_scripts(
-        npub_1,
-        npub_2,
-        npub_arbitrator,
-        timelock_duration,
-        EscrowScript::A,
-    )?;
+    // Collaborative Path
+    if npub_arbitrator.is_none() && timelock_duration.is_none() {
+        trace!("Collaborative path");
 
+        let script_1 = escrow_scripts(
+            npub_1,
+            npub_2,
+            npub_arbitrator,
+            timelock_duration,
+            EscrowScript::A,
+        )?;
+
+        TaprootBuilder::new()
+            .add_leaf(0, script_1)?
+            .finalize(SECP256K1, *UNSPENDABLE_PUBLIC_KEY)
+            // FIXME(@storopoli): better error here.
+            .map_err(|_| Error::TaprootBuilder(TaprootBuilderError::EmptyTree))
+    }
     // Arbitrator path.
-    if npub_arbitrator.is_some() && timelock_duration.is_some() {
+    else if npub_arbitrator.is_some() && timelock_duration.is_some() {
+        trace!("Arbitrator path");
+
+        let script_1 = escrow_scripts(
+            npub_1,
+            npub_2,
+            npub_arbitrator,
+            timelock_duration,
+            EscrowScript::A,
+        )?;
+
         let script_2 = escrow_scripts(
             npub_1,
             npub_2,
@@ -93,14 +114,6 @@ pub fn escrow_spend_info(
             .add_leaf(1, script_1)?
             .add_leaf(2, script_2)?
             .add_leaf(2, script_3)?
-            .finalize(SECP256K1, *UNSPENDABLE_PUBLIC_KEY)
-            // FIXME(@storopoli): better error here.
-            .map_err(|_| Error::TaprootBuilder(TaprootBuilderError::EmptyTree))
-    }
-    // Collaborative Path
-    else if npub_arbitrator.is_none() && timelock_duration.is_none() {
-        TaprootBuilder::new()
-            .add_leaf(0, script_1)?
             .finalize(SECP256K1, *UNSPENDABLE_PUBLIC_KEY)
             // FIXME(@storopoli): better error here.
             .map_err(|_| Error::TaprootBuilder(TaprootBuilderError::EmptyTree))
@@ -153,47 +166,43 @@ pub fn escrow_scripts(
     let pk_1 = npub_to_x_only_public_key(npub_1)?;
     let pk_2 = npub_to_x_only_public_key(npub_2)?;
 
-    let script_1 = ScriptBuf::builder()
-        .push_x_only_key(&pk_2)
-        .push_opcode(OP_CHECKSIGVERIFY)
-        .push_x_only_key(&pk_1)
-        .push_opcode(OP_CHECKSIGVERIFY)
-        .into_script();
-
-    if let Some(arbitrator) = npub_arbitrator {
-        let pk_arbitrator = npub_to_x_only_public_key(arbitrator)?;
-        // Timelock.
-        let sequence = Sequence::from_consensus(timelock_duration.unwrap());
-
-        let script_2 = ScriptBuf::builder()
-            .push_x_only_key(&pk_arbitrator)
+    match escrow_script {
+        EscrowScript::A => Ok(ScriptBuf::builder()
+            .push_x_only_key(&pk_2)
             .push_opcode(OP_CHECKSIGVERIFY)
             .push_x_only_key(&pk_1)
             .push_opcode(OP_CHECKSIGVERIFY)
-            .push_sequence(sequence)
-            .push_opcode(OP_CSV)
-            .push_opcode(OP_DROP)
-            .into_script();
-
-        let script_3 = ScriptBuf::builder()
-            .push_x_only_key(&pk_arbitrator)
-            .push_opcode(OP_CHECKSIGVERIFY)
-            .push_x_only_key(&pk_2)
-            .push_opcode(OP_CHECKSIGVERIFY)
-            .push_sequence(sequence)
-            .push_opcode(OP_CSV)
-            .push_opcode(OP_DROP)
-            .into_script();
-
-        match escrow_script {
-            EscrowScript::B => Ok(script_2),
-            EscrowScript::C => Ok(script_3),
-            _ => Err(Error::InvalidEscrowType("Invalid escrow type".to_string())),
+            .into_script()),
+        EscrowScript::B => {
+            let npub_arbitrator = npub_arbitrator.unwrap();
+            let pk_arbitrator = npub_to_x_only_public_key(npub_arbitrator)?;
+            // Timelock.
+            let sequence = Sequence::from_consensus(timelock_duration.unwrap());
+            Ok(ScriptBuf::builder()
+                .push_x_only_key(&pk_arbitrator)
+                .push_opcode(OP_CHECKSIGVERIFY)
+                .push_x_only_key(&pk_1)
+                .push_opcode(OP_CHECKSIGVERIFY)
+                .push_sequence(sequence)
+                .push_opcode(OP_CSV)
+                .push_opcode(OP_DROP)
+                .into_script())
         }
-    } else if escrow_script == EscrowScript::A {
-        Ok(script_1)
-    } else {
-        Err(Error::InvalidEscrowType("Invalid escrow type".to_string()))
+        EscrowScript::C => {
+            let npub_arbitrator = npub_arbitrator.unwrap();
+            let pk_arbitrator = npub_to_x_only_public_key(npub_arbitrator)?;
+            // Timelock.
+            let sequence = Sequence::from_consensus(timelock_duration.unwrap());
+            Ok(ScriptBuf::builder()
+                .push_x_only_key(&pk_arbitrator)
+                .push_opcode(OP_CHECKSIGVERIFY)
+                .push_x_only_key(&pk_2)
+                .push_opcode(OP_CHECKSIGVERIFY)
+                .push_sequence(sequence)
+                .push_opcode(OP_CSV)
+                .push_opcode(OP_DROP)
+                .into_script())
+        }
     }
 }
 
