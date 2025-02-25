@@ -1,11 +1,44 @@
 //! Creates Taproot Transactions using Nostr keys.
 
-use bitcoin::{Amount, Network, OutPoint, Transaction, TxIn, TxOut, Txid, absolute, transaction};
+use bitcoin::{
+    Address, Amount, Network, OutPoint, Transaction, TxIn, TxOut, Txid, absolute, transaction,
+};
 use nostr::key::PublicKey as NostPublicKey;
 
 use crate::{error::Error, util::npub_to_address};
 
-/// Creates a 2-of-2/2-of-3 multisig transaction for collaboration/dispute between two/three users,
+/// Creates a [`Transaction`] that swipe the resolution address to a `destination` [`Address`].
+///
+/// Assumes that the resolution address is derived from the users' Nostr public key
+/// and has received a single input.
+pub fn resolution_tx(
+    amount: Amount,
+    funding_txid: Txid,
+    destination: &Address,
+    fee: Amount,
+) -> Transaction {
+    // Parse stuff
+    let prevout = OutPoint {
+        txid: funding_txid,
+        vout: 0,
+    };
+
+    // Create the transaction
+    Transaction {
+        version: transaction::Version(2),
+        lock_time: absolute::LockTime::ZERO,
+        input: vec![TxIn {
+            previous_output: prevout,
+            ..Default::default()
+        }],
+        output: vec![TxOut {
+            value: amount - fee,
+            script_pubkey: destination.script_pubkey(),
+        }],
+    }
+}
+
+/// Creates a 2-of-2/2-of-3 multisig [`Transaction`] for collaboration/dispute between two/three users,
 /// given an escrow amount, and their respective Nostr public keys.
 ///
 /// The user should also specify the funding [`Txid`] that assumes the vout is always 0.
@@ -15,7 +48,7 @@ use crate::{error::Error, util::npub_to_address};
 /// # Errors
 ///
 /// Errors if could not create SegWit-v0 resolution addresses from supplied npubs.
-pub fn create_escrow_tx(
+pub fn escrow_tx(
     npub_1: &NostPublicKey,
     npub_2: &NostPublicKey,
     escrow_amount_1: Amount,
@@ -78,7 +111,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_create_tx() {
+    fn test_escrow_tx() {
         let npub_1 =
             parse_npub("npub1lfsec9a40ntx0hjr9wtuchclar7xcyhrf0gngaz3vt5dhnqdndaq099v6c").unwrap();
         let npub_2 =
@@ -90,7 +123,7 @@ mod tests {
             .unwrap();
         let fee = Amount::from_sat(1_000);
         let network = Network::Bitcoin;
-        let tx = create_escrow_tx(
+        let tx = escrow_tx(
             &npub_1,
             &npub_2,
             escrow_amount_1,

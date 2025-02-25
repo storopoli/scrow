@@ -3,6 +3,7 @@
 use bitcoin::{
     Script, TapLeafHash, TapSighashType, Transaction, TxOut,
     hashes::Hash,
+    key::TapTweak,
     sighash::{Prevouts, SighashCache},
     taproot::{ControlBlock, LeafVersion},
 };
@@ -14,6 +15,32 @@ use crate::{
     error::Error,
     scripts::{EscrowScript, escrow_scripts},
 };
+
+/// Signs a [`Transaction`] with the given [`NostrSecretKey`].
+///
+/// It must be a P2TR key path spend transaction with a single input.
+fn sign_resolution_tx(
+    transaction: &Transaction,
+    nsec: &NostrSecretKey,
+    prevout: TxOut,
+) -> Transaction {
+    // Parse nsec to a bitcoin secret key.
+    let sk = SecretKey::from_slice(&nsec.to_secret_bytes()).expect("infallible");
+    let keypair = Keypair::from_secret_key(SECP256K1, &sk);
+
+    let mut sighasher = SighashCache::new(transaction);
+    let sighash_type = TapSighashType::All;
+    let taproot_key_spend_signature_hash = sighasher
+        .taproot_key_spend_signature_hash(0, &Prevouts::All(&[prevout]), sighash_type)
+        .expect("must create sighash");
+    let message = Message::from_digest_slice(taproot_key_spend_signature_hash.as_byte_array())
+        .expect("must create a message");
+    let tweaked = keypair.tap_tweak(SECP256K1, None);
+    let signature = SECP256K1.sign_schnorr(&message, &tweaked.to_inner());
+    let mut transaction = transaction.clone();
+    transaction.input[0].witness.push(signature.as_ref());
+    transaction
+}
 
 /// Signs an escrow P2TR [`Transaction`], given an input `index` using a [`NostrSecretKey`].
 ///
