@@ -64,44 +64,30 @@ pub fn escrow_spend_info(
     npub_arbitrator: Option<&NostrPublicKey>,
     timelock_duration: Option<u32>,
 ) -> Result<TaprootSpendInfo, Error> {
-    // Parse npubs to bitcoin public keys.
-    let pk_1 = npub_to_x_only_public_key(npub_1)?;
-    let pk_2 = npub_to_x_only_public_key(npub_2)?;
-
-    let script_1 = ScriptBuf::builder()
-        .push_x_only_key(&pk_2)
-        .push_opcode(OP_CHECKSIGVERIFY)
-        .push_x_only_key(&pk_1)
-        .push_opcode(OP_CHECKSIGVERIFY)
-        .into_script();
+    let script_1 = escrow_scripts(
+        npub_1,
+        npub_2,
+        npub_arbitrator,
+        timelock_duration,
+        EscrowScript::A,
+    )?;
 
     // Arbitrator path.
     if npub_arbitrator.is_some() && timelock_duration.is_some() {
-        // Safe to unwrap
-        let pk_arbitrator = npub_to_x_only_public_key(npub_arbitrator.unwrap())?;
-
-        // Timelock.
-        let sequence = Sequence::from_consensus(timelock_duration.unwrap());
-
-        let script_2 = ScriptBuf::builder()
-            .push_x_only_key(&pk_arbitrator)
-            .push_opcode(OP_CHECKSIGVERIFY)
-            .push_x_only_key(&pk_1)
-            .push_opcode(OP_CHECKSIGVERIFY)
-            .push_sequence(sequence)
-            .push_opcode(OP_CSV)
-            .push_opcode(OP_DROP)
-            .into_script();
-
-        let script_3 = ScriptBuf::builder()
-            .push_x_only_key(&pk_arbitrator)
-            .push_opcode(OP_CHECKSIGVERIFY)
-            .push_x_only_key(&pk_2)
-            .push_opcode(OP_CHECKSIGVERIFY)
-            .push_sequence(sequence)
-            .push_opcode(OP_CSV)
-            .push_opcode(OP_DROP)
-            .into_script();
+        let script_2 = escrow_scripts(
+            npub_1,
+            npub_2,
+            npub_arbitrator,
+            timelock_duration,
+            EscrowScript::B,
+        )?;
+        let script_3 = escrow_scripts(
+            npub_1,
+            npub_2,
+            npub_arbitrator,
+            timelock_duration,
+            EscrowScript::C,
+        )?;
 
         TaprootBuilder::new()
             .add_leaf(1, script_1)?
