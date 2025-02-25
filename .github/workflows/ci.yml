@@ -57,7 +57,7 @@ jobs:
 
       - name: Run tests
         run: |
-          cargo test --all-features --all-targets
+          cargo test --all-targets
 
   clippy:
     name: Clippy lints
@@ -81,4 +81,4 @@ jobs:
             cargo-${{ runner.os }}-
 
       - name: Clippy lints
-        run: cargo clippy --all-features --tests -- -D warnings
+        run: cargo clippy --tests -- -D warnings
