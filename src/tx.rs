@@ -102,7 +102,7 @@ mod tests {
         .unwrap();
         println!(
             "Collaborative Transaction: {}",
-            consensus::serialize(&tx).as_hex().to_string()
+            consensus::serialize(&tx).as_hex()
         );
 
         let resolution_address_1p = npub_to_address(&npub_1, network).unwrap();
