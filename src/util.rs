@@ -31,7 +31,6 @@ pub fn parse_network(network: String) -> Network {
         "Mainnet" => Network::Bitcoin,
         "Testnet" => Network::Testnet,
         "Signet" => Network::Signet,
-        "Mutinynet" => Network::Signet,
         _ => panic!("Invalid network"),
     }
 }
