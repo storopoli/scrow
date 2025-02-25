@@ -127,6 +127,117 @@ pub fn escrow_spend_info(
     }
 }
 
+/// Creates an escrow-resolution 2-of-3 multisig P2TR [`TaprootSpendInfo`] from 2 [`NostrPublicKey`]s,
+/// an optional arbitrator [`NostrPublicKey`] and an optional timelock duration in blocks.
+///
+/// # Spending Conditions
+///
+/// - 2-of-2 multisig between the two parties without timelocks.
+/// - 2-of-3 multisig between the one of the parties and the arbitrator with a timelock
+///   (if using an arbitrator).
+///
+/// # Merkle Tree Layout
+///
+/// 1. `A`: 2-of-2 multisig between the two parties without timelocks.
+/// 2. `B`: 2-of-3 multisig between the first of the parties and the arbitrator with a timelock
+///    (if using an arbitrator).
+/// 3. `C`: 2-of-3 multisig between the second of the parties and the arbitrator with a timelock
+///    (if using an arbitrator).
+///
+/// `A` is at depth 1, and `B` and `C` are at depth 2.
+///
+/// ```text
+///     root
+///        \
+///        /\
+///       /  \
+///      A    *
+///          / \
+///         /   \
+///        B     C
+/// ```
+pub fn escrow_scripts(
+    npub_1: &NostrPublicKey,
+    npub_2: &NostrPublicKey,
+    npub_arbitrator: Option<&NostrPublicKey>,
+    timelock_duration: Option<u32>,
+    escrow_script: EscrowScript,
+) -> Result<ScriptBuf, Error> {
+    // Parse npubs to bitcoin public keys.
+    let pk_1 = npub_to_x_only_public_key(npub_1)?;
+    let pk_2 = npub_to_x_only_public_key(npub_2)?;
+
+    let script_1 = ScriptBuf::builder()
+        .push_x_only_key(&pk_2)
+        .push_opcode(OP_CHECKSIGVERIFY)
+        .push_x_only_key(&pk_1)
+        .push_opcode(OP_CHECKSIGVERIFY)
+        .into_script();
+
+    if let Some(arbitrator) = npub_arbitrator {
+        let pk_arbitrator = npub_to_x_only_public_key(arbitrator)?;
+        // Timelock.
+        let sequence = Sequence::from_consensus(timelock_duration.unwrap());
+
+        let script_2 = ScriptBuf::builder()
+            .push_x_only_key(&pk_arbitrator)
+            .push_opcode(OP_CHECKSIGVERIFY)
+            .push_x_only_key(&pk_1)
+            .push_opcode(OP_CHECKSIGVERIFY)
+            .push_sequence(sequence)
+            .push_opcode(OP_CSV)
+            .push_opcode(OP_DROP)
+            .into_script();
+
+        let script_3 = ScriptBuf::builder()
+            .push_x_only_key(&pk_arbitrator)
+            .push_opcode(OP_CHECKSIGVERIFY)
+            .push_x_only_key(&pk_2)
+            .push_opcode(OP_CHECKSIGVERIFY)
+            .push_sequence(sequence)
+            .push_opcode(OP_CSV)
+            .push_opcode(OP_DROP)
+            .into_script();
+
+        match escrow_script {
+            EscrowScript::B => Ok(script_2),
+            EscrowScript::C => Ok(script_3),
+            _ => Err(Error::InvalidEscrowType("Invalid escrow type".to_string())),
+        }
+    } else if escrow_script == EscrowScript::A {
+        Ok(script_1)
+    } else {
+        Err(Error::InvalidEscrowType("Invalid escrow type".to_string()))
+    }
+}
+
+/// The escrow script type.
+///
+/// 1. `A`: 2-of-2 multisig between the two parties without timelocks.
+/// 2. `B`: 2-of-3 multisig between the first of the parties and the arbitrator with a timelock
+///    (if using an arbitrator).
+/// 3. `C`: 2-of-3 multisig between the second of the parties and the arbitrator with a timelock
+///    (if using an arbitrator).
+///
+/// `A` is at depth 1, and `B` and `C` are at depth 2.
+///
+/// ```text
+///     root
+///        \
+///        /\
+///       /  \
+///      A    *
+///          / \
+///         /   \
+///        B     C
+/// ```
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+pub enum EscrowScript {
+    A,
+    B,
+    C,
+}
+
 /// Creates an escrow-resolution 2-of-3 multisig P2TR [`Address`] from 2 [`NostrPublicKey`]s,
 /// an optional arbitrator [`NostrPublicKey`] and an optional timelock duration in blocks.
 ///

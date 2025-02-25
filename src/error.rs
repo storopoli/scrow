@@ -20,4 +20,7 @@ pub enum Error {
 
     #[error("Rounding error")]
     Rounding,
+
+    #[error("Invalid escrow type: {0}")]
+    InvalidEscrowType(String),
 }

@@ -15,7 +15,7 @@ use crate::{error::Error, util::npub_to_address};
 /// # Errors
 ///
 /// Errors if could not create SegWit-v0 resolution addresses from supplied npubs.
-pub fn create_tx(
+pub fn create_escrow_tx(
     npub_1: &NostPublicKey,
     npub_2: &NostPublicKey,
     escrow_amount_1: Amount,
@@ -90,7 +90,7 @@ mod tests {
             .unwrap();
         let fee = Amount::from_sat(1_000);
         let network = Network::Bitcoin;
-        let tx = create_tx(
+        let tx = create_escrow_tx(
             &npub_1,
             &npub_2,
             escrow_amount_1,

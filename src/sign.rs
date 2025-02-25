@@ -1,179 +1,121 @@
 //! Signs Taproot Transactions using Nostr keys.
 
 use bitcoin::{
-    Amount, EcdsaSighashType, PublicKey, Script, ScriptBuf, Transaction, XOnlyPublicKey, ecdsa,
-    sighash::SighashCache,
+    Script, TapLeafHash, TapSighashType, Transaction, TxOut,
+    hashes::Hash,
+    sighash::{Prevouts, SighashCache},
+    taproot::{ControlBlock, LeafVersion},
 };
+use dioxus::logger::tracing::trace;
 use nostr::key::{PublicKey as NostrPublicKey, SecretKey as NostrSecretKey};
-use secp256k1::{Message, SECP256K1, SecretKey};
+use secp256k1::{Keypair, Message, SECP256K1, SecretKey, schnorr};
 
-use crate::util::npub_to_x_only_public_key;
+use crate::{
+    error::Error,
+    scripts::{EscrowScript, escrow_scripts},
+};
 
-/// Signs a [`Transaction`] input `index` using a [`NostrSecretKey`].
+/// Signs an escrow P2TR [`Transaction`], given an input `index` using a [`NostrSecretKey`].
 ///
-/// The input is signed using the provided [`NostrSecretKey`], [`Amount`], and [`ScriptBuf`] locking script.
-pub fn sign_tx(
-    tx: Transaction,
+/// The input is signed using the provided [`NostrSecretKey`], `prevouts`, and [`ScriptBuf`] locking script.
+#[allow(clippy::too_many_arguments)]
+pub fn sign_escrow_tx(
+    tx: &Transaction,
     index: usize,
-    sk: &NostrSecretKey,
-    amount: Amount,
-    unlocking_script: &Script,
-) -> ecdsa::Signature {
+    nsec: &NostrSecretKey,
+    npub_1: &NostrPublicKey,
+    npub_2: &NostrPublicKey,
+    npub_arbitrator: Option<&NostrPublicKey>,
+    timelock_duration: Option<u32>,
+    prevouts: Vec<TxOut>,
+    escrow_script: EscrowScript,
+) -> Result<schnorr::Signature, Error> {
     // Parse nsec to a bitcoin secret key.
-    let sk = SecretKey::from_slice(&sk.to_secret_bytes()).expect("infallible");
-    let sighash_type = EcdsaSighashType::All;
+    let sk = SecretKey::from_slice(&nsec.to_secret_bytes()).expect("infallible");
+    let keypair = Keypair::from_secret_key(SECP256K1, &sk);
+
+    // get which escrow type.
+    let locking_script = escrow_scripts(
+        npub_1,
+        npub_2,
+        npub_arbitrator,
+        timelock_duration,
+        escrow_script,
+    )?;
+    let leaf_hash = TapLeafHash::from_script(locking_script.as_script(), LeafVersion::TapScript);
+
+    let sighash_type = TapSighashType::All;
     let mut sighash_cache = SighashCache::new(tx);
     let sighash = sighash_cache
-        .p2wsh_signature_hash(index, unlocking_script, amount, sighash_type)
+        .taproot_script_spend_signature_hash(
+            index,
+            &Prevouts::All(&prevouts),
+            leaf_hash,
+            sighash_type,
+        )
         .unwrap();
-    let message = Message::from(sighash);
-    let signature = SECP256K1.sign_ecdsa(&message, &sk);
-    ecdsa::Signature {
-        signature,
-        sighash_type,
-    }
+    let message =
+        Message::from_digest_slice(sighash.as_byte_array()).expect("must create a message");
+    let signature = SECP256K1.sign_schnorr(&message, &keypair);
+    trace!(%index, %signature, "Signature ");
+
+    Ok(signature)
 }
 
-/// Combine multiple [`ecdsa::Signature`]s into a single [`Transaction`] input.
-///
-/// Only use this of the 2-of-2 multisig collaborative.
-///
-/// It also sorts the PKs to see which one is the first to go into the witness stack,
-/// given a sorted multisig script.
-pub fn combine_signatures_collaborative(
+/// Types of escrow transactions.
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+pub enum EscrowType<'a> {
+    /// Collaborative escrow transaction.
+    ///
+    /// No timelocks and no arbitrator.
+    Collaborative {
+        participant_1: &'a NostrPublicKey,
+        participant_2: &'a NostrPublicKey,
+    },
+
+    /// Dispute escrow transaction.
+    ///
+    /// Timelocked and with an arbitrator.
+    Dispute {
+        participant_1: &'a NostrPublicKey,
+        participant_2: &'a NostrPublicKey,
+        arbitrator: &'a NostrPublicKey,
+    },
+}
+
+/// Combine one multiple [`schnorr::Signature`]s into a single [`Transaction`] input.
+pub fn combine_signatures(
     tx: Transaction,
     index: usize,
-    signatures: Vec<ecdsa::Signature>,
-    npubs: Vec<NostrPublicKey>,
-    unlocking_script: ScriptBuf,
+    signatures: Vec<&schnorr::Signature>,
+    locking_script: &Script,
+    control_block: ControlBlock,
 ) -> Transaction {
     let mut transaction = tx;
 
-    // Convert npubs to bitcoin public keys.
-    let pks: Vec<XOnlyPublicKey> = npubs
-        .iter()
-        .map(|npub| npub_to_x_only_public_key(npub).expect("infallible"))
-        .collect();
-
-    // Collaborative means 2-of-2 multisig.
-    // And we need a fucking empty thing first.
-    transaction.input[index].witness.push([]);
-
-    // Create pairs of PKs and signatures and sort by PK
-    let mut pairs: Vec<(XOnlyPublicKey, ecdsa::Signature)> =
-        pks.into_iter().zip(signatures).collect();
-
-    // Sort pairs based on public keys
-    pairs.sort_by(|a, b| a.0.cmp(&b.0));
-
-    // Push signatures in order of sorted public keys
-    for (_, signature) in pairs {
-        transaction.input[index].witness.push(signature.serialize());
+    // Push signatures in order
+    for signature in signatures {
+        transaction.input[index].witness.push(signature.as_ref());
     }
 
-    // Finally, push the unlocking script
-    transaction.input[index].witness.push(&unlocking_script);
-    transaction
-}
+    // Push locking script
+    transaction.input[index]
+        .witness
+        .push(locking_script.to_bytes());
 
-/// Combine multiple [`ecdsa::Signature`]s into a single [`Transaction`] input.
-///
-/// Only use this of the 2-of-3 multisig dispute in a collaborative path.
-///
-/// It also sorts the PKs to see which one is the first to go into the witness stack.
-pub fn combine_signatures_dispute_collaborative(
-    tx: Transaction,
-    index: usize,
-    signatures: Vec<ecdsa::Signature>,
-    npubs: Vec<NostrPublicKey>,
-    unlocking_script: ScriptBuf,
-) -> Transaction {
-    let mut transaction = tx;
+    // Push control block
+    transaction.input[index]
+        .witness
+        .push(control_block.serialize());
 
-    // Convert npubs to bitcoin public keys.
-    let pks: Vec<XOnlyPublicKey> = npubs
-        .iter()
-        .map(|npub| npub_to_x_only_public_key(npub).expect("infallible"))
-        .collect();
-
-    // Collaborative means 2-of-2 multisig.
-    // And we need a fucking empty thing first.
-    transaction.input[index].witness.push([]);
-
-    // Create pairs of PKs and signatures and sort by PK
-    let mut pairs: Vec<(XOnlyPublicKey, ecdsa::Signature)> =
-        pks.into_iter().zip(signatures).collect();
-
-    // Sort pairs based on public keys
-    pairs.sort_by(|a, b| a.0.cmp(&b.0));
-
-    // Push signatures in order of sorted public keys
-    for (_, signature) in pairs {
-        transaction.input[index].witness.push(signature.serialize());
-    }
-
-    // Push true to activate OP_IF
-    transaction.input[index].witness.push([0x01]);
-
-    // Finally, push the unlocking script
-    transaction.input[index].witness.push(&unlocking_script);
-    transaction
-}
-
-/// Combine multiple [`ecdsa::Signature`]s into a single [`Transaction`] input.
-///
-/// Only use this of the 2-of-3 multisig dispute in a arbitrator path.
-///
-/// It also sorts the PKs to see which one is the first to go into the witness stack,
-/// given a sorted multisig script.
-pub fn combine_signatures_dispute_arbitrator(
-    tx: Transaction,
-    index: usize,
-    signatures: Vec<ecdsa::Signature>,
-    pks: Vec<PublicKey>,
-    unlocking_script: ScriptBuf,
-) -> Transaction {
-    let mut transaction = tx;
-
-    // 2-of-3 multisig.
-    // We need a fucking empty thing first.
-    transaction.input[index].witness.push([]);
-
-    // Create pairs of PKs and signatures and sort by PK
-    let mut pairs: Vec<(PublicKey, ecdsa::Signature)> = pks.into_iter().zip(signatures).collect();
-
-    // Sort pairs based on public keys
-    pairs.sort_by(|a, b| a.0.cmp(&b.0));
-
-    // Push signatures in order of sorted public keys
-    for (_, signature) in pairs {
-        transaction.input[index].witness.push(signature.serialize());
-    }
-
-    // Push false to activate OP_ELSE
-    transaction.input[index].witness.push([]);
-
-    // Finally, push the unlocking script
-    transaction.input[index].witness.push(&unlocking_script);
     transaction
 }
 
 #[cfg(test)]
 mod tests {
-    use bitcoin::{
-        Amount, BlockHash, Network, OutPoint, Sequence, Transaction, TxIn, TxOut, Witness,
-        absolute::LockTime, consensus, ecdsa, hex::DisplayHex, sighash::SighashCache, transaction,
-    };
-    use corepc_node::Node;
-    use secp256k1::{Message, SecretKey, rand::thread_rng};
+    use bitcoin::Amount;
 
-    use crate::{
-        scripts::{
-            collaborative_address, collaborative_unlocking_script, dispute_address,
-            dispute_unlocking_script,
-        },
-        util::npub_to_address,
-    };
+    use secp256k1::{SecretKey, rand::thread_rng};
 
     use super::*;
 
