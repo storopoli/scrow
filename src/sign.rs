@@ -1,11 +1,11 @@
 //! Signs Taproot Transactions using Nostr keys.
 
 use bitcoin::{
-    Script, TapLeafHash, TapSighashType, Transaction, TxOut, Witness,
+    Script, ScriptBuf, TapLeafHash, TapSighashType, Transaction, TxOut, Witness,
     hashes::Hash,
     key::TapTweak,
     sighash::{Prevouts, SighashCache},
-    taproot::{self, ControlBlock, LeafVersion},
+    taproot::{self, LeafVersion, TaprootSpendInfo},
 };
 use dioxus::logger::tracing::trace;
 use nostr::key::{PublicKey as NostrPublicKey, SecretKey as NostrSecretKey};
@@ -33,7 +33,8 @@ pub fn sign_resolution_tx(
         .taproot_key_spend_signature_hash(0, &Prevouts::All(&[prevout]), sighash_type)
         .expect("must create sighash");
     let message = Message::from_digest(*sighash.as_byte_array());
-    // P2TR key path spend.
+
+    // For key path spend, we need to apply taproot tweak.
     let tweaked = keypair.tap_tweak(SECP256K1, None);
     let signature = SECP256K1.sign_schnorr(&message, &tweaked.to_inner());
     let signature = taproot::Signature {
@@ -49,7 +50,7 @@ pub fn sign_resolution_tx(
 /// Signs an escrow P2TR [`Transaction`], given an input `index` using a [`NostrSecretKey`].
 ///
 /// The input is signed using the provided [`NostrSecretKey`], `prevouts`, and [`ScriptBuf`] locking script.
-#[allow(clippy::too_many_arguments)]
+#[expect(clippy::too_many_arguments)]
 pub fn sign_escrow_tx(
     tx: &Transaction,
     index: usize,
@@ -89,6 +90,8 @@ pub fn sign_escrow_tx(
         )
         .unwrap();
     let message = Message::from_digest(*sighash.as_byte_array());
+
+    // For script path, we use the UNTWEAKED keypair.
     let signature = SECP256K1.sign_schnorr(&message, &keypair);
     let signature = taproot::Signature {
         signature,
@@ -120,28 +123,34 @@ pub enum EscrowType<'a> {
     },
 }
 
-/// Combine one multiple [`schnorr::Signature`]s into a single [`Transaction`] input.
+/// Combine one multiple [`taproot::Signature`]s into a single [`Transaction`] input.
 pub fn combine_signatures(
     mut transaction: Transaction,
     index: usize,
     signatures: Vec<&taproot::Signature>,
     locking_script: &Script,
-    control_block: ControlBlock,
+    taproot_spend_info: TaprootSpendInfo,
 ) -> Transaction {
+    let prevout_leaf = (ScriptBuf::from(locking_script), LeafVersion::TapScript);
+    let control_block = taproot_spend_info
+        .control_block(&prevout_leaf)
+        .expect("Unable to create Control block");
+
+    // Construct the witness stack
+    let mut witness = Witness::new();
+
     // Push signatures in order
     for signature in signatures {
-        transaction.input[index].witness.push(signature.serialize());
+        witness.push(signature.serialize());
     }
 
     // Push locking script
-    transaction.input[index]
-        .witness
-        .push(locking_script.to_bytes());
+    witness.push(prevout_leaf.0.to_bytes());
 
     // Push control block
-    transaction.input[index]
-        .witness
-        .push(control_block.serialize());
+    witness.push(control_block.serialize());
+
+    transaction.input[index].witness = witness;
 
     transaction
 }
@@ -162,6 +171,7 @@ mod tests {
 
     use crate::{
         scripts::{escrow_address, escrow_spend_info},
+        tx::escrow_tx,
         util::npub_to_address,
     };
 
@@ -274,19 +284,17 @@ mod tests {
         btc_client.generate_to_address(1, &funded_address).unwrap();
 
         // Spend from the escrow address.
-        let final_address = btc_client.new_address().unwrap();
-        let unsigned = Transaction {
-            version: transaction::Version(2),
-            input: vec![TxIn {
-                previous_output: OutPoint { txid, vout: 0 },
-                ..Default::default()
-            }],
-            output: vec![TxOut {
-                value: *ESCROW_AMOUNT,
-                script_pubkey: final_address.script_pubkey(),
-            }],
-            lock_time: absolute::LockTime::ZERO,
-        };
+        let unsigned = escrow_tx(
+            &npub_1,
+            &npub_2,
+            None,
+            *MULTISIG_AMOUNT / 2,
+            *MULTISIG_AMOUNT / 2,
+            txid,
+            FEE,
+            network,
+        )
+        .unwrap();
         trace!(transaction=%consensus::serialize(&unsigned).as_hex(), "Unsigned escrow transaction");
 
         let script_pubkey = escrow_address.script_pubkey();
@@ -320,17 +328,16 @@ mod tests {
         .unwrap();
 
         let locking_script = escrow_scripts(&npub_1, &npub_2, None, None, EscrowScript::A).unwrap();
+        trace!(locking_script=%locking_script.to_asm_string(), "Locking script");
         let script_ver = &(locking_script.clone(), LeafVersion::TapScript);
-        let control_block = escrow_spend_info(&npub_1, &npub_2, None, None)
-            .unwrap()
-            .control_block(script_ver)
-            .unwrap();
+        trace!(locking_script=%script_ver.0.to_asm_string(), leaf_version=%script_ver.1, "Script version");
+        let taproot_spend_info = escrow_spend_info(&npub_1, &npub_2, None, None).unwrap();
         let signed = combine_signatures(
             unsigned,
             0,
             vec![&sig_1, &sig_2],
             &locking_script,
-            control_block,
+            taproot_spend_info,
         );
         trace!(transaction=%consensus::serialize(&signed).as_hex(), "Signed escrow");
         let result = btc_client.send_raw_transaction(&signed);

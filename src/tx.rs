@@ -1,7 +1,8 @@
 //! Creates Taproot Transactions using Nostr keys.
 
 use bitcoin::{
-    Address, Amount, Network, OutPoint, Transaction, TxIn, TxOut, Txid, absolute, transaction,
+    Address, Amount, Network, OutPoint, Sequence, Transaction, TxIn, TxOut, Txid, absolute,
+    transaction,
 };
 use nostr::key::PublicKey as NostPublicKey;
 
@@ -39,18 +40,20 @@ pub fn resolution_tx(
 }
 
 /// Creates a 2-of-2/2-of-3 multisig [`Transaction`] for collaboration/dispute between two/three users,
-/// given an escrow amount, and their respective Nostr public keys.
+/// given an escrow amount, and their respective Nostr public keys (`npub`s).
 ///
 /// The user should also specify the funding [`Txid`] that assumes the vout is always 0.
 ///
-/// The resolution address is the address derived from the users' Nostr public key.
+/// The resolution address is the address derived from the users' `npub`s.
 ///
 /// # Errors
 ///
-/// Errors if could not create SegWit-v0 resolution addresses from supplied npubs.
+/// Errors if could not create SegWit-v1 P2TR resolution addresses from supplied `npub`s.
+#[expect(clippy::too_many_arguments)]
 pub fn escrow_tx(
     npub_1: &NostPublicKey,
     npub_2: &NostPublicKey,
+    timelock_duration: Option<u32>,
     escrow_amount_1: Amount,
     escrow_amount_2: Amount,
     funding_txid: Txid,
@@ -79,12 +82,15 @@ pub fn escrow_tx(
         None => return Err(Error::Rounding),
     };
 
+    let timelock_duration = timelock_duration.unwrap_or_default();
+
     // Create the transaction
     let tx = Transaction {
         version: transaction::Version(2),
         lock_time: absolute::LockTime::ZERO,
         input: vec![TxIn {
             previous_output: prevout,
+            sequence: Sequence::from_consensus(timelock_duration),
             ..Default::default()
         }],
         output: vec![
@@ -126,6 +132,7 @@ mod tests {
         let tx = escrow_tx(
             &npub_1,
             &npub_2,
+            None,
             escrow_amount_1,
             escrow_amount_2,
             funding_txid,
