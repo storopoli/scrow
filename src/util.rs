@@ -1,6 +1,6 @@
-use bitcoin::{Address, Network, PrivateKey, XOnlyPublicKey};
+use bitcoin::{Address, Network, XOnlyPublicKey};
 use nostr::key::{PublicKey as NostrPublicKey, SecretKey as NostrSecretKey};
-use secp256k1::{SECP256K1, SecretKey as SecpSecretKey};
+use secp256k1::SECP256K1;
 
 use crate::error::Error;
 
@@ -26,12 +26,12 @@ pub fn days_hours_to_blocks(days: u32, hours: u32) -> u32 {
 }
 
 /// Parses a network string into a [`Network`].
-pub fn parse_network(network: String) -> Network {
+pub fn parse_network(network: String) -> Result<Network, Error> {
     match network.as_str() {
-        "Mainnet" => Network::Bitcoin,
-        "Testnet" => Network::Testnet,
-        "Signet" => Network::Signet,
-        _ => panic!("Invalid network"),
+        "Mainnet" => Ok(Network::Bitcoin),
+        "Testnet" => Ok(Network::Testnet),
+        "Signet" => Ok(Network::Signet),
+        e => Err(Error::InvalidNetwork(e.to_string())),
     }
 }
 
@@ -45,38 +45,26 @@ pub fn parse_nsec(input: &str) -> Result<NostrSecretKey, Error> {
     Ok(NostrSecretKey::parse(input)?)
 }
 
-/// Parses a [`NostrSecretKey`] into a [`PrivateKey`]
-pub fn nsec_to_private_key(nsec: &NostrSecretKey, network: Network) -> Result<PrivateKey, Error> {
-    let secret_bytes = nsec.secret_bytes();
-    let secret_key = SecpSecretKey::from_slice(&secret_bytes)?;
-    Ok(PrivateKey::new(secret_key, network))
-}
-
 /// Parses a [`NostrPublicKey`] to an [`XOnlyPublicKey`].
 pub fn npub_to_x_only_public_key(npub: &NostrPublicKey) -> Result<XOnlyPublicKey, Error> {
-    let public_bytes = npub.to_bytes();
-    let x_only_pk = XOnlyPublicKey::from_slice(&public_bytes)?;
-    Ok(x_only_pk)
+    Ok(npub.xonly()?)
 }
 
 /// Parses a [`NostrPublicKey`] to an [`XOnlyPublicKey`].
-pub fn nsec_to_x_only_public_key(nsec: &NostrSecretKey) -> Result<XOnlyPublicKey, Error> {
+pub fn nsec_to_x_only_public_key(nsec: &NostrSecretKey) -> XOnlyPublicKey {
     let (x_only_pk, _) = nsec.x_only_public_key(SECP256K1);
-    Ok(x_only_pk)
+    x_only_pk
 }
 
 /// Parses a [`NostrPublicKey`] to a P2TR [`Address`] key path spend, given a [`Network`].
 pub fn npub_to_address(npub: &NostrPublicKey, network: Network) -> Result<Address, Error> {
-    let public_bytes = npub.to_bytes();
-    let x_only_pk = XOnlyPublicKey::from_slice(&public_bytes)?;
+    let x_only_pk = npub_to_x_only_public_key(npub)?;
     let address = Address::p2tr(SECP256K1, x_only_pk, None, network);
     Ok(address)
 }
 
 #[cfg(test)]
 mod tests {
-    use bitcoin::hex::DisplayHex;
-
     use super::*;
 
     #[test]
@@ -89,20 +77,11 @@ mod tests {
     }
 
     #[test]
-    fn valid_parse_nsec() {
-        let nsec = "nsec1ezmlpxvhhjnqt9wf60tmshkye7xlwsf37dl0qlmrjuxeq7p3zahs2tukgx";
-        let nsec = parse_nsec(nsec).unwrap();
-        let sk = nsec_to_private_key(&nsec, Network::Bitcoin).unwrap();
-        let expected = "c8b7f09997bca60595c9d3d7b85ec4cf8df74131f37ef07f63970d907831176f";
-        assert_eq!(sk.to_bytes().as_hex().to_string(), expected);
-    }
-
-    #[test]
     fn odd_nsec() {
         // This motherfucker is an "odd" nsec
         let nsec = "nsec103m6x7a369k95rhtdn5w5mxsdpgyqprnysdtvhe6m0ef5xuz9d6s6emzda";
         let nsec = parse_nsec(nsec).unwrap();
-        let pk = nsec_to_x_only_public_key(&nsec).unwrap();
+        let pk = nsec_to_x_only_public_key(&nsec);
         let expected = "2d7b3d8028c474251676708ec41f12100685b200ccbb394e5e782d73b233a8eb";
         assert_eq!(pk.to_string(), expected);
     }

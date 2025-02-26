@@ -23,4 +23,7 @@ pub enum Error {
 
     #[error("Invalid escrow type: {0}")]
     InvalidEscrowType(String),
+
+    #[error("Invalid network: {0}")]
+    InvalidNetwork(String),
 }

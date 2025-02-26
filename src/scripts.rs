@@ -85,7 +85,7 @@ pub fn escrow_spend_info(
     }
     // Arbitrator path.
     else if npub_arbitrator.is_some() && timelock_duration.is_some() {
-        trace!("Arbitrator path");
+        trace!(npub_arbitrator = %npub_arbitrator.unwrap().to_hex(), timelock_duration = %timelock_duration.unwrap(), "Arbitrator path");
 
         let script_1 = escrow_scripts(
             npub_1,
