@@ -86,9 +86,8 @@ pub fn sign_escrow_tx(
             leaf_hash,
             sighash_type,
         )
-        .unwrap();
-    let message =
-        Message::from_digest_slice(sighash.as_byte_array()).expect("should sighash the damn thing");
+        .expect("fail to create signhash");
+    let message = Message::from_digest_slice(sighash.as_byte_array())?;
 
     // For script path, we use the UNTWEAKED keypair.
     let signature = SECP256K1.sign_schnorr_no_aux_rand(&message, &keypair);
@@ -174,7 +173,7 @@ mod tests {
     use crate::{
         scripts::{escrow_address, escrow_spend_info},
         tx::escrow_tx,
-        util::npub_to_address,
+        util::{npub_to_address, npub_to_x_only_public_key},
     };
 
     use super::*;
@@ -269,11 +268,11 @@ mod tests {
         trace!(transaction=%consensus::serialize(&unsigned).as_hex(), "Unsigned funding transaction");
 
         // Sign the first input using Sighashes
-        let prevout = TxOut {
+        let prevouts = TxOut {
             value: *COINBASE_AMOUNT,
             script_pubkey: funded_address.script_pubkey(),
         };
-        let signed = sign_resolution_tx(&unsigned, &nsec_1, prevout);
+        let signed = sign_resolution_tx(&unsigned, &nsec_1, prevouts);
         trace!(transaction=%consensus::serialize(&signed).as_hex(), "Signed funding");
 
         // Test if the transaction is valid.
@@ -329,8 +328,27 @@ mod tests {
         )
         .unwrap();
 
+        // Manually verify each signature
         let locking_script = escrow_scripts(&npub_1, &npub_2, None, None, EscrowScript::A).unwrap();
         trace!(locking_script=%locking_script.to_asm_string(), "Locking script");
+        let tap_leaf_hash = TapLeafHash::from_script(&locking_script, LeafVersion::TapScript);
+        let sighash = SighashCache::new(&unsigned)
+            .taproot_script_spend_signature_hash(
+                0,
+                &Prevouts::All(&[prevouts.clone()]),
+                tap_leaf_hash,
+                TapSighashType::Default,
+            )
+            .expect("Failed to create sighash");
+        let message = Message::from_digest_slice(sighash.as_byte_array()).unwrap();
+
+        // Verify each signature individually
+        let xonly_pk1 = npub_to_x_only_public_key(&npub_1).unwrap();
+        let xonly_pk2 = npub_to_x_only_public_key(&npub_2).unwrap();
+        let verify1 = SECP256K1.verify_schnorr(&sig_1, &message, &xonly_pk1);
+        let verify2 = SECP256K1.verify_schnorr(&sig_2, &message, &xonly_pk2);
+        assert!(verify1.is_ok() && verify2.is_ok());
+
         let script_ver = &(locking_script.clone(), LeafVersion::TapScript);
         trace!(locking_script=%script_ver.0.to_asm_string(), leaf_version=%script_ver.1, "Script version");
         let taproot_spend_info = escrow_spend_info(&npub_1, &npub_2, None, None).unwrap();

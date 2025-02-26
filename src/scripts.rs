@@ -168,6 +168,8 @@ pub fn escrow_scripts(
 
     match escrow_script {
         EscrowScript::A => Ok(ScriptBuf::builder()
+            // The script should be constructed so the first signature checked is pk2 (last in stack)
+            // and the second signature checked is pk1 (second-to-last in stack)
             .push_x_only_key(&pk_2)
             .push_opcode(OP_CHECKSIGVERIFY)
             .push_x_only_key(&pk_1)
