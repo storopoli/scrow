@@ -1,5 +1,5 @@
 [package]
-name = "scrow-backend"
+name = "scrow"
 version = "0.1.0"
 edition = "2024"
 authors = [
@@ -9,8 +9,6 @@ authors = [
     "blessedux <blessedux@protonmail.com>",
 ]
 license = "MIT"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 # NOTE: keep bitcoin and secp256k1 versions in sync.

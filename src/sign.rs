@@ -5,11 +5,11 @@ use bitcoin::{
     hashes::Hash,
     key::TapTweak,
     sighash::{Prevouts, SighashCache},
-    taproot::{self, LeafVersion, TaprootSpendInfo},
+    taproot::{LeafVersion, TaprootSpendInfo},
 };
 use dioxus::logger::tracing::trace;
 use nostr::key::{PublicKey as NostrPublicKey, SecretKey as NostrSecretKey};
-use secp256k1::{Message, SECP256K1};
+use secp256k1::{Message, SECP256K1, schnorr};
 
 use crate::{
     error::Error,
@@ -36,14 +36,15 @@ pub fn sign_resolution_tx(
 
     // For key path spend, we need to apply taproot tweak.
     let tweaked = keypair.tap_tweak(SECP256K1, None);
-    let signature = SECP256K1.sign_schnorr(&message, &tweaked.to_inner());
-    let signature = taproot::Signature {
-        signature,
-        sighash_type,
-    };
-    trace!(signature = %signature.signature, txid = %transaction.compute_txid(), "Signature resolution transaction");
+    let signature = SECP256K1.sign_schnorr_no_aux_rand(&message, &tweaked.to_inner());
+    trace!(signature = %signature, txid = %transaction.compute_txid(), "Signature resolution transaction");
     let mut transaction = transaction.clone();
-    transaction.input[0].witness = Witness::p2tr_key_spend(&signature);
+
+    // Construct the witness stack
+    let mut witness = Witness::new();
+    witness.push(signature.as_ref());
+
+    transaction.input[0].witness = witness;
     transaction
 }
 
@@ -61,7 +62,7 @@ pub fn sign_escrow_tx(
     timelock_duration: Option<u32>,
     prevouts: Vec<TxOut>,
     escrow_script: EscrowScript,
-) -> Result<taproot::Signature, Error> {
+) -> Result<schnorr::Signature, Error> {
     // Parse nsec to a bitcoin secret key.
     let keypair = nsec.keypair(SECP256K1);
 
@@ -74,7 +75,7 @@ pub fn sign_escrow_tx(
         escrow_script,
     )?;
     trace!(%index, locking_script = %locking_script.to_asm_string(), "escrow locking script");
-    let leaf_hash = TapLeafHash::from_script(locking_script.as_script(), LeafVersion::TapScript);
+    let leaf_hash = TapLeafHash::from_script(&locking_script, LeafVersion::TapScript);
 
     let sighash_type = TapSighashType::Default;
     let mut sighash_cache = SighashCache::new(tx);
@@ -90,20 +91,13 @@ pub fn sign_escrow_tx(
         Message::from_digest_slice(sighash.as_byte_array()).expect("should sighash the damn thing");
 
     // For script path, we use the UNTWEAKED keypair.
-    let signature = SECP256K1.sign_schnorr(&message, &keypair);
-    let signature = taproot::Signature {
-        signature,
-        sighash_type,
-    };
-    trace!(%index, %signature.signature, txid = %tx.compute_txid(), "Signature escrow transaction");
+    let signature = SECP256K1.sign_schnorr_no_aux_rand(&message, &keypair);
+    trace!(%index, %signature, txid = %tx.compute_txid(), "Signature escrow transaction");
 
     #[cfg(debug_assertions)]
     {
-        let verification = SECP256K1.verify_schnorr(
-            &signature.signature,
-            &message,
-            &keypair.x_only_public_key().0,
-        );
+        let verification =
+            SECP256K1.verify_schnorr(&signature, &message, &keypair.x_only_public_key().0);
         assert!(verification.is_ok());
     }
 
@@ -135,9 +129,9 @@ pub enum EscrowType<'a> {
 pub fn combine_signatures(
     mut transaction: Transaction,
     index: usize,
-    signatures: Vec<&taproot::Signature>,
+    signatures: Vec<&schnorr::Signature>,
     locking_script: &Script,
-    taproot_spend_info: TaprootSpendInfo,
+    taproot_spend_info: &TaprootSpendInfo,
 ) -> Transaction {
     let prevout_leaf = (ScriptBuf::from(locking_script), LeafVersion::TapScript);
     let control_block = taproot_spend_info
@@ -149,11 +143,11 @@ pub fn combine_signatures(
 
     // Push signatures in order
     for signature in signatures {
-        witness.push(signature.serialize());
+        witness.push(signature.as_ref());
     }
 
     // Push locking script
-    witness.push(prevout_leaf.0.to_bytes());
+    witness.push(prevout_leaf.0.as_bytes());
 
     // Push control block
     witness.push(control_block.serialize());
@@ -345,7 +339,7 @@ mod tests {
             0,
             vec![&sig_1, &sig_2],
             &locking_script,
-            taproot_spend_info,
+            &taproot_spend_info,
         );
         trace!(transaction=%consensus::serialize(&signed).as_hex(), "Signed escrow");
         let result = btc_client.send_raw_transaction(&signed);

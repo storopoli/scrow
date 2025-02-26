@@ -6,7 +6,7 @@ use bitcoin::{
     Address, Network, ScriptBuf, Sequence, XOnlyPublicKey,
     hashes::{Hash, sha256},
     opcodes::all::*,
-    taproot::{TaprootBuilder, TaprootBuilderError, TaprootSpendInfo},
+    taproot::{LeafVersion, TaprootBuilder, TaprootBuilderError, TaprootSpendInfo},
 };
 use dioxus::logger::tracing::trace;
 use nostr::key::PublicKey as NostrPublicKey;
@@ -78,7 +78,7 @@ pub fn escrow_spend_info(
         )?;
 
         TaprootBuilder::new()
-            .add_leaf(0, script_1)?
+            .add_leaf_with_ver(0, script_1, LeafVersion::TapScript)?
             .finalize(SECP256K1, *UNSPENDABLE_PUBLIC_KEY)
             // FIXME(@storopoli): better error here.
             .map_err(|_| Error::TaprootBuilder(TaprootBuilderError::EmptyTree))
@@ -111,9 +111,9 @@ pub fn escrow_spend_info(
         )?;
 
         TaprootBuilder::new()
-            .add_leaf(1, script_1)?
-            .add_leaf(2, script_2)?
-            .add_leaf(2, script_3)?
+            .add_leaf_with_ver(1, script_1, LeafVersion::TapScript)?
+            .add_leaf_with_ver(2, script_2, LeafVersion::TapScript)?
+            .add_leaf_with_ver(2, script_3, LeafVersion::TapScript)?
             .finalize(SECP256K1, *UNSPENDABLE_PUBLIC_KEY)
             // FIXME(@storopoli): better error here.
             .map_err(|_| Error::TaprootBuilder(TaprootBuilderError::EmptyTree))
@@ -171,7 +171,7 @@ pub fn escrow_scripts(
             .push_x_only_key(&pk_2)
             .push_opcode(OP_CHECKSIGVERIFY)
             .push_x_only_key(&pk_1)
-            .push_opcode(OP_CHECKSIGVERIFY)
+            .push_opcode(OP_CHECKSIG)
             .into_script()),
         EscrowScript::B => {
             let npub_arbitrator = npub_arbitrator.unwrap();
@@ -179,13 +179,13 @@ pub fn escrow_scripts(
             // Timelock.
             let sequence = Sequence::from_consensus(timelock_duration.unwrap());
             Ok(ScriptBuf::builder()
-                .push_x_only_key(&pk_arbitrator)
-                .push_opcode(OP_CHECKSIGVERIFY)
-                .push_x_only_key(&pk_1)
-                .push_opcode(OP_CHECKSIGVERIFY)
                 .push_sequence(sequence)
                 .push_opcode(OP_CSV)
                 .push_opcode(OP_DROP)
+                .push_x_only_key(&pk_arbitrator)
+                .push_opcode(OP_CHECKSIGVERIFY)
+                .push_x_only_key(&pk_1)
+                .push_opcode(OP_CHECKSIG)
                 .into_script())
         }
         EscrowScript::C => {
@@ -194,13 +194,13 @@ pub fn escrow_scripts(
             // Timelock.
             let sequence = Sequence::from_consensus(timelock_duration.unwrap());
             Ok(ScriptBuf::builder()
-                .push_x_only_key(&pk_arbitrator)
-                .push_opcode(OP_CHECKSIGVERIFY)
-                .push_x_only_key(&pk_2)
-                .push_opcode(OP_CHECKSIGVERIFY)
                 .push_sequence(sequence)
                 .push_opcode(OP_CSV)
                 .push_opcode(OP_DROP)
+                .push_x_only_key(&pk_arbitrator)
+                .push_opcode(OP_CHECKSIGVERIFY)
+                .push_x_only_key(&pk_2)
+                .push_opcode(OP_CHECKSIG)
                 .into_script())
         }
     }
@@ -307,7 +307,7 @@ mod tests {
         assert_eq!(address.address_type().unwrap(), AddressType::P2tr);
         assert_eq!(
             address.to_string(),
-            "tb1pvy4tvkm7prje88w2r7rgdq36jwjh2yzzjrgdvx6fhkaa53cxkqas50w49k".to_string()
+            "tb1pw9lk5k85v58rn2s8ccdxcp62khvqyj9rzdg6el5f5nagdfesv88sez0tc9".to_string()
         );
     }
 
@@ -330,7 +330,7 @@ mod tests {
         assert_eq!(address.address_type().unwrap(), AddressType::P2tr);
         assert_eq!(
             address.to_string(),
-            "tb1ppaserrmvjv93sc409pmcp8zswjyx99jrjfdsv55pyymekrfqugrqz3ul78".to_string()
+            "tb1paxkfvp7rra9707t8l2mk5mwuljrq6dgs0w6yey56q3d5gynp7u7s838an7".to_string()
         );
     }
 }
