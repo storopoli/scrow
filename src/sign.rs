@@ -288,6 +288,7 @@ mod tests {
         btc_client.generate_to_address(1, &funded_address).unwrap();
 
         // Spend from the escrow address.
+        let escrow_type = EscrowScript::A;
         let unsigned = escrow_tx(
             &npub_1,
             &npub_2,
@@ -303,7 +304,7 @@ mod tests {
 
         let script_pubkey = escrow_address.script_pubkey();
         let prevouts = TxOut {
-            value: *MULTISIG_AMOUNT, // Changed from ESCROW_AMOUNT to MULTISIG_AMOUNT
+            value: *MULTISIG_AMOUNT,
             script_pubkey,
         };
         let sig_1 = sign_escrow_tx(
@@ -315,7 +316,7 @@ mod tests {
             None,
             None,
             vec![prevouts.clone()],
-            EscrowScript::A,
+            escrow_type,
         )
         .unwrap();
         let sig_2 = sign_escrow_tx(
@@ -327,7 +328,7 @@ mod tests {
             None,
             None,
             vec![prevouts.clone()],
-            EscrowScript::A,
+            escrow_type,
         )
         .unwrap();
 
@@ -363,6 +364,396 @@ mod tests {
             &taproot_spend_info,
         );
         trace!(transaction=%consensus::serialize(&signed).as_hex(), "Signed escrow");
+        let result = btc_client.send_raw_transaction(&signed);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn sign_dispute_tx_flow_1() {
+        tracing_subscriber::registry()
+            .with(fmt::layer())
+            .with(EnvFilter::from_default_env())
+            .init();
+
+        // Setup regtest node and clients.
+        let bitcoind = Node::from_downloaded().unwrap();
+        let btc_client = &bitcoind.client;
+
+        // Get network.
+        let network = btc_client
+            .get_blockchain_info()
+            .expect("must get blockchain info")
+            .chain;
+        let network = network.parse::<Network>().expect("network must be valid");
+
+        // Generate nsec and npub.
+        let (nsec_1, npub_1) = generate_nostr_keys();
+        let (nsec_2, npub_2) = generate_nostr_keys();
+        let (nsec_arb, npub_arb) = generate_nostr_keys();
+        // Get the xonly pks.
+        let xonly_1 = nsec_1.x_only_public_key(SECP256K1).0;
+        let xonly_2 = nsec_2.x_only_public_key(SECP256K1).0;
+        let xonly_arb = nsec_arb.x_only_public_key(SECP256K1).0;
+        trace!(%xonly_1, %xonly_2, %xonly_arb, "xonly pks");
+
+        // Fund a SegWit-v1 P2TR address from the npub.
+        // Mine until maturity (101 blocks in Regtest).
+        let funded_address = npub_to_address(&npub_1, network).unwrap();
+        trace!(%funded_address, "Funded address");
+        let coinbase_block = btc_client
+            .generate_to_address(COINBASE_MATURITY, &funded_address)
+            .expect("must be able to generate blocks")
+            .0
+            .first()
+            .expect("must be able to get the blocks")
+            .parse::<BlockHash>()
+            .expect("must parse");
+        let coinbase_txid = btc_client
+            .get_block(coinbase_block)
+            .expect("must be able to get coinbase block")
+            .coinbase()
+            .expect("must be able to get the coinbase transaction")
+            .compute_txid();
+
+        // Send to the 2-of-2 multisig address.
+        let timelock_duration = 6;
+        let escrow_address = escrow_address(
+            &npub_1,
+            &npub_2,
+            Some(&npub_arb),
+            Some(timelock_duration),
+            network,
+        )
+        .unwrap();
+        trace!(%escrow_address, "Escrow address");
+
+        // Create the transaction.
+        let funding_input = OutPoint {
+            txid: coinbase_txid,
+            vout: 0,
+        };
+        let inputs = vec![TxIn {
+            previous_output: funding_input,
+            ..Default::default()
+        }];
+        let outputs = vec![TxOut {
+            value: *MULTISIG_AMOUNT,
+            script_pubkey: escrow_address.script_pubkey(),
+        }];
+        let unsigned = Transaction {
+            version: transaction::Version(2),
+            input: inputs,
+            output: outputs,
+            lock_time: absolute::LockTime::ZERO,
+        };
+        trace!(transaction=%consensus::serialize(&unsigned).as_hex(), "Unsigned funding transaction");
+
+        // Sign the first input using Sighashes
+        let prevouts = TxOut {
+            value: *COINBASE_AMOUNT,
+            script_pubkey: funded_address.script_pubkey(),
+        };
+        let signed = sign_resolution_tx(&unsigned, &nsec_1, prevouts);
+        trace!(transaction=%consensus::serialize(&signed).as_hex(), "Signed funding");
+
+        // Test if the transaction is valid.
+        let result = btc_client.send_raw_transaction(&signed);
+        assert!(result.is_ok());
+        let txid = result.unwrap().txid().unwrap();
+        assert_eq!(txid, signed.compute_txid());
+        debug!(%txid, "Sent to the escrow address");
+        // Mine 1 block to mine the transaction
+        btc_client.generate_to_address(1, &funded_address).unwrap();
+
+        // Spend from the escrow address.
+        let escrow_type = EscrowScript::B;
+        let unsigned = escrow_tx(
+            &npub_1,
+            &npub_2,
+            Some(timelock_duration),
+            *MULTISIG_AMOUNT / 2,
+            *MULTISIG_AMOUNT / 2,
+            txid,
+            FEE,
+            network,
+        )
+        .unwrap();
+        trace!(transaction=%consensus::serialize(&unsigned).as_hex(), "Unsigned escrow transaction");
+
+        let script_pubkey = escrow_address.script_pubkey();
+        let prevouts = TxOut {
+            value: *MULTISIG_AMOUNT,
+            script_pubkey,
+        };
+        let sig_1 = sign_escrow_tx(
+            &unsigned,
+            0,
+            &nsec_1, // First participant
+            &npub_1,
+            &npub_2,
+            Some(&npub_arb),
+            Some(timelock_duration),
+            vec![prevouts.clone()],
+            escrow_type,
+        )
+        .unwrap();
+        let sig_2 = sign_escrow_tx(
+            &unsigned,
+            0,
+            &nsec_arb, // Arbitrator
+            &npub_1,
+            &npub_2,
+            Some(&npub_arb),
+            Some(timelock_duration),
+            vec![prevouts.clone()],
+            escrow_type,
+        )
+        .unwrap();
+
+        // Manually verify each signature
+        let locking_script = escrow_scripts(
+            &npub_1,
+            &npub_2,
+            Some(&npub_arb),
+            Some(timelock_duration),
+            escrow_type,
+        )
+        .unwrap();
+        trace!(locking_script=%locking_script.to_asm_string(), "Locking script");
+        let tap_leaf_hash = TapLeafHash::from_script(&locking_script, LeafVersion::TapScript);
+        let sighash = SighashCache::new(&unsigned)
+            .taproot_script_spend_signature_hash(
+                0,
+                &Prevouts::All(&[prevouts.clone()]),
+                tap_leaf_hash,
+                TapSighashType::Default,
+            )
+            .expect("Failed to create sighash");
+        let message = Message::from_digest_slice(sighash.as_byte_array()).unwrap();
+
+        // Verify each signature individually
+        let xonly_pk1 = npub_to_x_only_public_key(&npub_1).unwrap();
+        let xonly_pkarb = npub_to_x_only_public_key(&npub_arb).unwrap();
+        let verify1 = SECP256K1.verify_schnorr(&sig_1, &message, &xonly_pk1);
+        let verify2 = SECP256K1.verify_schnorr(&sig_2, &message, &xonly_pkarb);
+        assert!(verify1.is_ok() && verify2.is_ok());
+
+        let script_ver = &(locking_script.clone(), LeafVersion::TapScript);
+        trace!(locking_script=%script_ver.0.to_asm_string(), leaf_version=%script_ver.1, "Script version");
+        let taproot_spend_info =
+            escrow_spend_info(&npub_1, &npub_2, Some(&npub_arb), Some(timelock_duration)).unwrap();
+        let signed = combine_signatures(
+            unsigned,
+            0,
+            vec![&sig_1, &sig_2],
+            &locking_script,
+            &taproot_spend_info,
+        );
+        trace!(transaction=%consensus::serialize(&signed).as_hex(), "Signed escrow");
+
+        // First try to broadcast the transaction without the timelock has reached
+        let result = btc_client.send_raw_transaction(&signed);
+        assert!(result.is_err());
+
+        // Now let's move timelock_duration - 1 blocks and should pass
+        btc_client
+            .generate_to_address(timelock_duration as usize - 1, &funded_address)
+            .unwrap();
+        let result = btc_client.send_raw_transaction(&signed);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn sign_dispute_tx_flow_2() {
+        tracing_subscriber::registry()
+            .with(fmt::layer())
+            .with(EnvFilter::from_default_env())
+            .init();
+
+        // Setup regtest node and clients.
+        let bitcoind = Node::from_downloaded().unwrap();
+        let btc_client = &bitcoind.client;
+
+        // Get network.
+        let network = btc_client
+            .get_blockchain_info()
+            .expect("must get blockchain info")
+            .chain;
+        let network = network.parse::<Network>().expect("network must be valid");
+
+        // Generate nsec and npub.
+        let (nsec_1, npub_1) = generate_nostr_keys();
+        let (nsec_2, npub_2) = generate_nostr_keys();
+        let (nsec_arb, npub_arb) = generate_nostr_keys();
+        // Get the xonly pks.
+        let xonly_1 = nsec_1.x_only_public_key(SECP256K1).0;
+        let xonly_2 = nsec_2.x_only_public_key(SECP256K1).0;
+        let xonly_arb = nsec_arb.x_only_public_key(SECP256K1).0;
+        trace!(%xonly_1, %xonly_2, %xonly_arb, "xonly pks");
+
+        // Fund a SegWit-v1 P2TR address from the npub.
+        // Mine until maturity (101 blocks in Regtest).
+        let funded_address = npub_to_address(&npub_1, network).unwrap();
+        trace!(%funded_address, "Funded address");
+        let coinbase_block = btc_client
+            .generate_to_address(COINBASE_MATURITY, &funded_address)
+            .expect("must be able to generate blocks")
+            .0
+            .first()
+            .expect("must be able to get the blocks")
+            .parse::<BlockHash>()
+            .expect("must parse");
+        let coinbase_txid = btc_client
+            .get_block(coinbase_block)
+            .expect("must be able to get coinbase block")
+            .coinbase()
+            .expect("must be able to get the coinbase transaction")
+            .compute_txid();
+
+        // Send to the 2-of-2 multisig address.
+        let timelock_duration = 6;
+        let escrow_address = escrow_address(
+            &npub_1,
+            &npub_2,
+            Some(&npub_arb),
+            Some(timelock_duration),
+            network,
+        )
+        .unwrap();
+        trace!(%escrow_address, "Escrow address");
+
+        // Create the transaction.
+        let funding_input = OutPoint {
+            txid: coinbase_txid,
+            vout: 0,
+        };
+        let inputs = vec![TxIn {
+            previous_output: funding_input,
+            ..Default::default()
+        }];
+        let outputs = vec![TxOut {
+            value: *MULTISIG_AMOUNT,
+            script_pubkey: escrow_address.script_pubkey(),
+        }];
+        let unsigned = Transaction {
+            version: transaction::Version(2),
+            input: inputs,
+            output: outputs,
+            lock_time: absolute::LockTime::ZERO,
+        };
+        trace!(transaction=%consensus::serialize(&unsigned).as_hex(), "Unsigned funding transaction");
+
+        // Sign the first input using Sighashes
+        let prevouts = TxOut {
+            value: *COINBASE_AMOUNT,
+            script_pubkey: funded_address.script_pubkey(),
+        };
+        let signed = sign_resolution_tx(&unsigned, &nsec_1, prevouts);
+        trace!(transaction=%consensus::serialize(&signed).as_hex(), "Signed funding");
+
+        // Test if the transaction is valid.
+        let result = btc_client.send_raw_transaction(&signed);
+        assert!(result.is_ok());
+        let txid = result.unwrap().txid().unwrap();
+        assert_eq!(txid, signed.compute_txid());
+        debug!(%txid, "Sent to the escrow address");
+        // Mine 1 block to mine the transaction
+        btc_client.generate_to_address(1, &funded_address).unwrap();
+
+        // Spend from the escrow address.
+        let escrow_type = EscrowScript::C;
+        let unsigned = escrow_tx(
+            &npub_1,
+            &npub_2,
+            Some(timelock_duration),
+            *MULTISIG_AMOUNT / 2,
+            *MULTISIG_AMOUNT / 2,
+            txid,
+            FEE,
+            network,
+        )
+        .unwrap();
+        trace!(transaction=%consensus::serialize(&unsigned).as_hex(), "Unsigned escrow transaction");
+
+        let script_pubkey = escrow_address.script_pubkey();
+        let prevouts = TxOut {
+            value: *MULTISIG_AMOUNT,
+            script_pubkey,
+        };
+        let sig_1 = sign_escrow_tx(
+            &unsigned,
+            0,
+            &nsec_2, // Second participant
+            &npub_1,
+            &npub_2,
+            Some(&npub_arb),
+            Some(timelock_duration),
+            vec![prevouts.clone()],
+            escrow_type,
+        )
+        .unwrap();
+        let sig_2 = sign_escrow_tx(
+            &unsigned,
+            0,
+            &nsec_arb, // Arbitrator
+            &npub_1,
+            &npub_2,
+            Some(&npub_arb),
+            Some(timelock_duration),
+            vec![prevouts.clone()],
+            escrow_type,
+        )
+        .unwrap();
+
+        // Manually verify each signature
+        let locking_script = escrow_scripts(
+            &npub_1,
+            &npub_2,
+            Some(&npub_arb),
+            Some(timelock_duration),
+            escrow_type,
+        )
+        .unwrap();
+        trace!(locking_script=%locking_script.to_asm_string(), "Locking script");
+        let tap_leaf_hash = TapLeafHash::from_script(&locking_script, LeafVersion::TapScript);
+        let sighash = SighashCache::new(&unsigned)
+            .taproot_script_spend_signature_hash(
+                0,
+                &Prevouts::All(&[prevouts.clone()]),
+                tap_leaf_hash,
+                TapSighashType::Default,
+            )
+            .expect("Failed to create sighash");
+        let message = Message::from_digest_slice(sighash.as_byte_array()).unwrap();
+
+        // Verify each signature individually
+        let xonly_pk1 = npub_to_x_only_public_key(&npub_2).unwrap();
+        let xonly_pkarb = npub_to_x_only_public_key(&npub_arb).unwrap();
+        let verify1 = SECP256K1.verify_schnorr(&sig_1, &message, &xonly_pk1);
+        let verify2 = SECP256K1.verify_schnorr(&sig_2, &message, &xonly_pkarb);
+        assert!(verify1.is_ok() && verify2.is_ok());
+
+        let script_ver = &(locking_script.clone(), LeafVersion::TapScript);
+        trace!(locking_script=%script_ver.0.to_asm_string(), leaf_version=%script_ver.1, "Script version");
+        let taproot_spend_info =
+            escrow_spend_info(&npub_1, &npub_2, Some(&npub_arb), Some(timelock_duration)).unwrap();
+        let signed = combine_signatures(
+            unsigned,
+            0,
+            vec![&sig_1, &sig_2],
+            &locking_script,
+            &taproot_spend_info,
+        );
+        trace!(transaction=%consensus::serialize(&signed).as_hex(), "Signed escrow");
+
+        // First try to broadcast the transaction without the timelock has reached
+        let result = btc_client.send_raw_transaction(&signed);
+        assert!(result.is_err());
+
+        // Now let's move timelock_duration - 1 blocks and should pass
+        btc_client
+            .generate_to_address(timelock_duration as usize - 1, &funded_address)
+            .unwrap();
         let result = btc_client.send_raw_transaction(&signed);
         assert!(result.is_ok());
     }
