@@ -20,9 +20,9 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             target
-          key: cargo-${{ runner.os }}-formatting-v2-${{ hashFiles('**/Cargo.toml', '**/Cargo.lock') }}
+          key: cargo-${{ runner.os }}-formatting-v4-${{ hashFiles('**/Cargo.toml', '**/Cargo.lock') }}
           restore-keys: |
-            cargo-${{ runner.os }}-formatting-v2-
+            cargo-${{ runner.os }}-formatting-v4-
             cargo-${{ runner.os }}-
 
       - name: Install Rust toolchain
@@ -47,9 +47,9 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             target
-          key: cargo-${{ runner.os }}-tests-v2-${{ hashFiles('**/Cargo.toml', '**/Cargo.lock') }}
+          key: cargo-${{ runner.os }}-tests-v4-${{ hashFiles('**/Cargo.toml', '**/Cargo.lock') }}
           restore-keys: |
-            cargo-${{ runner.os }}-tests-v2-
+            cargo-${{ runner.os }}-tests-v4-
             cargo-${{ runner.os }}-
 
       - name: Install latest nextest release
@@ -70,6 +70,7 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
+
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
@@ -80,9 +81,9 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             target
-          key: cargo-${{ runner.os }}-rust-clippy-v2-${{ hashFiles('**/Cargo.toml', '**/Cargo.lock') }}
+          key: cargo-${{ runner.os }}-rust-clippy-v4-${{ hashFiles('**/Cargo.toml', '**/Cargo.lock') }}
           restore-keys: |
-            cargo-${{ runner.os }}-rust-clippy-v2-
+            cargo-${{ runner.os }}-rust-clippy-v4-
             cargo-${{ runner.os }}-
 
       - name: Clippy lints
