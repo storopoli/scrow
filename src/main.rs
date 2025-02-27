@@ -1,10 +1,12 @@
 //! Satoshi Escrow Dixous App
 
 use bitcoin::{Address, Network};
+use components::Button;
 use dioxus::prelude::*;
 use esplora::{create_client, get_funding_txid};
 use scripts::UNSPENDABLE_PUBLIC_KEY;
 
+pub mod components;
 pub mod error;
 pub mod esplora;
 pub mod scripts;
@@ -35,7 +37,14 @@ fn main() {
 fn App() -> Element {
     rsx! {
         document::Link { rel: "icon", href: FAVICON }
-        document::Link { rel: "stylesheet", href: MAIN_CSS } document::Link { rel: "stylesheet", href: TAILWIND_CSS }
+        document::Link { rel: "stylesheet", href: MAIN_CSS }
+        document::Link { rel: "stylesheet", href: TAILWIND_CSS }
+        document::Link {
+            rel: "stylesheet",
+            href: "https://cdn.jsdelivr.net/npm/daisyui@4.12.24/dist/full.min.css",
+            integrity: "sha384-2V5uSMIWpBK7suX6yRDZH6ll7ktPJF2O58y0HSz+HiFCBCsmqZpxX1AZB4qAHuYI",
+            crossorigin: "anonymous"
+        }
         Router::<Route> {}
     }
 }
@@ -72,6 +81,7 @@ pub fn Hero() -> Element {
                 "\n"
                 "txid: {txid.cloned().unwrap_or_default()}"
             }
+            Button { text: "Click Me!" }
         }
     }
 }
