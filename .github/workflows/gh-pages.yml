@@ -1,0 +1,46 @@
+name: GitHub Pages
+
+env:
+  CARGO_TERM_COLOR: always
+  DIOXUS_VERSION: 0.6.3
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      # For the push to `gh-pages` branch.
+      contents: write
+      pages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: cargo-${{ runner.os }}-rust-dioxus-v2-${{ hashFiles('**/Cargo.toml', '**/Cargo.lock') }}
+          restore-keys: |
+            cargo-${{ runner.os }}-rust-dioxus-v2-
+              cargo-${{ runner.os }}-
+
+      - name: Install Dioxus
+        run: cargo install dioxus-cli@${{ env.DIOXUS_VERSION }}
+
+      - name: Build app
+        run: dx bundle --release
+
+      - name: Deploy Project 🚀
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          branch: gh-pages
+          folder: dist/public
