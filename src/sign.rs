@@ -86,7 +86,7 @@ pub fn sign_escrow_tx(
             leaf_hash,
             sighash_type,
         )
-        .expect("fail to create signhash");
+        .expect("fail to create sighash");
     let message = Message::from_digest_slice(sighash.as_byte_array())?;
 
     // For script path, we use the UNTWEAKED keypair.
