@@ -1,6 +1,8 @@
 //! Satoshi Escrow Dixous App
 
+use bitcoin::{Address, Network};
 use dioxus::prelude::*;
+use esplora::{create_client, get_funding_txid};
 use scripts::UNSPENDABLE_PUBLIC_KEY;
 
 pub mod error;
@@ -41,6 +43,19 @@ fn App() -> Element {
 #[component]
 pub fn Hero() -> Element {
     let unspendable_pk = *UNSPENDABLE_PUBLIC_KEY;
+    let txid = use_resource(move || async move {
+        let client =
+            create_client("https://mempool.space/testnet4/api/").expect("could not create client");
+        let address = "tb1q8tpam3snku72xz9sx3rxerrcqmqd2ljdq95k8j"
+            .parse::<Address<_>>()
+            .unwrap()
+            .require_network(Network::Testnet)
+            .unwrap();
+        get_funding_txid(&client, &address)
+            .await
+            .unwrap()
+            .to_string()
+    });
     rsx! {
         div {
             id: "hero",
@@ -53,6 +68,9 @@ pub fn Hero() -> Element {
                 a { href: "https://marketplace.visualstudio.com/items?itemName=DioxusLabs.dioxus", "💫 VSCode Extension" }
                 a { href: "https://discord.gg/XgGxMSkvUM", "👋 Community Discord" }
                 "unspendable_pk: {unspendable_pk}"
+                "\n"
+                "\n"
+                "txid: {txid.cloned().unwrap_or_default()}"
             }
         }
     }
