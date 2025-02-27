@@ -4,7 +4,7 @@ use dioxus::prelude::*;
 use scripts::UNSPENDABLE_PUBLIC_KEY;
 
 pub mod error;
-// pub mod network;
+pub mod esplora;
 pub mod scripts;
 pub mod sign;
 pub mod tx;

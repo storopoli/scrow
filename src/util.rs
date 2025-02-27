@@ -1,3 +1,5 @@
+//! Utility functions for Nostr keys and Bitcoin network.
+
 use bitcoin::{Address, Network, XOnlyPublicKey};
 use nostr::key::{PublicKey as NostrPublicKey, SecretKey as NostrSecretKey};
 use secp256k1::SECP256K1;

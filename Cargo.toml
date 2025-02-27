@@ -22,12 +22,17 @@ secp256k1 = { version = "0.29.0", features = ["global-context"] }
 nostr = "0.39.0"
 serde = { version = "1.0.218", features = ["derive"] }
 thiserror = "2.0.11"
+esplora-client = { version = "0.11.0", default-features = false, features = [
+    "tokio",
+    "async-https-rustls",
+] }
 dioxus = { version = "0.6.3", features = ["router"] }
 
 [dev-dependencies]
 corepc-node = { version = "0.5.0", features = ["28_0", "download"] }
 tracing = { version = "0.1.41", default-features = false }
 tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
+tokio = { version = "1.43.0", features = ["rt", "macros"] }
 
 [features]
 default = ["web"]

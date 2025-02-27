@@ -26,4 +26,10 @@ pub enum Error {
 
     #[error("Invalid network: {0}")]
     InvalidNetwork(String),
+
+    #[error("Esplora error: {0}")]
+    Esplora(#[from] esplora_client::Error),
+
+    #[error("Expected exactly one funding transaction")]
+    ExpectedOneFundingTransaction,
 }
