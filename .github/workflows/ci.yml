@@ -52,12 +52,17 @@ jobs:
             cargo-${{ runner.os }}-tests-v2-
             cargo-${{ runner.os }}-
 
+      - name: Install latest nextest release
+        uses: taiki-e/install-action@v2
+        with:
+          tool: nextest
+
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
       - name: Run tests
         run: |
-          cargo test --all-targets
+          cargo nextest r --all-targets
 
   clippy:
     name: Clippy lints
@@ -81,4 +86,4 @@ jobs:
             cargo-${{ runner.os }}-
 
       - name: Clippy lints
-        run: cargo clippy --tests -- -D warnings
+        run: cargo clippy --tests --all-targets -- -D warnings
