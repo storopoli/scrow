@@ -8,6 +8,7 @@ use bitcoin::{
     opcodes::all::*,
     taproot::{LeafVersion, TaprootBuilder, TaprootBuilderError, TaprootSpendInfo},
 };
+#[cfg(debug_assertions)]
 use dioxus::logger::tracing::trace;
 use nostr::key::PublicKey as NostrPublicKey;
 use secp256k1::SECP256K1;
@@ -67,6 +68,7 @@ pub fn escrow_spend_info(
 ) -> Result<TaprootSpendInfo, Error> {
     // Collaborative Path
     if npub_arbitrator.is_none() && timelock_duration.is_none() {
+        #[cfg(debug_assertions)]
         trace!("Collaborative path");
 
         let script_1 = escrow_scripts(
@@ -85,6 +87,7 @@ pub fn escrow_spend_info(
     }
     // Arbitrator path.
     else if npub_arbitrator.is_some() && timelock_duration.is_some() {
+        #[cfg(debug_assertions)]
         trace!(npub_arbitrator = %npub_arbitrator.unwrap().to_hex(), timelock_duration = %timelock_duration.unwrap(), "Arbitrator path");
 
         let script_1 = escrow_scripts(

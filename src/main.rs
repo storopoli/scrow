@@ -14,6 +14,12 @@ pub mod sign;
 pub mod tx;
 pub mod util;
 
+#[cfg(debug_assertions)]
+use dioxus::logger::{
+    self,
+    tracing::{Level, info},
+};
+
 #[derive(Debug, Clone, Routable, PartialEq)]
 #[rustfmt::skip]
 enum Route {
@@ -29,6 +35,14 @@ const MAIN_CSS: Asset = asset!("/assets/main.css");
 const TAILWIND_CSS: Asset = asset!("/assets/tailwind.css");
 
 fn main() {
+    #[cfg(debug_assertions)]
+    {
+        // init logger for Dioxus
+        logger::init(Level::INFO).expect("failed to init logger");
+    }
+    // launch the web app
+    #[cfg(debug_assertions)]
+    info!("Launching Satoshi Escrow app");
     dioxus::launch(App);
 }
 
