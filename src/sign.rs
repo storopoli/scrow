@@ -127,7 +127,7 @@ pub enum EscrowType<'a> {
     },
 }
 
-/// Combine one multiple [`taproot::Signature`]s into a single [`Transaction`] input.
+/// Combine one multiple [`schnorr::Signature`]s into a single [`Transaction`] input.
 pub fn combine_signatures(
     mut transaction: Transaction,
     index: usize,
