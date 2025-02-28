@@ -1,9 +1,6 @@
 //! Satoshi Escrow Dixous App
 
-use bitcoin::{Address, Network};
 use dioxus::prelude::*;
-use esplora::{create_client, get_funding_txid};
-use scripts::UNSPENDABLE_PUBLIC_KEY;
 
 #[cfg(debug_assertions)]
 use dioxus::logger::{
@@ -19,14 +16,14 @@ pub mod sign;
 pub mod tx;
 pub mod util;
 
-use components::Navbar;
+use components::{Home, Navbar};
 
 #[derive(Debug, Clone, Routable, PartialEq)]
 #[rustfmt::skip]
 enum Route {
     #[layout(Navbar)]
-    #[route("/")]
-    Home {},
+        #[route("/")]
+        Home {},
 }
 
 const FAVICON: Asset = asset!("/assets/favicon.ico");
@@ -49,33 +46,12 @@ fn App() -> Element {
     rsx! {
         document::Link { rel: "icon", href: FAVICON }
         document::Link { rel: "stylesheet", href: TAILWIND_CSS }
-        Router::<Route> {}
-    }
-}
-
-/// Home page
-#[component]
-fn Home() -> Element {
-    let unspendable_pk = *UNSPENDABLE_PUBLIC_KEY;
-    let txid = use_resource(move || async move {
-        let client =
-            create_client("https://mempool.space/testnet4/api/").expect("could not create client");
-        let address = "tb1q8tpam3snku72xz9sx3rxerrcqmqd2ljdq95k8j"
-            .parse::<Address<_>>()
-            .unwrap()
-            .require_network(Network::Testnet)
-            .unwrap();
-        get_funding_txid(&client, &address)
-            .await
-            .unwrap()
-            .to_string()
-    });
-    rsx! {
-        div {
-            "unspendable_pk: {unspendable_pk}"
-            "\n"
-            "\n"
-            "txid: {txid.cloned().unwrap_or_default()}"
+        document::Link {
+            rel: "stylesheet",
+            href: "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css",
+            integrity: "sha384-iw3OoTErCYJJB9mCa8LNS2hbsQ7M3C0EpIsO/H5+EGAkPGc6rk+V8i04oW/K5xq0",
+            crossorigin: "anonymous",
         }
+        Router::<Route> {}
     }
 }
