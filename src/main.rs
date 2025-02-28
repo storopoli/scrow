@@ -19,7 +19,6 @@ pub mod sign;
 pub mod tx;
 pub mod util;
 
-use components::Button;
 use components::Navbar;
 
 #[derive(Debug, Clone, Routable, PartialEq)]
@@ -77,7 +76,6 @@ fn Home() -> Element {
             "\n"
             "\n"
             "txid: {txid.cloned().unwrap_or_default()}"
-            Button { text: "Click Me!" }
         }
     }
 }

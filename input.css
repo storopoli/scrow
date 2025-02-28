@@ -4,9 +4,5 @@
 
 @config './tailwind.config.js';
 
-@plugin "daisyui" {
-    themes: fantasy;
-}
-
 @layer base {
 }
