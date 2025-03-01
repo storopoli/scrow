@@ -13,7 +13,7 @@ pub(crate) fn Home() -> Element {
                 div { class: "prose max-w-none",
                     h1 { class: "text-4xl font-bold text-gray-900 mb-4", "Satoshi Escrow" }
                     p { class: "text-xl text-gray-600 mb-8",
-                        "Satoshi Escrow: A Bitcoin non-custodial peer-to-peer dispute resolution using only Nostr keys."
+                        "A Bitcoin non-custodial peer-to-peer dispute resolution using only Nostr keys."
                     }
                     div { class: "mt-5",
                         a {
