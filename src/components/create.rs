@@ -3,7 +3,7 @@
 use dioxus::logger::tracing::info;
 use dioxus::prelude::*;
 
-use super::CopyButton;
+use super::{CopyButton, Footer};
 use crate::Route;
 
 /// Create escrow transaction component.
@@ -244,5 +244,6 @@ pub(crate) fn Create() -> Element {
                 }
             }
         }
+        Footer {}
     }
 }
