@@ -1,0 +1,31 @@
+<!doctype html>
+<html data-theme="fantasy">
+    <head>
+        <title>Satoshi Escrow</title>
+        <script>
+            if ("serviceWorker" in navigator) {
+                navigator.serviceWorker.register("/./assets/sw.js");
+            }
+        </script>
+        <link rel="manifest" href="/assets/manifest.json" />
+        <meta content="text/html;charset=utf-8" http-equiv="Content-Type" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta charset="UTF-8" />
+    <link rel="preload" as="script" href="/./assets/scrow-3a601b1c67cc207e.js" crossorigin><link rel="preload" as="fetch" type="application/wasm" href="/./assets/scrow_bg-b0f1f4514cbe9611.wasm" crossorigin></head>
+    <body>
+        <div id="main"></div>
+    <script>
+            // We can't use a module script here because we need to start the script immediately when streaming
+            import("/./assets/scrow-3a601b1c67cc207e.js").then(
+                ({ default: init }) => {
+                init("/./assets/scrow_bg-b0f1f4514cbe9611.wasm").then((wasm) => {
+                    if (wasm.__wbindgen_start == undefined) {
+                    wasm.main();
+                    }
+                });
+                }
+            );
+            </script>
+            
+            </body>
+</html>
