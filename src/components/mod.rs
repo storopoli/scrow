@@ -1,5 +1,6 @@
 //! Dioxus Components.
 
+pub(crate) mod broadcast;
 pub(crate) mod buttons;
 pub(crate) mod combine;
 pub(crate) mod create;
@@ -8,6 +9,7 @@ pub(crate) mod home;
 pub(crate) mod navbar;
 pub(crate) mod sign;
 
+pub(crate) use broadcast::Broadcast;
 pub(crate) use buttons::{CopyButton, PrimaryButton};
 pub(crate) use combine::Combine;
 pub(crate) use create::Create;
