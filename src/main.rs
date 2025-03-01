@@ -18,7 +18,7 @@ pub mod sign;
 pub mod tx;
 pub mod util;
 
-use components::{Broadcast, Combine, Create, Home, Navbar, Sign};
+use components::{Broadcast, Combine, Create, Home, Navbar, Settings, Sign};
 
 #[derive(Debug, Clone, Routable, PartialEq)]
 #[rustfmt::skip]
@@ -34,6 +34,8 @@ enum Route {
         Combine {},
         #[route("/broadcast")]
         Broadcast {},
+        #[route("/settings")]
+        Settings {},
 }
 
 const FAVICON: Asset = asset!("/assets/favicon.ico");

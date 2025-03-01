@@ -66,6 +66,7 @@ pub(crate) fn Broadcast() -> Element {
 
                                 div { class: "pt-5",
                                     div { class: "flex justify-end",
+                                        // TODO: Use PrimaryButton with a custom onclick
                                         button {
                                             r#type: "submit",
                                             class: "ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500",
@@ -170,6 +171,7 @@ pub(crate) fn Broadcast() -> Element {
                                         }
                                         div { class: "mt-4",
                                             div { class: "-mx-2 -my-1.5 flex",
+                                                // TODO: Use PrimaryButton with a custom onclick
                                                 button {
                                                     r#type: "button",
                                                     class: "bg-red-50 px-2 py-1.5 rounded-md text-sm font-medium text-red-800 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-red-50 focus:ring-red-600",

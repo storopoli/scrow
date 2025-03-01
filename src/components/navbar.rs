@@ -105,7 +105,7 @@ pub(crate) fn Navbar() -> Element {
                         Link {
                             id: "settings",
                             class: "p-2 rounded-full text-gray-500 hover:text-gray-700 focus:outline-none",
-                            to: Route::Home {}, // TODO: Settings
+                            to: Route::Settings {},
                             i {
                                 svg {
                                     xmlns: "http://www.w3.org/2000/svg",
