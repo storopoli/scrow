@@ -163,7 +163,7 @@ pub(crate) fn Home() -> Element {
                                 }
                             }
                             Link {
-                                to: Route::Home {}, // TODO: Replace with Route::Spend {} when available
+                                to: Route::Spend {},
                                 class: "block bg-white shadow-sm rounded-lg p-6 hover:shadow-md transition-shadow",
                                 h3 { class: "text-lg font-semibold text-gray-900 mb-2",
                                     "5. Spend"

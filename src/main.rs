@@ -18,7 +18,7 @@ pub mod sign;
 pub mod tx;
 pub mod util;
 
-use components::{Broadcast, Combine, Create, Home, Navbar, Settings, Sign};
+use components::{Broadcast, Combine, Create, Home, Navbar, Settings, Sign, Spend};
 
 #[derive(Debug, Clone, Routable, PartialEq)]
 #[rustfmt::skip]
@@ -34,6 +34,8 @@ enum Route {
         Combine {},
         #[route("/broadcast")]
         Broadcast {},
+        #[route("/spend")]
+        Spend {},
         #[route("/settings")]
         Settings {},
 }

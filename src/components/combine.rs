@@ -238,7 +238,7 @@ pub(crate) fn Combine() -> Element {
                 div { class: "mt-8 bg-white shadow overflow-hidden sm:rounded-lg",
                     div { class: "px-4 py-5 sm:p-6",
                         h3 { class: "text-lg leading-6 font-medium text-gray-900",
-                            "Combined Transaction"
+                            "Signed Transaction"
                         }
 
                         div { class: "mt-5 border-t border-gray-200 pt-5",
