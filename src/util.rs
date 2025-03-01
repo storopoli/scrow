@@ -12,6 +12,12 @@ const BLOCKS_PER_DAY: u32 = 6 * 24;
 /// Number of Bitcoin blocks per hour assuming 10-minute intervals.
 const BLOCKS_PER_HOUR: u32 = 6;
 
+/// P2TR Transaction weight for 1 input and 1 output.
+///
+/// Used to calculate the fee for the transaction that spends the escrow.
+/// This is a conservative measure to ensure sufficient fees.
+pub(crate) const P2TR_TX_WEIGHT_FUNDING: u64 = 200;
+
 /// Converts `days` to blocks assuming that blocks comes in 10-minute intervals.
 pub fn days_to_blocks(days: u32) -> u32 {
     days * BLOCKS_PER_DAY
