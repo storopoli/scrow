@@ -102,7 +102,7 @@ pub(crate) fn Settings() -> Element {
 
                         div { class: "mt-5",
                             a {
-                                href: "https://github.com/username/satoshi-escrow",
+                                href: "https://github.com/storopoli/scrow",
                                 target: "_blank",
                                 class: "inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500",
                                 // GitHub icon SVG
