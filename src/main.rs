@@ -25,6 +25,7 @@ use components::{Broadcast, Combine, Create, Home, Navbar, Settings, Sign, Spend
 enum Route {
     #[layout(Navbar)]
         #[route("/")]
+        #[redirect("/:.._segments", |_segments: Vec<String>| Route::Home {})]
         Home {},
         #[route("/create")]
         Create {},
