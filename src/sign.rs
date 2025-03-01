@@ -7,6 +7,7 @@ use bitcoin::{
     sighash::{Prevouts, SighashCache},
     taproot::{LeafVersion, TaprootSpendInfo},
 };
+#[cfg(debug_assertions)]
 use dioxus::logger::tracing::{error, trace};
 use nostr::key::{PublicKey as NostrPublicKey, SecretKey as NostrSecretKey};
 use secp256k1::{Message, SECP256K1, schnorr};
@@ -37,6 +38,7 @@ pub fn sign_resolution_tx(
     // For key path spend, we need to apply taproot tweak.
     let tweaked = keypair.tap_tweak(SECP256K1, None);
     let signature = SECP256K1.sign_schnorr_no_aux_rand(&message, &tweaked.to_inner());
+    #[cfg(debug_assertions)]
     trace!(signature = %signature, txid = %transaction.compute_txid(), "Signature resolution transaction");
     let mut transaction = transaction.clone();
 
@@ -74,6 +76,7 @@ pub fn sign_escrow_tx(
         timelock_duration,
         escrow_script,
     )?;
+    #[cfg(debug_assertions)]
     trace!(%index, locking_script = %locking_script.to_asm_string(), "escrow locking script");
     let leaf_hash = TapLeafHash::from_script(&locking_script, LeafVersion::TapScript);
 
@@ -91,6 +94,7 @@ pub fn sign_escrow_tx(
 
     // For script path, we use the UNTWEAKED keypair.
     let signature = SECP256K1.sign_schnorr_no_aux_rand(&message, &keypair);
+    #[cfg(debug_assertions)]
     trace!(%index, %signature, txid = %tx.compute_txid(), "Signature escrow transaction");
 
     #[cfg(debug_assertions)]
@@ -127,7 +131,7 @@ pub enum EscrowType<'a> {
     },
 }
 
-/// Combine one multiple [`taproot::Signature`]s into a single [`Transaction`] input.
+/// Combine one multiple [`schnorr::Signature`]s into a single [`Transaction`] input.
 pub fn combine_signatures(
     mut transaction: Transaction,
     index: usize,
@@ -229,6 +233,7 @@ mod tests {
         // Fund a SegWit-v1 P2TR address from the npub.
         // Mine until maturity (101 blocks in Regtest).
         let funded_address = npub_to_address(&npub_1, network).unwrap();
+        #[cfg(debug_assertions)]
         trace!(%funded_address, "Funded address");
         let coinbase_block = btc_client
             .generate_to_address(COINBASE_MATURITY, &funded_address)
@@ -247,6 +252,7 @@ mod tests {
 
         // Send to the 2-of-2 multisig address.
         let escrow_address = escrow_address(&npub_1, &npub_2, None, None, network).unwrap();
+        #[cfg(debug_assertions)]
         trace!(%escrow_address, "Escrow address");
 
         // Create the transaction.

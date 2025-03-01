@@ -82,7 +82,20 @@ and does not provide Nostr easy npub/nsec signing.
 
 ## Development
 
-This uses Dioxus Bla Bla
+Satoshi Escrow is a pure Rust web application built with [Dioxus](https://dioxuslabs.com/).
+
+In order to run the application locally, you need to have Rust and Cargo installed.
+To preview the application,
+install the `dx` Dioxus CLI,
+run the following command:
+
+```bash
+dx serve
+```
+
+Also if you change Tailwind CSS,
+you need to run the following command
+(make sure you have `tailwindcss` installed):
 
 ```bash
 npx tailwindcss -i ./input.css -o ./assets/tailwind.css --watch

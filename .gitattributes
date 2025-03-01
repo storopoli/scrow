@@ -1,0 +1,9 @@
+# Serialisation
+*.json  text
+*.toml  text
+*.xml   text
+*.yaml  text
+*.yml   text
+
+# PWA Builder template
+*.js linguist-generated

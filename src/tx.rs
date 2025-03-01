@@ -4,6 +4,7 @@ use bitcoin::{
     Address, Amount, Network, OutPoint, Sequence, Transaction, TxIn, TxOut, Txid, absolute,
     transaction,
 };
+#[cfg(debug_assertions)]
 use dioxus::logger::tracing::trace;
 use nostr::key::PublicKey as NostPublicKey;
 
@@ -74,19 +75,23 @@ pub fn escrow_tx(
         Some(fee) => fee,
         None => return Err(Error::Rounding),
     };
+    #[cfg(debug_assertions)]
     trace!(%fees_per_participant, "fees per participant");
     let liquid_escrow_amount_1 = match escrow_amount_1.checked_sub(fees_per_participant) {
         Some(amount) => amount,
         None => return Err(Error::Rounding),
     };
+    #[cfg(debug_assertions)]
     trace!(%liquid_escrow_amount_1, "liquid escrow amount 1");
     let liquid_escrow_amount_2 = match escrow_amount_2.checked_sub(fees_per_participant) {
         Some(amount) => amount,
         None => return Err(Error::Rounding),
     };
+    #[cfg(debug_assertions)]
     trace!(%liquid_escrow_amount_2, "liquid escrow amount 2");
 
     let timelock_duration = timelock_duration.unwrap_or_default();
+    #[cfg(debug_assertions)]
     trace!(%timelock_duration, "timelock duration");
 
     // Create the transaction
