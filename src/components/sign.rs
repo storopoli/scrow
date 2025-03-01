@@ -286,7 +286,7 @@ pub(crate) fn Sign() -> Element {
                                     clipboard_text: signature,
                                 }
                                 Link {
-                                    to: Route::Home {}, // TODO: Replace with Route::Combine {} when available
+                                    to: Route::Combine {},
                                     class: "ml-3 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500",
                                     "Continue to Combine"
                                 }

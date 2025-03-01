@@ -133,7 +133,7 @@ pub(crate) fn Home() -> Element {
                                 }
                             }
                             Link {
-                                to: Route::Home {}, // TODO: Replace with Route::Sign {} when available
+                                to: Route::Sign {},
                                 class: "block bg-white shadow-sm rounded-lg p-6 hover:shadow-md transition-shadow",
                                 h3 { class: "text-lg font-semibold text-gray-900 mb-2",
                                     "2. Sign Transaction"
@@ -143,7 +143,7 @@ pub(crate) fn Home() -> Element {
                                 }
                             }
                             Link {
-                                to: Route::Home {}, // TODO: Replace with Route::Combine {} when available
+                                to: Route::Combine {},
                                 class: "block bg-white shadow-sm rounded-lg p-6 hover:shadow-md transition-shadow",
                                 h3 { class: "text-lg font-semibold text-gray-900 mb-2",
                                     "3. Combine Signatures"
