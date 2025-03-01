@@ -32,6 +32,7 @@ enum Route {
 
 const FAVICON: Asset = asset!("/assets/favicon.ico");
 const TAILWIND_CSS: Asset = asset!("/assets/tailwind.css");
+const LOGO: Asset = asset!("/assets/logo.svg");
 
 fn main() {
     #[cfg(debug_assertions)]

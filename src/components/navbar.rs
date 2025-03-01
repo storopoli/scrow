@@ -2,7 +2,7 @@
 
 use dioxus::prelude::*;
 
-use crate::Route;
+use crate::{LOGO, Route};
 
 /// Shared navbar component.
 #[component]
@@ -55,6 +55,11 @@ pub(crate) fn Navbar() -> Element {
                     }
                     div { class: "flex",
                         div { class: "flex-shrink-0 flex items-center",
+                            img {
+                                src: LOGO,
+                                alt: "Satoshi Escrow Logo",
+                                class: "h-12 w-12 mr-2",
+                            }
                             span { class: "text-xl font-bold text-gray-900", "Satoshi Escrow" }
                         }
                         div { class: "hidden sm:ml-6 sm:flex sm:space-x-8",
