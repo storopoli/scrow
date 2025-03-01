@@ -1,4 +1,4 @@
-//! Create escrow transaction component.
+//! Sign escrow transaction component.
 
 use dioxus::prelude::*;
 
@@ -8,15 +8,14 @@ use dioxus::logger::tracing::info;
 use super::{CopyButton, Footer};
 use crate::Route;
 
-/// Create escrow transaction component.
+/// Sign escrow transaction component.
 #[component]
-pub(crate) fn Create() -> Element {
-    let address = use_signal(|| "bc1p...".to_string());
-    let transaction = use_signal(|| "Transaction data will appear here.");
+pub(crate) fn Sign() -> Element {
+    let signature = use_signal(|| "Signature will appear here...");
     rsx! {
         main { class: "max-w-7xl mx-auto py-6 sm:px-6 lg:px-8",
             div { class: "px-4 py-6 sm:px-0",
-                h1 { class: "text-2xl font-bold text-gray-900 mb-6", "Create Escrow" }
+                h1 { class: "text-2xl font-bold text-gray-900 mb-6", "Sign Escrow" }
 
                 div { class: "bg-white shadow overflow-hidden sm:rounded-lg",
                     div { class: "px-4 py-5 sm:p-6",
@@ -26,9 +25,65 @@ pub(crate) fn Create() -> Element {
                                 info!("Submitted! Event: {event:?}");
                                 event.prevent_default();
                             },
-
                             div { class: "space-y-6",
+                                div { class: "sm:col-span-6",
+                                    label {
+                                        r#for: "unsigned-tx",
+                                        class: "block text-sm font-medium text-gray-700",
+                                        "Unsigned Transaction String"
+                                    }
+                                    div { class: "mt-1",
+                                        textarea {
+                                            id: "unsigned-tx",
+                                            name: "unsigned-tx",
+                                            rows: "4",
+                                            class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
+                                            placeholder: "Paste the unsigned transaction here...",
+                                        }
+                                    }
+                                }
+
                                 div { class: "grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6",
+                                    div { class: "sm:col-span-3",
+                                        label {
+                                            r#for: "network",
+                                            class: "block text-sm font-medium text-gray-700",
+                                            "Bitcoin Network"
+                                        }
+                                        div { class: "mt-1",
+                                            select {
+                                                id: "network",
+                                                name: "network",
+                                                class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
+                                                option { value: "mainnet", "Mainnet" }
+                                                option { value: "testnet", "Testnet" }
+                                                option { value: "signet", "Signet" }
+                                                option { value: "regtest", "Regtest" }
+                                            }
+                                        }
+                                    }
+
+                                    div { class: "sm:col-span-3",
+                                        label {
+                                            r#for: "escrow-type",
+                                            class: "block text-sm font-medium text-gray-700",
+                                            "Escrow Type"
+                                        }
+                                        div { class: "mt-1",
+                                            select {
+                                                id: "escrow-type",
+                                                name: "escrow-type",
+                                                class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
+                                                option { value: "A", "A - Collaborative (2-of-2)" }
+                                                option { value: "B",
+                                                    "B - Dispute: First Party + Arbitrator"
+                                                }
+                                                option { value: "C",
+                                                    "C - Dispute: Second Party + Arbitrator"
+                                                }
+                                            }
+                                        }
+                                    }
                                     div { class: "sm:col-span-3",
                                         label {
                                             r#for: "npub1",
@@ -62,19 +117,35 @@ pub(crate) fn Create() -> Element {
                                             }
                                         }
                                     }
+                                    div { class: "sm:col-span-3",
+                                        label {
+                                            r#for: "txid",
+                                            class: "block text-sm font-medium text-gray-700",
+                                            "Funding Transaction ID"
+                                        }
+                                        div { class: "mt-1",
+                                            input {
+                                                r#type: "text",
+                                                name: "txid",
+                                                id: "txid",
+                                                class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
+                                                placeholder: "txid...",
+                                            }
+                                        }
+                                    }
 
                                     div { class: "sm:col-span-3",
                                         label {
-                                            r#for: "amount1",
+                                            r#for: "amount",
                                             class: "block text-sm font-medium text-gray-700",
-                                            "Buyer Escrow Amount (BTC)"
+                                            "Total Locked Escrow Amount (BTC)"
                                         }
                                         div { class: "mt-1",
                                             input {
                                                 r#type: "number",
                                                 step: "0.00000001",
-                                                name: "amount1",
-                                                id: "amount1",
+                                                name: "amount",
+                                                id: "amount",
                                                 class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
                                                 placeholder: "0.00000000",
                                             }
@@ -83,45 +154,30 @@ pub(crate) fn Create() -> Element {
 
                                     div { class: "sm:col-span-3",
                                         label {
-                                            r#for: "amount2",
+                                            r#for: "nsec",
                                             class: "block text-sm font-medium text-gray-700",
-                                            "Seller Escrow Amount (BTC)"
+                                            "Your Nostr Secret Key (nsec)"
                                         }
                                         div { class: "mt-1",
                                             input {
-                                                r#type: "number",
-                                                step: "0.00000001",
-                                                name: "amount2",
-                                                id: "amount2",
+                                                r#type: "password",
+                                                name: "nsec",
+                                                id: "nsec",
                                                 class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
-                                                placeholder: "0.00000000",
+                                                placeholder: "nsec...",
                                             }
                                         }
-                                    }
-
-                                    div { class: "sm:col-span-3",
-                                        label {
-                                            r#for: "network",
-                                            class: "block text-sm font-medium text-gray-700",
-                                            "Bitcoin Network"
-                                        }
-                                        div { class: "mt-1",
-                                            select {
-                                                id: "network",
-                                                name: "network",
-                                                class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
-                                                option { value: "mainnet", "Mainnet" }
-                                                option { value: "testnet", "Testnet" }
-                                                option { value: "signet", "Signet" }
-                                                option { value: "regtest", "Regtest" }
-                                            }
+                                        p { class: "mt-2 text-xs text-red-600",
+                                            "Your key is never stored or transmitted. All signing happens locally."
                                         }
                                     }
                                 }
 
-                                div { class: "border-t border-gray-200 pt-6",
+                                div {
+                                    id: "arbitrator-section",
+                                    class: "border-t border-gray-200 pt-6",
                                     h3 { class: "text-lg font-medium text-gray-900",
-                                        "Optional Dispute Resolution"
+                                        "Arbitrator Details (for Dispute Resolution)"
                                     }
 
                                     div { class: "mt-4 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6",
@@ -190,7 +246,7 @@ pub(crate) fn Create() -> Element {
                                         button {
                                             r#type: "submit",
                                             class: "ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500",
-                                            "Generate Escrow"
+                                            "Sign Transaction"
                                         }
                                     }
                                 }
@@ -203,47 +259,36 @@ pub(crate) fn Create() -> Element {
                 div { class: "mt-8 bg-white shadow overflow-hidden sm:rounded-lg",
                     div { class: "px-4 py-5 sm:p-6",
                         h3 { class: "text-lg leading-6 font-medium text-gray-900",
-                            "Escrow Details"
+                            "Signature"
                         }
 
                         div { class: "mt-5 border-t border-gray-200 pt-5",
-                            dl { class: "grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2",
-                                div { class: "sm:col-span-2",
-                                    dt { class: "text-sm font-medium text-gray-500",
-                                        "Deposit Address"
-                                    }
-                                    dd {
-                                        id: "escrow-address",
-                                        class: "mt-1 text-sm text-gray-900 break-all bg-gray-50 p-3 rounded",
-                                        {address}
-                                    }
+                            div { class: "sm:col-span-6",
+                                label {
+                                    r#for: "signature",
+                                    class: "block text-sm font-medium text-gray-500",
+                                    "Your Signature"
                                 }
-
-                                div { class: "sm:col-span-2",
-                                    dt { class: "text-sm font-medium text-gray-500",
-                                        "Unsigned Escrow Resolution Transaction"
-                                    }
-                                    dd { class: "mt-1 text-sm text-gray-900",
-                                        textarea {
-                                            id: "escrow-transaction",
-                                            readonly: "true",
-                                            class: "w-full h-32 p-3 border border-gray-300 rounded-md bg-gray-50 focus:ring-indigo-500 focus:border-indigo-500",
-                                            placeholder: transaction,
-                                        }
+                                div { class: "mt-1",
+                                    textarea {
+                                        id: "signature",
+                                        readonly: "true",
+                                        rows: "4",
+                                        class: "shadow-sm block w-full sm:text-sm border-gray-300 rounded-md p-2 border bg-gray-50",
+                                        placeholder: signature,
                                     }
                                 }
                             }
 
                             div { class: "mt-5 flex",
-                                CopyButton { text: "Address", clipboard_text: address }
                                 CopyButton {
-                                    text: "Transaction",
-                                    clipboard_text: transaction,
+                                    text: "Signature",
+                                    clipboard_text: signature,
                                 }
                                 Link {
-                                    to: Route::Home {}, // TODO: Replace with Route::Sign {} when available
+                                    to: Route::Home {}, // TODO: Replace with Route::Combine {} when available
                                     class: "ml-3 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500",
-                                    "Continue to Sign"
+                                    "Continue to Combine"
                                 }
                             }
                         }

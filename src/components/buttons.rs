@@ -1,10 +1,11 @@
 //! Buttons Components.
 
-#[cfg(debug_assertions)]
-use dioxus::logger::tracing;
 use dioxus::prelude::*;
 use wasm_bindgen_futures::JsFuture;
 use web_sys::window;
+
+#[cfg(debug_assertions)]
+use dioxus::logger::tracing;
 
 /// Copy button component.
 #[component]
