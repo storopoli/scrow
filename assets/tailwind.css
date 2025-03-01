@@ -705,6 +705,9 @@
   .text-green-800 {
     color: var(--color-green-800);
   }
+  .text-indigo-500 {
+    color: var(--color-indigo-500);
+  }
   .text-indigo-700 {
     color: var(--color-indigo-700);
   }
@@ -786,6 +789,9 @@
   .ease-out {
     --tw-ease: var(--ease-out);
     transition-timing-function: var(--ease-out);
+  }
+  .\[r\3 �t�\3 �W�Y�\]F��i�\f ��\.SD\,\1e _\\\:\2 \] {
+    r�t��W�Y�]F��i���.SD,_\: ;
   }
   .hover\:border-gray-300 {
     &:hover {
