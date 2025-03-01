@@ -44,7 +44,30 @@ pub(crate) fn CopyButton(text: String, clipboard_text: String) -> Element {
             r#type: "button",
             onclick: on_copy,
             class: "inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500",
-            i { class: "fas fa-copy mr-2" }
+            i { class: "mr-2",
+                svg {
+                    xmlns: "http://www.w3.org/2000/svg",
+                    width: "24",
+                    height: "24",
+                    view_box: "0 0 24 24",
+                    fill: "none",
+                    stroke: "currentColor",
+                    "stroke-width": "2",
+                    "stroke-linecap": "round",
+                    "stroke-linejoin": "round",
+                    class: "lucide lucide-copy",
+
+                    rect {
+                        width: "14",
+                        height: "14",
+                        x: "8",
+                        y: "8",
+                        rx: "2",
+                        ry: "2",
+                    }
+                    path { d: "M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" }
+                }
+            }
             " Copy {text}"
         }
     }
@@ -58,7 +81,22 @@ pub fn PrimaryButton(text: String, onclick: Callback<MouseEvent>) -> Element {
             r#type: "button",
             onclick,
             class: "inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500",
-            i { class: "fas fa-check mr-2" }
+            i { class: "mr-2",
+                svg {
+                    xmlns: "http://www.w3.org/2000/svg",
+                    width: "24",
+                    height: "24",
+                    view_box: "0 0 24 24",
+                    fill: "none",
+                    stroke: "currentColor",
+                    "stroke-width": "2",
+                    "stroke-linecap": "round",
+                    "stroke-linejoin": "round",
+                    class: "lucide lucide-check",
+
+                    path { d: "M20 6 9 17l-5-5" }
+                }
+            }
             " {text}"
         }
     }

@@ -18,7 +18,39 @@ pub(crate) fn Navbar() -> Element {
                             aria_controls: "mobile-menu",
                             aria_expanded: "false",
                             span { class: "sr-only", "Menu" }
-                            i { class: "fas fa-bars block h-6 w-6" }
+                            i {
+                                svg {
+                                    xmlns: "http://www.w3.org/2000/svg",
+                                    width: "24",
+                                    height: "24",
+                                    view_box: "0 0 24 24",
+                                    fill: "none",
+                                    stroke: "currentColor",
+                                    "stroke-width": "2",
+                                    "stroke-linecap": "round",
+                                    "stroke-linejoin": "round",
+                                    class: "lucide lucide-menu",
+
+                                    line {
+                                        x1: "4",
+                                        x2: "20",
+                                        y1: "12",
+                                        y2: "12",
+                                    }
+                                    line {
+                                        x1: "4",
+                                        x2: "20",
+                                        y1: "6",
+                                        y2: "6",
+                                    }
+                                    line {
+                                        x1: "4",
+                                        x2: "20",
+                                        y1: "18",
+                                        y2: "18",
+                                    }
+                                }
+                            }
                         }
                     }
                     div { class: "flex",
@@ -69,7 +101,35 @@ pub(crate) fn Navbar() -> Element {
                             id: "settings",
                             class: "p-2 rounded-full text-gray-500 hover:text-gray-700 focus:outline-none",
                             to: Route::Home {}, // TODO: Settings
-                            i { class: "fas fa-cog text-xl" }
+                            i {
+                                svg {
+                                    xmlns: "http://www.w3.org/2000/svg",
+                                    width: "24",
+                                    height: "24",
+                                    view_box: "0 0 24 24",
+                                    fill: "none",
+                                    stroke: "currentColor",
+                                    "stroke-width": "2",
+                                    "stroke-linecap": "round",
+                                    "stroke-linejoin": "round",
+                                    class: "lucide lucide-cog",
+
+                                    path { d: "M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z" }
+                                    path { d: "M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" }
+                                    path { d: "M12 2v2" }
+                                    path { d: "M12 22v-2" }
+                                    path { d: "m17 20.66-1-1.73" }
+                                    path { d: "M11 10.27 7 3.34" }
+                                    path { d: "m20.66 17-1.73-1" }
+                                    path { d: "m3.34 7 1.73 1" }
+                                    path { d: "M14 12h8" }
+                                    path { d: "M2 12h2" }
+                                    path { d: "m20.66 7-1.73 1" }
+                                    path { d: "m3.34 17 1.73-1" }
+                                    path { d: "m17 3.34-1 1.73" }
+                                    path { d: "m11 13.73-4 6.93" }
+                                }
+                            }
                             span { class: "sr-only", "Settings" }
                         }
                     }
@@ -87,7 +147,7 @@ pub(crate) fn Navbar() -> Element {
                     Link {
                         id: "create",
                         class: "border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800 block pl-3 pr-4 py-2 border-l-4 text-base font-medium",
-                        to: Route::Home {}, // TODO: Create
+                        to: Route::Create {},
                         "Create"
                     }
                     Link {

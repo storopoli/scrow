@@ -27,6 +27,7 @@ esplora-client = { version = "0.11.0", default-features = false, features = [
     "async-https-rustls",
 ] }
 dioxus = { version = "0.6.3", features = ["router"] }
+# web-sys and wasm-bindgen-futures is to get clipboard interactivity in WASM
 web-sys = { version = "0.3.77", default-features = false, features = [
     "Clipboard",
     "Window",
