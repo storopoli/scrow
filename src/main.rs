@@ -1,5 +1,7 @@
 //! Satoshi Escrow Dixous App
 
+#![allow(non_snake_case)]
+
 use dioxus::prelude::*;
 
 #[cfg(debug_assertions)]
@@ -16,7 +18,7 @@ pub mod sign;
 pub mod tx;
 pub mod util;
 
-use components::{Home, Navbar};
+use components::{Create, Home, Navbar};
 
 #[derive(Debug, Clone, Routable, PartialEq)]
 #[rustfmt::skip]
@@ -24,6 +26,8 @@ enum Route {
     #[layout(Navbar)]
         #[route("/")]
         Home {},
+        #[route("/create")]
+        Create {},
 }
 
 const FAVICON: Asset = asset!("/assets/favicon.ico");

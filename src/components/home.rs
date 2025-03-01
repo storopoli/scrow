@@ -1,8 +1,10 @@
+//! Home page component.
+
 use dioxus::prelude::*;
 
 use crate::{Route, components::Footer};
 
-/// Home page
+/// Home page component.
 #[component]
 pub(crate) fn Home() -> Element {
     rsx! {
@@ -94,7 +96,7 @@ pub(crate) fn Home() -> Element {
                         h2 { class: "text-2xl font-semibold text-gray-900 mb-4", "Getting Started" }
                         div { class: "grid md:grid-cols-5 gap-6",
                             Link {
-                                to: Route::Home {}, // TODO: Replace with Route::Create {} when available
+                                to: Route::Create {},
                                 class: "block bg-white shadow-sm rounded-lg p-6 hover:shadow-md transition-shadow",
                                 h3 { class: "text-lg font-semibold text-gray-900 mb-2",
                                     "1. Create Escrow"

@@ -1,6 +1,8 @@
+//! Footer component.
+
 use dioxus::prelude::*;
 
-/// Footer
+/// Footer component.
 #[component]
 pub(crate) fn Footer() -> Element {
     rsx! {

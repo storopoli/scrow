@@ -27,6 +27,13 @@ esplora-client = { version = "0.11.0", default-features = false, features = [
     "async-https-rustls",
 ] }
 dioxus = { version = "0.6.3", features = ["router"] }
+web-sys = { version = "0.3.77", default-features = false, features = [
+    "Clipboard",
+    "Window",
+    "Navigator",
+    "Permissions",
+] }
+wasm-bindgen-futures = { version = "0.4.50" }
 
 [dev-dependencies]
 corepc-node = { version = "0.5.0", features = ["28_0", "download"] }
