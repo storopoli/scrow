@@ -570,6 +570,9 @@
   .p-6 {
     padding: calc(var(--spacing) * 6);
   }
+  .p-7 {
+    padding: calc(var(--spacing) * 7);
+  }
   .p-9 {
     padding: calc(var(--spacing) * 9);
   }
