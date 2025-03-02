@@ -10,7 +10,10 @@ use crate::{
     NETWORK, Route,
     scripts::escrow_address,
     tx::escrow_tx,
-    util::{P2TR_TX_WEIGHT_FUNDING, days_to_blocks, hours_to_blocks, parse_network, parse_npub},
+    util::{
+        P2TR_TX_WEIGHT_FUNDING, days_to_blocks, hours_to_blocks, npub_to_address, parse_network,
+        parse_npub,
+    },
 };
 
 use super::{ContinueButton, CopyButton, Footer, PrimaryButton};
@@ -29,6 +32,8 @@ pub(crate) fn Create() -> Element {
     let mut funding_txid = use_signal(String::new);
     let mut escrow_address_str = use_signal(String::new);
     let mut escrow_transaction = use_signal(|| "Transaction data will appear here.".to_string());
+    let mut derived_address_buyer = use_signal(String::new);
+    let mut derived_address_seller = use_signal(String::new);
     rsx! {
         main { class: "max-w-7xl mx-auto py-6 sm:px-6 lg:px-8",
             div { class: "px-4 py-6 sm:px-0",
@@ -271,18 +276,57 @@ pub(crate) fn Create() -> Element {
                             }
 
                             div { class: "border-t border-gray-200 pt-6",
-                                div { class: "sm:col-span-2",
-                                    dt { class: "text-lg font-medium text-gray-900",
-                                        "Deposit Address"
+                                div { class: "grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6",
+                                    div { class: "col-span-2",
+                                        dt { class: "text-lg font-medium text-gray-900",
+                                            "Deposit Address"
+                                        }
+                                        dd {
+                                            id: "escrow-address",
+                                            class: "mt-1 text-sm text-gray-900 break-all bg-gray-50 p-3 rounded",
+                                            {
+                                                if escrow_address_str.read().is_empty() {
+                                                    "bc1p...".to_string()
+                                                } else {
+                                                    escrow_address_str.read().clone()
+                                                }
+                                            }
+                                        }
                                     }
-                                    dd {
-                                        id: "escrow-address",
-                                        class: "mt-1 text-sm text-gray-900 break-all bg-gray-50 p-3 rounded",
-                                        {
-                                            if escrow_address_str.read().is_empty() {
-                                                "bc1p...".to_string()
-                                            } else {
-                                                escrow_address_str.read().clone()
+                                }
+                            }
+
+                            div { class: "border-t border-gray-200 pt-6",
+                                div { class: "grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6",
+                                    div { class: "col-span-3",
+                                        dt { class: "text-lg font-medium text-gray-900",
+                                            "Buyer Resolution Address"
+                                        }
+                                        dd {
+                                            id: "buyer-address",
+                                            class: "mt-1 text-sm text-gray-900 break-all bg-gray-50 p-3 rounded",
+                                            {
+                                                if derived_address_buyer.read().is_empty() {
+                                                    "bc1p...".to_string()
+                                                } else {
+                                                    derived_address_buyer.read().clone()
+                                                }
+                                            }
+                                        }
+                                    }
+                                    div { class: "col-span-3",
+                                        dt { class: "text-lg font-medium text-gray-900",
+                                            "Seller Resolution Address"
+                                        }
+                                        dd {
+                                            id: "buyer-address",
+                                            class: "mt-1 text-sm text-gray-900 break-all bg-gray-50 p-3 rounded",
+                                            {
+                                                if derived_address_seller.read().is_empty() {
+                                                    "bc1p...".to_string()
+                                                } else {
+                                                    derived_address_seller.read().clone()
+                                                }
                                             }
                                         }
                                     }
@@ -290,9 +334,9 @@ pub(crate) fn Create() -> Element {
                             }
 
 
-                            div { class: "mt-5 flex",
+                            div { class: "mt-5 flex flex-col space-y-3 sm:flex-row sm:space-y-0 sm:space-x-3",
                                 CopyButton {
-                                    text: "Address",
+                                    text: "Deposit Address",
                                     clipboard_text: escrow_address_str,
                                 }
                                 PrimaryButton {
@@ -306,6 +350,12 @@ pub(crate) fn Create() -> Element {
                                         let npub_buyer = parse_npub(&npub_buyer.read()).unwrap();
                                         let npub_seller = parse_npub(&npub_seller.read()).unwrap();
                                         let network = parse_network(&NETWORK.read()).unwrap();
+                                        *derived_address_buyer.write() = npub_to_address(&npub_buyer, network)
+                                            .unwrap()
+                                            .to_string();
+                                        *derived_address_seller.write() = npub_to_address(&npub_seller, network)
+                                            .unwrap()
+                                            .to_string();
                                         let resolved_escrow_address = if !npub_arbitrator.read().is_empty() {
                                             #[cfg(debug_assertions)]
                                             trace!("dispute escrow address");
@@ -399,7 +449,7 @@ pub(crate) fn Create() -> Element {
                                 }
                             }
 
-                            div { class: "mt-5 flex",
+                            div { class: "mt-5 flex flex-col space-y-3 sm:flex-row sm:space-y-0 sm:space-x-3",
                                 CopyButton {
                                     text: "Transaction",
                                     clipboard_text: escrow_transaction,

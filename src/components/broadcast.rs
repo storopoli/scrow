@@ -73,52 +73,47 @@ pub(crate) fn Broadcast() -> Element {
                 }
 
                 // Result Section (would be shown after form submission)
-                div { class: "mt-8 bg-white shadow overflow-hidden sm:rounded-lg",
+                // TODO: Use conditional rendering instead of 'hidden' class in Dioxus
+                div { class: "mt-8 bg-white shadow hidden overflow-hidden sm:rounded-lg",
                     div { class: "px-4 py-5 sm:p-6",
-                        h3 { class: "text-lg leading-6 font-medium text-gray-900",
-                            "Broadcast Result"
-                        }
 
-                        div { class: "mt-5 border-t border-gray-200 pt-5",
-                            // Success State
-                            div { class: "rounded-md bg-green-50 p-4",
-                                div { class: "flex",
-                                    div { class: "flex-shrink-0, text-green-50",
-                                        svg {
-                                            xmlns: "http://www.w3.org/2000/svg",
-                                            width: "24",
-                                            height: "24",
-                                            view_box: "0 0 24 24",
-                                            fill: "none",
-                                            stroke: "currentColor",
-                                            "stroke-width": "2",
-                                            "stroke-linecap": "round",
-                                            "stroke-linejoin": "round",
-                                            class: "lucide lucide-check",
+                        // Success State
+                        // TODO: Use conditional rendering instead of 'hidden' class in Dioxus
+                        div { class: "rounded-md bg-green-50 p-4",
+                            div { class: "flex",
+                                div { class: "flex-shrink-0, text-green-50",
+                                    svg {
+                                        xmlns: "http://www.w3.org/2000/svg",
+                                        width: "24",
+                                        height: "24",
+                                        view_box: "0 0 24 24",
+                                        fill: "none",
+                                        stroke: "currentColor",
+                                        "stroke-width": "2",
+                                        "stroke-linecap": "round",
+                                        "stroke-linejoin": "round",
+                                        class: "lucide lucide-check",
 
-                                            path { d: "M20 6 9 17l-5-5" }
+                                        path { d: "M20 6 9 17l-5-5" }
+                                    }
+                                }
+                                div { class: "ml-3",
+                                    h3 { class: "text-sm font-medium text-green-800",
+                                        "Transaction Broadcasted Successfully"
+                                    }
+                                    div { class: "mt-2 text-sm text-green-700",
+                                        p {
+                                            "Transaction ID: "
+                                            span { class: "font-mono break-all", {broadcasted_txid} }
                                         }
                                     }
-                                    div { class: "ml-3",
-                                        h3 { class: "text-sm font-medium text-green-800",
-                                            "Transaction Broadcasted Successfully"
-                                        }
-                                        div { class: "mt-2 text-sm text-green-700",
-                                            p {
-                                                "Transaction ID: "
-                                                span { class: "font-mono break-all",
-                                                    {broadcasted_txid}
-                                                }
-                                            }
-                                        }
-                                        div { class: "mt-4",
-                                            div { class: "-mx-2 -my-1.5 flex",
-                                                a {
-                                                    href: "#", // This would be dynamically set based on the TX ID and network
-                                                    target: "_blank",
-                                                    class: "bg-green-50 px-2 py-1.5 rounded-md text-sm font-medium text-green-800 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-green-50 focus:ring-green-600",
-                                                    "View on Block Explorer"
-                                                }
+                                    div { class: "mt-4",
+                                        div { class: "-mx-2 -my-1.5 flex",
+                                            a {
+                                                href: "#", // This would be dynamically set based on the TX ID and network
+                                                target: "_blank",
+                                                class: "bg-green-50 px-2 py-1.5 rounded-md text-sm font-medium text-green-800 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-green-50 focus:ring-green-600",
+                                                "View on Block Explorer"
                                             }
                                         }
                                     }
@@ -126,7 +121,8 @@ pub(crate) fn Broadcast() -> Element {
                             }
 
                             // Error State (hidden by default)
-                            div { class: "rounded-md bg-red-50 p-4 hidden", // Use conditional rendering instead of 'hidden' class in Dioxus
+                            // TODO: Use conditional rendering instead of 'hidden' class in Dioxus
+                            div { class: "rounded-md bg-red-50 p-4 hidden",
                                 div { class: "flex",
                                     div { class: "flex-shrink-0",
                                         svg {

@@ -4,7 +4,7 @@ use bitcoin::{Address, Network, XOnlyPublicKey};
 use nostr::key::{PublicKey as NostrPublicKey, SecretKey as NostrSecretKey};
 use secp256k1::SECP256K1;
 
-use crate::{error::Error, scripts::EscrowScript, sign::EscrowType};
+use crate::{error::Error, scripts::EscrowScript};
 
 /// Number of Bitcoin blocks per day assuming 10-minute intervals.
 const BLOCKS_PER_DAY: u32 = 6 * 24;
@@ -29,6 +29,7 @@ pub(crate) fn hours_to_blocks(hours: u32) -> u32 {
 }
 
 /// Converts `days` and `hours` to blocks assuming that blocks comes in 10-minute intervals.
+#[allow(dead_code)]
 pub(crate) fn days_hours_to_blocks(days: u32, hours: u32) -> u32 {
     days_to_blocks(days) + hours_to_blocks(hours)
 }
@@ -69,6 +70,7 @@ pub(crate) fn npub_to_x_only_public_key(npub: &NostrPublicKey) -> Result<XOnlyPu
 }
 
 /// Parses a [`NostrPublicKey`] to an [`XOnlyPublicKey`].
+#[allow(dead_code)]
 pub(crate) fn nsec_to_x_only_public_key(nsec: &NostrSecretKey) -> XOnlyPublicKey {
     let (x_only_pk, _) = nsec.x_only_public_key(SECP256K1);
     x_only_pk

@@ -248,16 +248,16 @@ pub(crate) fn Combine() -> Element {
                                     }
                                 }
                             }
+                        }
 
-                            div { class: "mt-5 flex",
-                                CopyButton {
-                                    text: "Transaction",
-                                    clipboard_text: signed_transaction,
-                                }
-                                ContinueButton {
-                                    to: Route::Broadcast {},
-                                    text: "Continue to Broadcast",
-                                }
+                        div { class: "mt-5 flex flex-col space-y-3 sm:flex-row sm:space-y-0 sm:space-x-3",
+                            CopyButton {
+                                text: "Transaction",
+                                clipboard_text: signed_transaction,
+                            }
+                            ContinueButton {
+                                to: Route::Broadcast {},
+                                text: "Continue to Broadcast",
                             }
                         }
                     }

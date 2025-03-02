@@ -134,20 +134,15 @@ pub(crate) fn Spend() -> Element {
                     }
                 }
 
-                // Result Section (would be shown after form submission)
+                // Result Section (would be shown after button click)
                 div { class: "mt-8 bg-white shadow overflow-hidden sm:rounded-lg",
                     div { class: "px-4 py-5 sm:p-6",
                         h3 { class: "text-lg leading-6 font-medium text-gray-900",
                             "Signed Transaction"
                         }
 
-                        div { class: "mt-5 border-t border-gray-200 pt-5",
-                            div { class: "sm:col-span-6",
-                                label {
-                                    r#for: "signed-tx",
-                                    class: "block text-sm font-medium text-gray-500",
-                                    "Signed Transaction"
-                                }
+                        div { class: "mt-4 grid grid-cols-3 gap-y-6 gap-x-4 sm:grid-cols-2",
+                            div { class: "col-span-3",
                                 div { class: "mt-1",
                                     textarea {
                                         id: "signed-tx",
@@ -158,16 +153,16 @@ pub(crate) fn Spend() -> Element {
                                     }
                                 }
                             }
+                        }
 
-                            div { class: "mt-5 flex",
-                                CopyButton {
-                                    text: "Signature",
-                                    clipboard_text: signed_transaction,
-                                }
-                                ContinueButton {
-                                    to: Route::Broadcast {},
-                                    text: "Continue to Broadcast",
-                                }
+                        div { class: "mt-5 flex flex-col space-y-3 sm:flex-row sm:space-y-0 sm:space-x-3",
+                            CopyButton {
+                                text: "Signature",
+                                clipboard_text: signed_transaction,
+                            }
+                            ContinueButton {
+                                to: Route::Broadcast {},
+                                text: "Continue to Broadcast",
                             }
                         }
                     }

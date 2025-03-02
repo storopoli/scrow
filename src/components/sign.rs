@@ -415,34 +415,24 @@ pub(crate) fn Sign() -> Element {
                             "Signature"
                         }
 
-                        div { class: "mt-5 border-t border-gray-200 pt-5",
-                            div { class: "sm:col-span-6",
-                                label {
-                                    r#for: "signature",
-                                    class: "block text-sm font-medium text-gray-500",
-                                    "Your Signature"
-                                }
-                                div { class: "mt-1",
-                                    textarea {
-                                        id: "signature",
-                                        readonly: "true",
-                                        rows: "4",
-                                        class: "shadow-sm block w-full sm:text-sm border-gray-300 rounded-md p-2 border bg-gray-50",
-                                        placeholder: signature,
-                                        value: signature,
-                                    }
+                        div { class: "sm:col-span-6",
+                            div { class: "mt-1",
+                                textarea {
+                                    id: "signature",
+                                    readonly: "true",
+                                    rows: "4",
+                                    class: "shadow-sm block w-full sm:text-sm border-gray-300 rounded-md p-2 border bg-gray-50",
+                                    placeholder: signature,
+                                    value: signature,
                                 }
                             }
+                        }
 
-                            div { class: "mt-5 flex",
-                                CopyButton {
-                                    text: "Signature",
-                                    clipboard_text: signature,
-                                }
-                                ContinueButton {
-                                    to: Route::Combine {},
-                                    text: "Continue to Combine",
-                                }
+                        div { class: "mt-5 flex flex-col space-y-3 sm:flex-row sm:space-y-0 sm:space-x-3",
+                            CopyButton { text: "Signature", clipboard_text: signature }
+                            ContinueButton {
+                                to: Route::Combine {},
+                                text: "Continue to Combine",
                             }
                         }
                     }
