@@ -4,13 +4,13 @@ use bitcoin::{Amount, Txid, consensus, hex::DisplayHex};
 use dioxus::prelude::*;
 
 #[cfg(debug_assertions)]
-use dioxus::logger::tracing::trace;
+use dioxus::logger::tracing::{info, trace};
 
 use crate::{
     NETWORK, Route,
     scripts::escrow_address,
     tx::escrow_tx,
-    util::{P2TR_TX_WEIGHT_FUNDING, hours_to_blocks, parse_network, parse_npub},
+    util::{P2TR_TX_WEIGHT_FUNDING, days_to_blocks, hours_to_blocks, parse_network, parse_npub},
 };
 
 use super::{ContinueButton, CopyButton, Footer, PrimaryButton};
@@ -18,8 +18,8 @@ use super::{ContinueButton, CopyButton, Footer, PrimaryButton};
 /// Create escrow transaction component.
 #[component]
 pub(crate) fn Create() -> Element {
-    let mut npub_buyer = use_signal(|| "Buyer Nostr Public Key (npub)".to_string());
-    let mut npub_seller = use_signal(|| "Seller Nostr Public Key (npub)".to_string());
+    let mut npub_buyer = use_signal(String::new);
+    let mut npub_seller = use_signal(String::new);
     let mut npub_arbitrator = use_signal(String::new);
     let mut btc_amount_buyer = use_signal(String::new);
     let mut btc_amount_seller = use_signal(String::new);
@@ -27,7 +27,7 @@ pub(crate) fn Create() -> Element {
     let mut timelock_days = use_signal(String::new);
     let mut timelock_hours = use_signal(String::new);
     let mut funding_txid = use_signal(String::new);
-    let mut escrow_address_str = use_signal(|| "bc1p...".to_string());
+    let mut escrow_address_str = use_signal(String::new);
     let mut escrow_transaction = use_signal(|| "Transaction data will appear here.".to_string());
     rsx! {
         main { class: "max-w-7xl mx-auto py-6 sm:px-6 lg:px-8",
@@ -92,6 +92,7 @@ pub(crate) fn Create() -> Element {
                                         input {
                                             r#type: "number",
                                             min: "0.00000001",
+                                            max: "100.0",
                                             step: "0.00000001",
                                             name: "amount_buyer",
                                             id: "amount_buyer",
@@ -118,6 +119,7 @@ pub(crate) fn Create() -> Element {
                                         input {
                                             r#type: "number",
                                             min: "0.00000001",
+                                            max: "100.0",
                                             step: "0.00000001",
                                             name: "amount_seller",
                                             id: "amount_seller",
@@ -275,8 +277,14 @@ pub(crate) fn Create() -> Element {
                                     }
                                     dd {
                                         id: "escrow-address",
-                                        class: "mt-1 text-md text-gray-900 break-all bg-gray-50 p-3 rounded",
-                                        {escrow_address_str}
+                                        class: "mt-1 text-sm text-gray-900 break-all bg-gray-50 p-3 rounded",
+                                        {
+                                            if escrow_address_str.read().is_empty() {
+                                                "bc1p...".to_string()
+                                            } else {
+                                                escrow_address_str.read().clone()
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -297,7 +305,7 @@ pub(crate) fn Create() -> Element {
                                         );
                                         let npub_buyer = parse_npub(&npub_buyer.read()).unwrap();
                                         let npub_seller = parse_npub(&npub_seller.read()).unwrap();
-                                        let network = parse_network(NETWORK.read().clone()).unwrap();
+                                        let network = parse_network(&NETWORK.read()).unwrap();
                                         let resolved_escrow_address = if !npub_arbitrator.read().is_empty() {
                                             #[cfg(debug_assertions)]
                                             trace!("dispute escrow address");
@@ -305,7 +313,7 @@ pub(crate) fn Create() -> Element {
                                             let timelock_hours = hours_to_blocks(
                                                 timelock_hours.read().parse::<u32>().unwrap(),
                                             );
-                                            let timelock_days = hours_to_blocks(
+                                            let timelock_days = days_to_blocks(
                                                 timelock_days.read().parse::<u32>().unwrap(),
                                             );
                                             escrow_address(
@@ -325,7 +333,7 @@ pub(crate) fn Create() -> Element {
                                                 .to_string()
                                         };
                                         #[cfg(debug_assertions)]
-                                        trace!(% resolved_escrow_address, "Derived escrow address");
+                                        info!(% resolved_escrow_address, "Derived escrow address");
                                         escrow_address_str.set(resolved_escrow_address);
                                     },
                                     text: "Generate Address",
@@ -345,7 +353,7 @@ pub(crate) fn Create() -> Element {
                             div { class: "sm:col-span-3",
                                 label {
                                     r#for: "funding_txid",
-                                    class: "block text-sm font-medium text-gray-700",
+                                    class: "block text-md font-medium text-gray-700",
                                     "Escrow funding Transaction ID"
                                 }
                                 p { class: "mt-2 text-xs text-red-600",
@@ -384,6 +392,7 @@ pub(crate) fn Create() -> Element {
                                             id: "escrow-transaction",
                                             readonly: "true",
                                             class: "w-full h-32 p-3 border border-gray-300 rounded-md bg-gray-50 focus:ring-indigo-500 focus:border-indigo-500",
+                                            placeholder: escrow_transaction,
                                             value: escrow_transaction,
                                         }
                                     }
@@ -415,7 +424,7 @@ pub(crate) fn Create() -> Element {
                                             .unwrap();
                                         let fee_rate = fee_rate.read().parse::<u64>().unwrap();
                                         let fee = Amount::from_sat(fee_rate * P2TR_TX_WEIGHT_FUNDING);
-                                        let network = parse_network(NETWORK.read().clone()).unwrap();
+                                        let network = parse_network(&NETWORK.read()).unwrap();
                                         let funding_txid = funding_txid.read().parse::<Txid>().unwrap();
                                         let resolved_escrow_transaction = if !npub_arbitrator.read().is_empty() {
                                             #[cfg(debug_assertions)]
@@ -423,7 +432,7 @@ pub(crate) fn Create() -> Element {
                                             let timelock_hours = hours_to_blocks(
                                                 timelock_hours.read().parse::<u32>().unwrap(),
                                             );
-                                            let timelock_days = hours_to_blocks(
+                                            let timelock_days = days_to_blocks(
                                                 timelock_days.read().parse::<u32>().unwrap(),
                                             );
                                             let escrow_tx = escrow_tx(
@@ -455,7 +464,7 @@ pub(crate) fn Create() -> Element {
                                             consensus::serialize(&escrow_tx).as_hex().to_string()
                                         };
                                         #[cfg(debug_assertions)]
-                                        trace!(% resolved_escrow_transaction, "Derived escrow transaction");
+                                        info!(% resolved_escrow_transaction, "Derived escrow transaction");
                                         escrow_transaction.set(resolved_escrow_transaction);
                                     },
                                     text: "Generate Transaction",
