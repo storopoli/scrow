@@ -4,7 +4,7 @@ use bitcoin::{Address, Network, XOnlyPublicKey};
 use nostr::key::{PublicKey as NostrPublicKey, SecretKey as NostrSecretKey};
 use secp256k1::SECP256K1;
 
-use crate::error::Error;
+use crate::{error::Error, scripts::EscrowScript, sign::EscrowType};
 
 /// Number of Bitcoin blocks per day assuming 10-minute intervals.
 const BLOCKS_PER_DAY: u32 = 6 * 24;
@@ -19,23 +19,23 @@ const BLOCKS_PER_HOUR: u32 = 6;
 pub(crate) const P2TR_TX_WEIGHT_FUNDING: u64 = 200;
 
 /// Converts `days` to blocks assuming that blocks comes in 10-minute intervals.
-pub fn days_to_blocks(days: u32) -> u32 {
+pub(crate) fn days_to_blocks(days: u32) -> u32 {
     days * BLOCKS_PER_DAY
 }
 
 /// Converts `hours` to blocks assuming that blocks comes in 10-minute intervals.
-pub fn hours_to_blocks(hours: u32) -> u32 {
+pub(crate) fn hours_to_blocks(hours: u32) -> u32 {
     hours * BLOCKS_PER_HOUR
 }
 
 /// Converts `days` and `hours` to blocks assuming that blocks comes in 10-minute intervals.
-pub fn days_hours_to_blocks(days: u32, hours: u32) -> u32 {
+pub(crate) fn days_hours_to_blocks(days: u32, hours: u32) -> u32 {
     days_to_blocks(days) + hours_to_blocks(hours)
 }
 
 /// Parses a network string into a [`Network`].
-pub fn parse_network(network: String) -> Result<Network, Error> {
-    match network.as_str() {
+pub(crate) fn parse_network(network: &str) -> Result<Network, Error> {
+    match network {
         "Mainnet" => Ok(Network::Bitcoin),
         "Testnet" => Ok(Network::Testnet),
         "Signet" => Ok(Network::Signet),
@@ -43,29 +43,39 @@ pub fn parse_network(network: String) -> Result<Network, Error> {
     }
 }
 
+/// Parses an escrow type string into a [`EscrowType`].
+pub(crate) fn parse_escrow_type(escrow_type: &str) -> Result<EscrowScript, Error> {
+    match escrow_type {
+        "A" => Ok(EscrowScript::A),
+        "B" => Ok(EscrowScript::B),
+        "C" => Ok(EscrowScript::C),
+        e => Err(Error::InvalidEscrowType(e.to_string())),
+    }
+}
+
 /// Parses a [`NostrPublicKey`] from a string.
-pub fn parse_npub(input: &str) -> Result<NostrPublicKey, Error> {
+pub(crate) fn parse_npub(input: &str) -> Result<NostrPublicKey, Error> {
     Ok(NostrPublicKey::parse(input)?)
 }
 
 /// Parses a [`NostrSecretKey`] from a string.
-pub fn parse_nsec(input: &str) -> Result<NostrSecretKey, Error> {
+pub(crate) fn parse_nsec(input: &str) -> Result<NostrSecretKey, Error> {
     Ok(NostrSecretKey::parse(input)?)
 }
 
 /// Parses a [`NostrPublicKey`] to an [`XOnlyPublicKey`].
-pub fn npub_to_x_only_public_key(npub: &NostrPublicKey) -> Result<XOnlyPublicKey, Error> {
+pub(crate) fn npub_to_x_only_public_key(npub: &NostrPublicKey) -> Result<XOnlyPublicKey, Error> {
     Ok(npub.xonly()?)
 }
 
 /// Parses a [`NostrPublicKey`] to an [`XOnlyPublicKey`].
-pub fn nsec_to_x_only_public_key(nsec: &NostrSecretKey) -> XOnlyPublicKey {
+pub(crate) fn nsec_to_x_only_public_key(nsec: &NostrSecretKey) -> XOnlyPublicKey {
     let (x_only_pk, _) = nsec.x_only_public_key(SECP256K1);
     x_only_pk
 }
 
 /// Parses a [`NostrPublicKey`] to a P2TR [`Address`] key path spend, given a [`Network`].
-pub fn npub_to_address(npub: &NostrPublicKey, network: Network) -> Result<Address, Error> {
+pub(crate) fn npub_to_address(npub: &NostrPublicKey, network: Network) -> Result<Address, Error> {
     let x_only_pk = npub_to_x_only_public_key(npub)?;
     let address = Address::p2tr(SECP256K1, x_only_pk, None, network);
     Ok(address)

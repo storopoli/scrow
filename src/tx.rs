@@ -14,7 +14,7 @@ use crate::{error::Error, util::npub_to_address};
 ///
 /// Assumes that the resolution address is derived from the users' Nostr public key
 /// and has received a single input.
-pub fn resolution_tx(
+pub(crate) fn resolution_tx(
     amount: Amount,
     funding_txid: Txid,
     destination: &Address,
@@ -52,7 +52,7 @@ pub fn resolution_tx(
 ///
 /// Errors if could not create SegWit-v1 P2TR resolution addresses from supplied `npub`s.
 #[expect(clippy::too_many_arguments)]
-pub fn escrow_tx(
+pub(crate) fn escrow_tx(
     npub_1: &NostPublicKey,
     npub_2: &NostPublicKey,
     timelock_duration: Option<u32>,

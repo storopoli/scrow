@@ -20,7 +20,7 @@ use crate::{
 /// Signs a [`Transaction`] with the given [`NostrSecretKey`].
 ///
 /// It must be a P2TR key path spend transaction with a single input as the 0th vout.
-pub fn sign_resolution_tx(
+pub(crate) fn sign_resolution_tx(
     transaction: &Transaction,
     nsec: &NostrSecretKey,
     prevout: TxOut,
@@ -54,7 +54,7 @@ pub fn sign_resolution_tx(
 ///
 /// The input is signed using the provided [`NostrSecretKey`], `prevouts`, and [`ScriptBuf`] locking script.
 #[expect(clippy::too_many_arguments)]
-pub fn sign_escrow_tx(
+pub(crate) fn sign_escrow_tx(
     tx: &Transaction,
     index: usize,
     nsec: &NostrSecretKey,
@@ -112,7 +112,7 @@ pub fn sign_escrow_tx(
 
 /// Types of escrow transactions.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
-pub enum EscrowType<'a> {
+pub(crate) enum EscrowType<'a> {
     /// Collaborative escrow transaction.
     ///
     /// No timelocks and no arbitrator.
@@ -132,7 +132,7 @@ pub enum EscrowType<'a> {
 }
 
 /// Combine one multiple [`schnorr::Signature`]s into a single [`Transaction`] input.
-pub fn combine_signatures(
+pub(crate) fn combine_signatures(
     mut transaction: Transaction,
     index: usize,
     signatures: Vec<&schnorr::Signature>,

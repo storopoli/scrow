@@ -3,7 +3,7 @@
 use dioxus::prelude::*;
 
 #[cfg(debug_assertions)]
-use dioxus::logger::tracing::info;
+use dioxus::logger::tracing::trace;
 
 use super::Footer;
 
@@ -19,59 +19,52 @@ pub(crate) fn Broadcast() -> Element {
 
                 div { class: "bg-white shadow overflow-hidden sm:rounded-lg",
                     div { class: "px-4 py-5 sm:p-6",
-                        form {
-                            onsubmit: move |event| {
-                                #[cfg(debug_assertions)]
-                                info!("Submitted! Event: {event:?}");
-                                event.prevent_default();
-                            },
-                            div { class: "space-y-6",
-                                div { class: "sm:col-span-6",
+                        div { class: "space-y-6",
+                            div { class: "sm:col-span-6",
+                                label {
+                                    r#for: "signed-tx",
+                                    class: "block text-sm font-medium text-gray-700",
+                                    "Signed Transaction String"
+                                }
+                                div { class: "mt-1",
+                                    textarea {
+                                        id: "signed-tx",
+                                        name: "signed-tx",
+                                        rows: "4",
+                                        class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
+                                        placeholder: "Paste the signed transaction here...",
+                                    }
+                                }
+                            }
+
+                            div { class: "grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6",
+                                div { class: "sm:col-span-3",
                                     label {
-                                        r#for: "signed-tx",
+                                        r#for: "network",
                                         class: "block text-sm font-medium text-gray-700",
-                                        "Signed Transaction String"
+                                        "Bitcoin Network"
                                     }
                                     div { class: "mt-1",
-                                        textarea {
-                                            id: "signed-tx",
-                                            name: "signed-tx",
-                                            rows: "4",
+                                        select {
+                                            id: "network",
+                                            name: "network",
                                             class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
-                                            placeholder: "Paste the signed transaction here...",
+                                            option { value: "mainnet", "Mainnet" }
+                                            option { value: "testnet", "Testnet" }
+                                            option { value: "signet", "Signet" }
+                                            option { value: "regtest", "Regtest" }
                                         }
                                     }
                                 }
+                            }
 
-                                div { class: "grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6",
-                                    div { class: "sm:col-span-3",
-                                        label {
-                                            r#for: "network",
-                                            class: "block text-sm font-medium text-gray-700",
-                                            "Bitcoin Network"
-                                        }
-                                        div { class: "mt-1",
-                                            select {
-                                                id: "network",
-                                                name: "network",
-                                                class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
-                                                option { value: "mainnet", "Mainnet" }
-                                                option { value: "testnet", "Testnet" }
-                                                option { value: "signet", "Signet" }
-                                                option { value: "regtest", "Regtest" }
-                                            }
-                                        }
-                                    }
-                                }
-
-                                div { class: "pt-5",
-                                    div { class: "flex justify-end",
-                                        // TODO: Use PrimaryButton with a custom onclick
-                                        button {
-                                            r#type: "submit",
-                                            class: "ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500",
-                                            "Broadcast Transaction"
-                                        }
+                            div { class: "pt-5",
+                                div { class: "flex justify-end",
+                                    // TODO: Use PrimaryButton with a custom onclick
+                                    button {
+                                        r#type: "submit",
+                                        class: "ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500",
+                                        "Broadcast Transaction"
                                     }
                                 }
                             }

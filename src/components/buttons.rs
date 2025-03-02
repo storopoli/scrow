@@ -78,7 +78,7 @@ pub(crate) fn CopyButton(text: String, clipboard_text: String) -> Element {
 
 /// Primary button component.
 #[component]
-pub fn PrimaryButton(text: String, onclick: Callback<MouseEvent>) -> Element {
+pub(crate) fn PrimaryButton(text: String, onclick: Callback<MouseEvent>) -> Element {
     rsx! {
         button {
             r#type: "button",
@@ -91,7 +91,7 @@ pub fn PrimaryButton(text: String, onclick: Callback<MouseEvent>) -> Element {
 
 /// Secondary button component.
 #[component]
-pub fn SecondaryButton(text: String, onclick: Callback<MouseEvent>) -> Element {
+pub(crate) fn SecondaryButton(text: String, onclick: Callback<MouseEvent>) -> Element {
     rsx! {
         button {
             r#type: "button",
@@ -104,7 +104,7 @@ pub fn SecondaryButton(text: String, onclick: Callback<MouseEvent>) -> Element {
 
 /// Continue to section button component.
 #[component]
-pub fn ContinueButton(text: String, to: Route) -> Element {
+pub(crate) fn ContinueButton(text: String, to: Route) -> Element {
     rsx! {
         Link {
             class: "ml-3 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500",

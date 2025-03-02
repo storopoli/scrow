@@ -5,7 +5,7 @@ use thiserror::Error;
 /// Errors related to Bitcoin scripts, transaction building and signing,
 /// network operations, string parsing, and other common errors.
 #[derive(Debug, Error)]
-pub enum Error {
+pub(crate) enum Error {
     #[error("Wrong Inputs: {0}")]
     WrongInputs(String),
 

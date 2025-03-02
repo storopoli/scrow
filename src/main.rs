@@ -10,13 +10,13 @@ use dioxus::logger::{
     tracing::{Level, info},
 };
 
-pub mod components;
-pub mod error;
-pub mod esplora;
-pub mod scripts;
-pub mod sign;
-pub mod tx;
-pub mod util;
+pub(crate) mod components;
+pub(crate) mod error;
+pub(crate) mod esplora;
+pub(crate) mod scripts;
+pub(crate) mod sign;
+pub(crate) mod tx;
+pub(crate) mod util;
 
 use components::{Broadcast, Combine, Create, Home, Navbar, Settings, Sign, Spend};
 
