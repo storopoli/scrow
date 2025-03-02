@@ -45,6 +45,13 @@ const FAVICON: Asset = asset!("/assets/favicon.ico");
 const TAILWIND_CSS: Asset = asset!("/assets/tailwind.css");
 const LOGO: Asset = asset!("/assets/logo.svg");
 
+/// The default network
+static NETWORK: GlobalSignal<String> = Global::new(|| "Mainnet".to_string());
+
+/// The default esplora endpoint
+static ESPLORA_ENDPOINT: GlobalSignal<String> =
+    Global::new(|| "https://mempool.space/api".to_string());
+
 fn main() {
     #[cfg(debug_assertions)]
     {
