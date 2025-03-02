@@ -25,8 +25,8 @@ use crate::{error::Error, util::npub_to_x_only_public_key};
 ///
 /// But this is fine; we only need a generator with no efficiently-computable discrete logarithm
 /// relation against the standard generator.
-pub const UNSPENDABLE_PUBLIC_KEY_INPUT: &[u8] = b"X-only-PK unspendable";
-pub static UNSPENDABLE_PUBLIC_KEY: LazyLock<XOnlyPublicKey> = LazyLock::new(|| {
+pub(crate) const UNSPENDABLE_PUBLIC_KEY_INPUT: &[u8] = b"X-only-PK unspendable";
+pub(crate) static UNSPENDABLE_PUBLIC_KEY: LazyLock<XOnlyPublicKey> = LazyLock::new(|| {
     XOnlyPublicKey::from_slice(sha256::Hash::hash(UNSPENDABLE_PUBLIC_KEY_INPUT).as_byte_array())
         .expect("valid xonly public key")
 });
@@ -60,7 +60,7 @@ pub static UNSPENDABLE_PUBLIC_KEY: LazyLock<XOnlyPublicKey> = LazyLock::new(|| {
 ///         /   \
 ///        B     C
 /// ```
-pub fn escrow_spend_info(
+pub(crate) fn escrow_spend_info(
     npub_1: &NostrPublicKey,
     npub_2: &NostrPublicKey,
     npub_arbitrator: Option<&NostrPublicKey>,
@@ -158,7 +158,7 @@ pub fn escrow_spend_info(
 ///         /   \
 ///        B     C
 /// ```
-pub fn escrow_scripts(
+pub(crate) fn escrow_scripts(
     npub_1: &NostrPublicKey,
     npub_2: &NostrPublicKey,
     npub_arbitrator: Option<&NostrPublicKey>,
@@ -232,7 +232,7 @@ pub fn escrow_scripts(
 ///        B     C
 /// ```
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
-pub enum EscrowScript {
+pub(crate) enum EscrowScript {
     A,
     B,
     C,
@@ -267,7 +267,7 @@ pub enum EscrowScript {
 ///         /   \
 ///        B     C
 /// ```
-pub fn escrow_address(
+pub(crate) fn escrow_address(
     npub_1: &NostrPublicKey,
     npub_2: &NostrPublicKey,
     npub_arbitrator: Option<&NostrPublicKey>,

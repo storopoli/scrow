@@ -12,8 +12,7 @@ pub(crate) mod sign;
 pub(crate) mod spend;
 
 pub(crate) use broadcast::Broadcast;
-#[allow(unused_imports)] // TODO: use these
-pub(crate) use buttons::{CopyButton, PrimaryButton, SecondaryButton};
+pub(crate) use buttons::{ContinueButton, CopyButton, PrimaryButton, SecondaryButton};
 pub(crate) use combine::Combine;
 pub(crate) use create::Create;
 pub(crate) use footer::Footer;

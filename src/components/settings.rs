@@ -3,13 +3,16 @@
 use dioxus::prelude::*;
 
 #[cfg(debug_assertions)]
-use dioxus::logger::tracing::info;
+use dioxus::logger::tracing::trace;
 
-use super::Footer;
+use crate::{ESPLORA_ENDPOINT, NETWORK};
+
+use super::{Footer, SecondaryButton};
 
 /// Settings component.
 #[component]
 pub(crate) fn Settings() -> Element {
+    // Read the current values from global state
     rsx! {
         main { class: "max-w-7xl mx-auto py-6 sm:px-6 lg:px-8",
             div { class: "px-4 py-6 sm:px-0",
@@ -17,69 +20,74 @@ pub(crate) fn Settings() -> Element {
 
                 div { class: "bg-white shadow overflow-hidden sm:rounded-lg",
                     div { class: "px-4 py-5 sm:p-6",
-                        form {
-                            onsubmit: move |event| {
-                                #[cfg(debug_assertions)]
-                                info!("Submitted! Event: {event:?}");
-                                event.prevent_default();
-                            },
-                            div { class: "space-y-6",
-                                div { class: "grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6",
-                                    div { class: "sm:col-span-3",
-                                        label {
-                                            r#for: "network",
-                                            class: "block text-sm font-medium text-gray-700",
-                                            "Default Bitcoin Network"
-                                        }
-                                        div { class: "mt-1",
-                                            select {
-                                                id: "network",
-                                                name: "network",
-                                                class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
-                                                option { value: "mainnet", "Mainnet" }
-                                                option { value: "testnet", "Testnet" }
-                                                option { value: "signet", "Signet" }
-                                                option { value: "regtest", "Regtest" }
-                                            }
-                                        }
+                        div { class: "space-y-6",
+                            div { class: "grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6",
+                                div { class: "sm:col-span-3",
+                                    label {
+                                        r#for: "network",
+                                        class: "block text-sm font-medium text-gray-700",
+                                        "Default Bitcoin Network"
                                     }
-
-                                    div { class: "sm:col-span-6",
-                                        label {
-                                            r#for: "esplora-url",
-                                            class: "block text-sm font-medium text-gray-700",
-                                            "Esplora API Backend URL"
-                                        }
-                                        div { class: "mt-1",
-                                            input {
-                                                r#type: "url",
-                                                name: "esplora-url",
-                                                id: "esplora-url",
-                                                class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
-                                                placeholder: "https://mempool.space/api",
-                                            }
-                                        }
-                                        p { class: "mt-2 text-xs text-gray-500",
-                                            "Default for mainnet: https://mempool.space/api"
+                                    div { class: "mt-1",
+                                        select {
+                                            id: "network",
+                                            name: "network",
+                                            class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
+                                            oninput: move |event| {
+                                                #[cfg(debug_assertions)]
+                                                trace!(% NETWORK, event_value =% event.value(), "Set network");
+                                                *NETWORK.write() = event.value();
+                                            },
+                                            value: NETWORK.read().clone(),
+                                            option { value: "Mainnet", "Mainnet" }
+                                            option { value: "Testnet", "Testnet" }
+                                            option { value: "Signet", "Signet" }
+                                            option { value: "Regtest", "Regtest" }
                                         }
                                     }
                                 }
 
-                                div { class: "pt-5",
-                                    div { class: "flex justify-end space-x-3",
-                                        // TODO: Use SecondaryButton with a custom onclick
-                                        button {
-                                            r#type: "button",
-                                            class: "inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500",
-                                            onclick: move |_| {},
-                                            "Restore Defaults"
+                                div { class: "sm:col-span-6",
+                                    label {
+                                        r#for: "esplora-url",
+                                        class: "block text-sm font-medium text-gray-700",
+                                        "Esplora API Backend URL"
+                                    }
+                                    div { class: "mt-1",
+                                        input {
+                                            r#type: "url",
+                                            name: "esplora-url",
+                                            id: "esplora-url",
+                                            class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
+                                            placeholder: "https://mempool.space/api",
+                                            value: ESPLORA_ENDPOINT.read().clone(),
+                                            oninput: move |event| {
+                                                #[cfg(debug_assertions)]
+                                                trace!(% ESPLORA_ENDPOINT, event_value =% event.value(), "Set Eslora endpoint");
+                                                *ESPLORA_ENDPOINT.write() = event.value();
+                                            },
                                         }
-                                        // TODO: Use PrimaryButton with a custom onclick
-                                        button {
-                                            r#type: "submit",
-                                            class: "inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500",
-                                            "Save Settings"
-                                        }
+                                    }
+                                    p { class: "mt-2 text-xs text-gray-500",
+                                        "Default for mainnet: https://mempool.space/api"
+                                    }
+                                }
+                            }
+
+                            div { class: "pt-5",
+                                div { class: "flex justify-end space-x-3",
+                                    SecondaryButton {
+                                        onclick: move |_| {
+                                            *NETWORK.write() = "Mainnet".to_string();
+                                            *ESPLORA_ENDPOINT.write() = "https://mempool.space/api".to_string();
+                                        },
+                                        text: "Restore Defaults",
+                                    }
+                                    // TODO: Use PrimaryButton with a custom onclick
+                                    button {
+                                        r#type: "button",
+                                        class: "inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500",
+                                        "Save Settings"
                                     }
                                 }
                             }

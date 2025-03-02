@@ -7,3 +7,5 @@
 
 # PWA Builder template
 *.js linguist-generated
+*.css linguist-generated
+*.html linguist-generated

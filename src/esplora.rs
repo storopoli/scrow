@@ -1,4 +1,5 @@
 //! Interactions with Esplora backends.
+#![allow(dead_code)] // TODO: Dynamic fee estimates
 
 use std::collections::HashMap;
 
@@ -8,20 +9,22 @@ use esplora_client::{AsyncClient, Builder, r#async::DefaultSleeper};
 use crate::error::Error;
 
 /// How Esplora returns fee estimates.
-pub type FeeEstimate = HashMap<u16, f64>;
+pub(crate) type FeeEstimate = HashMap<u16, f64>;
 
 /// Creates a new `async` Esplora client.
-pub fn create_client(url: &str) -> Result<AsyncClient<DefaultSleeper>, Error> {
+pub(crate) fn create_client(url: &str) -> Result<AsyncClient<DefaultSleeper>, Error> {
     Ok(Builder::new(url).build_async()?)
 }
 
 /// Gets fee estimates from Esplora.
-pub async fn get_fee_estimates(client: &AsyncClient<DefaultSleeper>) -> Result<FeeEstimate, Error> {
+pub(crate) async fn get_fee_estimates(
+    client: &AsyncClient<DefaultSleeper>,
+) -> Result<FeeEstimate, Error> {
     Ok(client.get_fee_estimates().await?)
 }
 
 /// Gets balance from Esplora.
-pub async fn get_balance(
+pub(crate) async fn get_balance(
     client: &AsyncClient<DefaultSleeper>,
     address: &Address,
 ) -> Result<Amount, Error> {
@@ -34,7 +37,7 @@ pub async fn get_balance(
 /// Gets funding [`Txid`] from Esplora.
 ///
 /// This assumes a virgin address with just one funding transaction.
-pub async fn get_funding_txid(
+pub(crate) async fn get_funding_txid(
     client: &AsyncClient<DefaultSleeper>,
     address: &Address,
 ) -> Result<Txid, Error> {
@@ -51,7 +54,7 @@ pub async fn get_funding_txid(
 }
 
 /// Broadcast [`Transaction`].
-pub async fn broadcast_transaction(
+pub(crate) async fn broadcast_transaction(
     client: &AsyncClient<DefaultSleeper>,
     transaction: &Transaction,
 ) -> Result<(), Error> {

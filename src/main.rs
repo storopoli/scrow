@@ -10,13 +10,13 @@ use dioxus::logger::{
     tracing::{Level, info},
 };
 
-pub mod components;
-pub mod error;
-pub mod esplora;
-pub mod scripts;
-pub mod sign;
-pub mod tx;
-pub mod util;
+pub(crate) mod components;
+pub(crate) mod error;
+pub(crate) mod esplora;
+pub(crate) mod scripts;
+pub(crate) mod sign;
+pub(crate) mod tx;
+pub(crate) mod util;
 
 use components::{Broadcast, Combine, Create, Home, Navbar, Settings, Sign, Spend};
 
@@ -25,6 +25,7 @@ use components::{Broadcast, Combine, Create, Home, Navbar, Settings, Sign, Spend
 enum Route {
     #[layout(Navbar)]
         #[route("/")]
+        #[redirect("/:.._segments", |_segments: Vec<String>| Route::Home {})]
         Home {},
         #[route("/create")]
         Create {},
@@ -43,6 +44,13 @@ enum Route {
 const FAVICON: Asset = asset!("/assets/favicon.ico");
 const TAILWIND_CSS: Asset = asset!("/assets/tailwind.css");
 const LOGO: Asset = asset!("/assets/logo.svg");
+
+/// The default network
+static NETWORK: GlobalSignal<String> = Global::new(|| "Mainnet".to_string());
+
+/// The default esplora endpoint
+static ESPLORA_ENDPOINT: GlobalSignal<String> =
+    Global::new(|| "https://mempool.space/api".to_string());
 
 fn main() {
     #[cfg(debug_assertions)]
