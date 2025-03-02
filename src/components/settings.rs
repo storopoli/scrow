@@ -7,7 +7,7 @@ use dioxus::logger::tracing::trace;
 
 use crate::{ESPLORA_ENDPOINT, NETWORK};
 
-use super::Footer;
+use super::{Footer, SecondaryButton};
 
 /// Settings component.
 #[component]
@@ -76,15 +76,12 @@ pub(crate) fn Settings() -> Element {
 
                             div { class: "pt-5",
                                 div { class: "flex justify-end space-x-3",
-                                    // TODO: Use SecondaryButton with a custom onclick
-                                    button {
-                                        r#type: "button",
-                                        class: "inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500",
+                                    SecondaryButton {
                                         onclick: move |_| {
                                             *NETWORK.write() = "Mainnet".to_string();
                                             *ESPLORA_ENDPOINT.write() = "https://mempool.space/api".to_string();
                                         },
-                                        "Restore Defaults"
+                                        text: "Restore Defaults",
                                     }
                                     // TODO: Use PrimaryButton with a custom onclick
                                     button {

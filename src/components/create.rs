@@ -6,13 +6,14 @@ use dioxus::prelude::*;
 #[cfg(debug_assertions)]
 use dioxus::logger::tracing::trace;
 
-use super::{CopyButton, Footer};
 use crate::{
     NETWORK, Route,
     scripts::escrow_address,
     tx::escrow_tx,
     util::{P2TR_TX_WEIGHT_FUNDING, hours_to_blocks, parse_network, parse_npub},
 };
+
+use super::{ContinueButton, CopyButton, Footer, PrimaryButton};
 
 /// Create escrow transaction component.
 #[component]
@@ -281,57 +282,53 @@ pub(crate) fn Create() -> Element {
                             }
 
 
-                            div { class: "pt-5",
-                                div { class: "flex",
-                                    CopyButton {
-                                        text: "Address",
-                                        clipboard_text: escrow_address_str,
-                                    }
-                                    button {
-                                        r#type: "button",
-                                        class: "ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500",
-                                        onclick: move |_| {
+                            div { class: "mt-5 flex",
+                                CopyButton {
+                                    text: "Address",
+                                    clipboard_text: escrow_address_str,
+                                }
+                                PrimaryButton {
+                                    onclick: move |_| {
+                                        #[cfg(debug_assertions)]
+                                        trace!(
+                                            % npub_buyer, % npub_seller, % btc_amount_buyer, % btc_amount_seller, %
+                                            fee_rate, % NETWORK, % npub_arbitrator, % timelock_days, % timelock_hours,
+                                            "Clicked Generate Address"
+                                        );
+                                        let npub_buyer = parse_npub(&npub_buyer.read()).unwrap();
+                                        let npub_seller = parse_npub(&npub_seller.read()).unwrap();
+                                        let network = parse_network(NETWORK.read().clone()).unwrap();
+                                        let resolved_escrow_address = if !npub_arbitrator.read().is_empty() {
                                             #[cfg(debug_assertions)]
-                                            trace!(
-                                                % npub_buyer, % npub_seller, % btc_amount_buyer, % btc_amount_seller, %
-                                                fee_rate, % NETWORK, % npub_arbitrator, % timelock_days, % timelock_hours,
-                                                "Clicked Generate Address"
+                                            trace!("dispute escrow address");
+                                            let npub_arbitrator = parse_npub(&npub_arbitrator.read()).unwrap();
+                                            let timelock_hours = hours_to_blocks(
+                                                timelock_hours.read().parse::<u32>().unwrap(),
                                             );
-                                            let npub_buyer = parse_npub(&npub_buyer.read()).unwrap();
-                                            let npub_seller = parse_npub(&npub_seller.read()).unwrap();
-                                            let network = parse_network(NETWORK.read().clone()).unwrap();
-                                            let resolved_escrow_address = if !npub_arbitrator.read().is_empty() {
-                                                #[cfg(debug_assertions)]
-                                                trace!("dispute escrow address");
-                                                let npub_arbitrator = parse_npub(&npub_arbitrator.read()).unwrap();
-                                                let timelock_hours = hours_to_blocks(
-                                                    timelock_hours.read().parse::<u32>().unwrap(),
-                                                );
-                                                let timelock_days = hours_to_blocks(
-                                                    timelock_days.read().parse::<u32>().unwrap(),
-                                                );
-                                                escrow_address(
-                                                        &npub_buyer,
-                                                        &npub_seller,
-                                                        Some(&npub_arbitrator),
-                                                        Some(timelock_days + timelock_hours),
-                                                        network,
-                                                    )
-                                                    .unwrap()
-                                                    .to_string()
-                                            } else {
-                                                #[cfg(debug_assertions)]
-                                                trace!("collaborative escrow address");
-                                                escrow_address(&npub_buyer, &npub_seller, None, None, network)
-                                                    .unwrap()
-                                                    .to_string()
-                                            };
+                                            let timelock_days = hours_to_blocks(
+                                                timelock_days.read().parse::<u32>().unwrap(),
+                                            );
+                                            escrow_address(
+                                                    &npub_buyer,
+                                                    &npub_seller,
+                                                    Some(&npub_arbitrator),
+                                                    Some(timelock_days + timelock_hours),
+                                                    network,
+                                                )
+                                                .unwrap()
+                                                .to_string()
+                                        } else {
                                             #[cfg(debug_assertions)]
-                                            trace!(% resolved_escrow_address, "Derived escrow address");
-                                            escrow_address_str.set(resolved_escrow_address);
-                                        },
-                                        "Generate Address"
-                                    }
+                                            trace!("collaborative escrow address");
+                                            escrow_address(&npub_buyer, &npub_seller, None, None, network)
+                                                .unwrap()
+                                                .to_string()
+                                        };
+                                        #[cfg(debug_assertions)]
+                                        trace!(% resolved_escrow_address, "Derived escrow address");
+                                        escrow_address_str.set(resolved_escrow_address);
+                                    },
+                                    text: "Generate Address",
                                 }
                             }
                         }
@@ -398,9 +395,7 @@ pub(crate) fn Create() -> Element {
                                     text: "Transaction",
                                     clipboard_text: escrow_transaction,
                                 }
-                                button {
-                                    r#type: "button",
-                                    class: "ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500",
+                                PrimaryButton {
                                     onclick: move |_| {
                                         #[cfg(debug_assertions)]
                                         trace!(
@@ -463,12 +458,11 @@ pub(crate) fn Create() -> Element {
                                         trace!(% resolved_escrow_transaction, "Derived escrow transaction");
                                         escrow_transaction.set(resolved_escrow_transaction);
                                     },
-                                    "Generate Transaction"
+                                    text: "Generate Transaction",
                                 }
-                                Link {
+                                ContinueButton {
                                     to: Route::Sign {},
-                                    class: "ml-3 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500",
-                                    "Continue to Sign"
+                                    text: "Continue to Sign",
                                 }
                             }
                         }
