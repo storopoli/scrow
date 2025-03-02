@@ -165,8 +165,6 @@ pub(crate) fn Create() -> Element {
                                     }
                                 }
 
-
-
                                 div { class: "sm:col-span-3",
                                     label {
                                         r#for: "network",
