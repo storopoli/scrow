@@ -166,7 +166,7 @@ pub(crate) fn combine_signatures(
 
 #[cfg(test)]
 mod tests {
-    use std::sync::LazyLock;
+    use std::sync::{LazyLock, Once};
 
     use bitcoin::{
         Amount, BlockHash, Network, OutPoint, TxIn, absolute, consensus, hex::DisplayHex,
@@ -205,12 +205,22 @@ mod tests {
         (nsec, npub)
     }
 
+    // Only attempt to start tracing once
+    fn init_tracing() {
+        static INIT: Once = Once::new();
+
+        INIT.call_once(|| {
+            tracing_subscriber::registry()
+                .with(fmt::layer())
+                .with(EnvFilter::from_default_env())
+                .try_init()
+                .ok();
+        });
+    }
+
     #[test]
     fn sign_collaborative_tx_flow() {
-        tracing_subscriber::registry()
-            .with(fmt::layer())
-            .with(EnvFilter::from_default_env())
-            .init();
+        init_tracing();
 
         // Setup regtest node and clients.
         let bitcoind = Node::from_downloaded().unwrap();
@@ -377,10 +387,7 @@ mod tests {
 
     #[test]
     fn sign_dispute_tx_flow_1() {
-        tracing_subscriber::registry()
-            .with(fmt::layer())
-            .with(EnvFilter::from_default_env())
-            .init();
+        init_tracing();
 
         // Setup regtest node and clients.
         let bitcoind = Node::from_downloaded().unwrap();
@@ -572,10 +579,7 @@ mod tests {
 
     #[test]
     fn sign_dispute_tx_flow_2() {
-        tracing_subscriber::registry()
-            .with(fmt::layer())
-            .with(EnvFilter::from_default_env())
-            .init();
+        init_tracing();
 
         // Setup regtest node and clients.
         let bitcoind = Node::from_downloaded().unwrap();
