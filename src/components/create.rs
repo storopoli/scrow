@@ -31,7 +31,7 @@ pub(crate) fn Create() -> Element {
     let mut timelock_hours = use_signal(String::new);
     let mut funding_txid = use_signal(String::new);
     let mut escrow_address_str = use_signal(String::new);
-    let mut escrow_transaction = use_signal(|| "Transaction data will appear here.".to_string());
+    let mut escrow_transaction = use_signal(String::new);
     let mut derived_address_buyer = use_signal(String::new);
     let mut derived_address_seller = use_signal(String::new);
     rsx! {
@@ -442,7 +442,7 @@ pub(crate) fn Create() -> Element {
                                             id: "escrow-transaction",
                                             readonly: "true",
                                             class: "w-full h-32 p-3 border border-gray-300 rounded-md bg-gray-50 focus:ring-indigo-500 focus:border-indigo-500",
-                                            placeholder: escrow_transaction,
+                                            placeholder: "Transaction data will appear here...",
                                             value: escrow_transaction,
                                         }
                                     }

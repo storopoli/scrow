@@ -335,7 +335,7 @@ pub(crate) fn Sign() -> Element {
                                                 .unwrap();
                                             let signature_str = if !npub_arbitrator.read().is_empty() {
                                                 #[cfg(debug_assertions)]
-                                                trace!("dispute escrow address");
+                                                trace!("dispute escrow sign");
                                                 let npub_arbitrator = parse_npub(&npub_arbitrator.read()).unwrap();
                                                 let timelock_hours = hours_to_blocks(
                                                     timelock_hours.read().parse::<u32>().unwrap(),
@@ -370,7 +370,7 @@ pub(crate) fn Sign() -> Element {
                                                     .unwrap()
                                             } else {
                                                 #[cfg(debug_assertions)]
-                                                trace!("collaborative escrow address");
+                                                trace!("collaborative escrow sign");
                                                 let escrow_address = escrow_address(
                                                         &npub_buyer,
                                                         &npub_seller,
@@ -422,7 +422,7 @@ pub(crate) fn Sign() -> Element {
                                     readonly: "true",
                                     rows: "4",
                                     class: "shadow-sm block w-full sm:text-sm border-gray-300 rounded-md p-2 border bg-gray-50",
-                                    placeholder: signature,
+                                    placeholder: "Signature will appear here...",
                                     value: signature,
                                 }
                             }

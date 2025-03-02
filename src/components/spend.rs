@@ -12,7 +12,7 @@ use super::{ContinueButton, CopyButton, Footer};
 /// Spend from resolution address component.
 #[component]
 pub(crate) fn Spend() -> Element {
-    let signed_transaction = use_signal(|| "Signed transaction will appear here...");
+    let signed_transaction = use_signal(String::new);
     rsx! {
         main { class: "max-w-7xl mx-auto py-6 sm:px-6 lg:px-8",
             div { class: "px-4 py-6 sm:px-0",

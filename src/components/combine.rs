@@ -1,18 +1,35 @@
 //! Combine escrow signatures component.
 
+use bitcoin::{Transaction, consensus, hex::DisplayHex};
 use dioxus::prelude::*;
 
 #[cfg(debug_assertions)]
-use dioxus::logger::tracing::trace;
+use dioxus::logger::tracing::{info, trace};
+use secp256k1::schnorr;
 
-use crate::Route;
+use crate::{
+    Route,
+    scripts::{escrow_scripts, escrow_spend_info},
+    sign::combine_signatures,
+    util::{days_to_blocks, hours_to_blocks, parse_escrow_type, parse_npub},
+};
 
-use super::{ContinueButton, CopyButton, Footer};
+use super::{ContinueButton, CopyButton, Footer, PrimaryButton};
 
 /// Combine escrow transaction component.
 #[component]
 pub(crate) fn Combine() -> Element {
-    let signed_transaction = use_signal(|| "Signed transaction will appear here...");
+    let mut unsigned_tx = use_signal(String::new);
+    let mut signed_tx_str = use_signal(String::new);
+    let mut escrow_type = use_signal(String::new);
+    let mut npub_buyer = use_signal(String::new);
+    let mut npub_seller = use_signal(String::new);
+    let mut signature_1 = use_signal(String::new);
+    let mut signature_2 = use_signal(String::new);
+    let mut npub_arbitrator = use_signal(String::new);
+    let mut timelock_days = use_signal(String::new);
+    let mut timelock_hours = use_signal(String::new);
+    let mut signature_arbitrator = use_signal(String::new);
     rsx! {
         main { class: "max-w-7xl mx-auto py-6 sm:px-6 lg:px-8",
             div { class: "px-4 py-6 sm:px-0",
@@ -34,6 +51,12 @@ pub(crate) fn Combine() -> Element {
                                         rows: "4",
                                         class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
                                         placeholder: "Paste the unsigned transaction here...",
+                                        oninput: move |event| {
+                                            #[cfg(debug_assertions)]
+                                            trace!(% unsigned_tx, event_value =% event.value(), "Set unsigned transaction");
+                                            unsigned_tx.set(event.value());
+                                        },
+                                        value: unsigned_tx,
                                     }
                                 }
                             }
@@ -51,7 +74,12 @@ pub(crate) fn Combine() -> Element {
                                             name: "npub1",
                                             id: "npub1",
                                             class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
-                                            placeholder: "npub1...",
+                                            placeholder: "npub...",
+                                            oninput: move |event| {
+                                                #[cfg(debug_assertions)]
+                                                trace!(% npub_buyer, event_value =% event.value(), "Set buyer's npub");
+                                                npub_buyer.set(event.value());
+                                            },
                                         }
                                     }
                                 }
@@ -68,7 +96,12 @@ pub(crate) fn Combine() -> Element {
                                             name: "npub2",
                                             id: "npub2",
                                             class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
-                                            placeholder: "npub2...",
+                                            placeholder: "npub...",
+                                            oninput: move |event| {
+                                                #[cfg(debug_assertions)]
+                                                trace!(% npub_seller, event_value =% event.value(), "Set seller's npub");
+                                                npub_seller.set(event.value());
+                                            },
                                         }
                                     }
                                 }
@@ -85,7 +118,12 @@ pub(crate) fn Combine() -> Element {
                                             name: "signature1",
                                             rows: "2",
                                             class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
-                                            placeholder: "Paste the first signature here...",
+                                            placeholder: "Paste signature here...",
+                                            oninput: move |event| {
+                                                #[cfg(debug_assertions)]
+                                                trace!(% signature_1, event_value =% event.value(), "Set signature 1");
+                                                signature_1.set(event.value());
+                                            },
                                         }
                                     }
                                 }
@@ -102,7 +140,12 @@ pub(crate) fn Combine() -> Element {
                                             name: "signature2",
                                             rows: "2",
                                             class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
-                                            placeholder: "Paste the second signature here...",
+                                            placeholder: "Paste signature here...",
+                                            oninput: move |event| {
+                                                #[cfg(debug_assertions)]
+                                                trace!(% signature_2, event_value =% event.value(), "Set signature 2");
+                                                signature_2.set(event.value());
+                                            },
                                         }
                                     }
                                 }
@@ -118,6 +161,11 @@ pub(crate) fn Combine() -> Element {
                                             id: "escrow-type",
                                             name: "escrow-type",
                                             class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
+                                            oninput: move |event| {
+                                                #[cfg(debug_assertions)]
+                                                trace!(% escrow_type, event_value =% event.value(), "Set escrow type");
+                                                escrow_type.set(event.value());
+                                            },
                                             option { value: "A", "A - Collaborative (2-of-2)" }
                                             option { value: "B", "B - Dispute: First Party + Arbitrator" }
                                             option { value: "C", "C - Dispute: Second Party + Arbitrator" }
@@ -147,6 +195,11 @@ pub(crate) fn Combine() -> Element {
                                                 id: "arbitrator",
                                                 class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
                                                 placeholder: "npub...",
+                                                oninput: move |event| {
+                                                    #[cfg(debug_assertions)]
+                                                    trace!(% npub_arbitrator, event_value =% event.value(), "Set arbitrator's npub");
+                                                    npub_arbitrator.set(event.value());
+                                                },
                                             }
                                         }
                                     }
@@ -167,6 +220,11 @@ pub(crate) fn Combine() -> Element {
                                                         id: "timelock-days",
                                                         class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
                                                         placeholder: "0",
+                                                        oninput: move |event| {
+                                                            #[cfg(debug_assertions)]
+                                                            trace!(% timelock_days, event_value =% event.value(), "Set timelock days");
+                                                            timelock_days.set(event.value());
+                                                        },
                                                     }
                                                 }
                                             }
@@ -185,6 +243,11 @@ pub(crate) fn Combine() -> Element {
                                                         id: "timelock-hours",
                                                         class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
                                                         placeholder: "0",
+                                                        oninput: move |event| {
+                                                            #[cfg(debug_assertions)]
+                                                            trace!(% timelock_hours, event_value =% event.value(), "Set timelock hours");
+                                                            timelock_hours.set(event.value());
+                                                        },
                                                     }
                                                 }
                                             }
@@ -203,7 +266,15 @@ pub(crate) fn Combine() -> Element {
                                                 name: "signaturearb",
                                                 rows: "2",
                                                 class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
-                                                placeholder: "Paste the arbitrator signature here...",
+                                                placeholder: "Paste signature here...",
+                                                oninput: move |event| {
+                                                    #[cfg(debug_assertions)]
+                                                    trace!(
+                                                        % signature_arbitrator, event_value =% event.value(),
+                                                        "Set signature arbitrator"
+                                                    );
+                                                    signature_arbitrator.set(event.value());
+                                                },
                                             }
                                         }
                                     }
@@ -213,10 +284,96 @@ pub(crate) fn Combine() -> Element {
                             div { class: "pt-5",
                                 div { class: "flex justify-end",
                                     // TODO: Use PrimaryButton with a custom onclick
-                                    button {
-                                        r#type: "submit",
-                                        class: "ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500",
-                                        "Combine Signatures"
+                                    PrimaryButton {
+                                        onclick: move |_| {
+                                            #[cfg(debug_assertions)]
+                                            trace!(
+                                                % npub_buyer, % npub_seller, % signature_1, % signature_2, % npub_arbitrator,
+                                                % signature_arbitrator, % timelock_days, % timelock_hours, % escrow_type,
+                                                "Clicked Combine Signatures"
+                                            );
+                                            let npub_buyer = parse_npub(&npub_buyer.read()).unwrap();
+                                            let npub_seller = parse_npub(&npub_seller.read()).unwrap();
+                                            let escrow_type = parse_escrow_type(&escrow_type.read()).unwrap();
+                                            let unsigned_tx: Transaction = consensus::deserialize(
+                                                    unsigned_tx.read().as_bytes(),
+                                                )
+                                                .unwrap();
+                                            let signatures: Vec<schnorr::Signature> = vec![
+                                                signature_1.read(),
+                                                signature_2.read(),
+                                                signature_arbitrator.read(),
+                                            ]
+                                                .into_iter()
+                                                .filter(|s| !s.is_empty())
+                                                .map(|s| s.parse::<schnorr::Signature>().unwrap())
+                                                .collect();
+                                            let signed_tx = if !npub_arbitrator.read().is_empty() {
+                                                #[cfg(debug_assertions)]
+                                                trace!("dispute escrow combine signatures");
+                                                let npub_arbitrator = parse_npub(&npub_arbitrator.read()).unwrap();
+                                                let timelock_hours = hours_to_blocks(
+                                                    timelock_hours.read().parse::<u32>().unwrap(),
+                                                );
+                                                let timelock_days = days_to_blocks(
+                                                    timelock_days.read().parse::<u32>().unwrap(),
+                                                );
+                                                let timelock_duration = timelock_days + timelock_hours;
+                                                let locking_script = escrow_scripts(
+                                                        &npub_buyer,
+                                                        &npub_seller,
+                                                        Some(&npub_arbitrator),
+                                                        Some(timelock_duration),
+                                                        escrow_type,
+                                                    )
+                                                    .unwrap();
+                                                let taproot_spend_info = escrow_spend_info(
+                                                        &npub_buyer,
+                                                        &npub_seller,
+                                                        Some(&npub_arbitrator),
+                                                        Some(timelock_duration),
+                                                    )
+                                                    .unwrap();
+                                                let signed_tx = combine_signatures(
+                                                    unsigned_tx,
+                                                    0,
+                                                    signatures.iter().collect::<Vec<&schnorr::Signature>>(),
+                                                    &locking_script,
+                                                    &taproot_spend_info,
+                                                );
+                                                consensus::serialize(&signed_tx).as_hex().to_string()
+                                            } else {
+                                                #[cfg(debug_assertions)]
+                                                trace!("collaborative escrow combine signatures");
+                                                let locking_script = escrow_scripts(
+                                                        &npub_buyer,
+                                                        &npub_seller,
+                                                        None,
+                                                        None,
+                                                        escrow_type,
+                                                    )
+                                                    .unwrap();
+                                                let taproot_spend_info = escrow_spend_info(
+                                                        &npub_buyer,
+                                                        &npub_seller,
+                                                        None,
+                                                        None,
+                                                    )
+                                                    .unwrap();
+                                                let signed_tx = combine_signatures(
+                                                    unsigned_tx,
+                                                    0,
+                                                    signatures.iter().collect::<Vec<&schnorr::Signature>>(),
+                                                    &locking_script,
+                                                    &taproot_spend_info,
+                                                );
+                                                consensus::serialize(&signed_tx).as_hex().to_string()
+                                            };
+                                            #[cfg(debug_assertions)]
+                                            info!(% signed_tx, "Combined signatures into a signed transaction");
+                                            signed_tx_str.set(signed_tx);
+                                        },
+                                        text: "Combine Signatures",
                                     }
                                 }
                             }
@@ -244,7 +401,8 @@ pub(crate) fn Combine() -> Element {
                                         readonly: "true",
                                         rows: "4",
                                         class: "shadow-sm block w-full sm:text-sm border-gray-300 rounded-md p-2 border bg-gray-50",
-                                        placeholder: signed_transaction,
+                                        placeholder: "Signed transaction will appear here...",
+                                        value: signed_tx_str,
                                     }
                                 }
                             }
@@ -253,7 +411,7 @@ pub(crate) fn Combine() -> Element {
                         div { class: "mt-5 flex flex-col space-y-3 sm:flex-row sm:space-y-0 sm:space-x-3",
                             CopyButton {
                                 text: "Transaction",
-                                clipboard_text: signed_transaction,
+                                clipboard_text: signed_tx_str,
                             }
                             ContinueButton {
                                 to: Route::Broadcast {},
