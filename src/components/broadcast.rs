@@ -18,6 +18,14 @@ pub(crate) fn Broadcast() -> Element {
     let mut signed_tx = use_signal(String::new);
     let mut broadcast_result_str = use_signal(String::new);
     let mut broadcasted_txid = use_signal(String::new);
+    let esplora_base_url = use_memo(move || {
+        let esplora_endpoint = ESPLORA_ENDPOINT.read().clone();
+        let break_points = esplora_endpoint.split("api").collect::<Vec<&str>>();
+        break_points
+            .first()
+            .map(|&url| url.to_string())
+            .unwrap_or_default()
+    });
     rsx! {
         main { class: "max-w-7xl mx-auto py-6 sm:px-6 lg:px-8",
             div { class: "px-4 py-6 sm:px-0",
@@ -67,10 +75,10 @@ pub(crate) fn Broadcast() -> Element {
                                                 *NETWORK.write() = event.value();
                                             },
                                             value: NETWORK.read().clone(),
-                                            option { value: "mainnet", "Mainnet" }
-                                            option { value: "testnet", "Testnet" }
-                                            option { value: "signet", "Signet" }
-                                            option { value: "regtest", "Regtest" }
+                                            option { value: "Mainnet", "Mainnet" }
+                                            option { value: "Testnet", "Testnet" }
+                                            option { value: "Signet", "Signet" }
+                                            option { value: "Regtest", "Regtest" }
                                         }
                                     }
                                 }
@@ -80,18 +88,20 @@ pub(crate) fn Broadcast() -> Element {
                                 div { class: "flex justify-end",
                                     PrimaryButton {
                                         onclick: move |_| {
+                                            info!(% ESPLORA_ENDPOINT, "Created esplora client");
                                             let esplora_client = create_client(&ESPLORA_ENDPOINT.read()).unwrap();
                                             let signed_tx: Transaction = consensus::deserialize(
                                                     Vec::from_hex(&signed_tx.read()).unwrap().as_ref(),
                                                 )
                                                 .unwrap();
                                             let txid = signed_tx.compute_txid();
+                                            broadcasted_txid.set(txid.to_string());
                                             spawn(async move {
                                                 let broadcast_result = broadcast_transaction(&esplora_client, &signed_tx)
                                                     .await;
+                                                info!(? broadcast_result, "broadcast_result");
                                                 match broadcast_result {
                                                     Ok(_) => {
-                                                        broadcasted_txid.set(txid.to_string());
                                                         #[cfg(debug_assertions)]
                                                         info!(% txid, "Transaction broadcasted successfully");
                                                         broadcast_result_str.set("Success".to_string());
@@ -121,7 +131,7 @@ pub(crate) fn Broadcast() -> Element {
                     && broadcast_result_str.read().starts_with("Success")
                 {
                     // Result Section
-                    div { class: "mt-8 bg-white shadow hidden overflow-hidden sm:rounded-lg",
+                    div { class: "mt-8 bg-white shadow overflow-hidden sm:rounded-lg",
                         div { class: "px-4 py-5 sm:p-6",
 
                             div { class: "rounded-md bg-green-50 p-4",
@@ -157,7 +167,7 @@ pub(crate) fn Broadcast() -> Element {
                                         div { class: "mt-4",
                                             div { class: "-mx-2 -my-1.5 flex",
                                                 a {
-                                                    href: "#", // This would be dynamically set based on the TX ID and network
+                                                    href: format!("{}tx/{}", esplora_base_url.read(), broadcasted_txid.read()),
                                                     target: "_blank",
                                                     class: "bg-green-50 px-2 py-1.5 rounded-md text-sm font-medium text-green-800 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-green-50 focus:ring-green-600",
                                                     "View on Block Explorer"
@@ -173,7 +183,7 @@ pub(crate) fn Broadcast() -> Element {
                     && broadcast_result_str.read().starts_with("Error")
                 {
                     // Result Section
-                    div { class: "mt-8 bg-white shadow hidden overflow-hidden sm:rounded-lg",
+                    div { class: "mt-8 bg-white shadow overflow-hidden sm:rounded-lg",
                         div { class: "px-4 py-5 sm:p-6",
 
                             div { class: "rounded-md bg-red-50 p-4 ",
@@ -210,17 +220,7 @@ pub(crate) fn Broadcast() -> Element {
                                             "Broadcast Failed"
                                         }
                                         div { class: "mt-2 text-sm text-red-700",
-                                            p { "Error message will appear here" }
-                                        }
-                                        div { class: "mt-4",
-                                            div { class: "-mx-2 -my-1.5 flex",
-                                                // TODO: Use PrimaryButton with a custom onclick
-                                                button {
-                                                    r#type: "button",
-                                                    class: "bg-red-50 px-2 py-1.5 rounded-md text-sm font-medium text-red-800 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-red-50 focus:ring-red-600",
-                                                    "Try Again"
-                                                }
-                                            }
+                                            p { {broadcast_result_str} }
                                         }
                                     }
                                 }
