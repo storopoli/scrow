@@ -62,7 +62,7 @@ pub(crate) fn Spend() -> Element {
 
                                 div { class: "sm:col-span-3",
                                     label {
-                                        r#for: "npub1",
+                                        r#for: "npub",
                                         class: "block text-sm font-medium text-gray-700",
                                         "Your Nostr Public Key (npub)"
                                     }
@@ -90,15 +90,15 @@ pub(crate) fn Spend() -> Element {
 
                                 div { class: "sm:col-span-3",
                                     label {
-                                        r#for: "txid",
+                                        r#for: "escrow-txid",
                                         class: "block text-sm font-medium text-gray-700",
                                         "Escrow Resolution Transaction ID"
                                     }
                                     div { class: "mt-1",
                                         input {
                                             r#type: "text",
-                                            name: "txid",
-                                            id: "txid",
+                                            name: "escrow-txid",
+                                            id: "escrow-txid",
                                             class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
                                             placeholder: "txid...",
                                             oninput: move |event| {
@@ -110,7 +110,7 @@ pub(crate) fn Spend() -> Element {
                                     }
                                 }
 
-                                div { class: "sm: col-span-3",
+                                div { class: "sm:col-span-3",
                                     label {
                                         r#for: "destination-address",
                                         class: "block text-sm font-medium text-gray-700",
@@ -118,12 +118,10 @@ pub(crate) fn Spend() -> Element {
                                     }
                                     div { class: "mt-1",
                                         input {
-                                            id: "destination-address",
                                             r#type: "text",
-                                            name: "txid",
-                                            id: "txid",
+                                            name: "destination-address",
+                                            id: "destination-address",
                                             class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
-                                            class: "mt-1 text-sm text-gray-900 break-all bg-gray-50 p-3 rounded",
                                             placeholder: "Enter your destination address...",
                                             oninput: move |event| {
                                                 #[cfg(debug_assertions)]
@@ -185,18 +183,19 @@ pub(crate) fn Spend() -> Element {
                                         }
                                     }
                                 }
-                                div { class: "sm: col-span-3",
-                                    dt { class: "text-sm font-medium text-gray-900",
+
+                                div { class: "sm:col-span-3",
+                                    label { class: "block text-sm font-medium text-gray-700",
                                         "Your Resolution Address"
                                     }
-                                    dd {
-                                        id: "buyer-address",
-                                        class: "mt-1 text-sm text-gray-900 break-all bg-gray-50 p-3 rounded",
-                                        {
-                                            if derived_address.read().is_empty() {
-                                                "bc1p...".to_string()
-                                            } else {
-                                                derived_address.read().clone()
+                                    div { class: "mt-1",
+                                        div { class: "text-sm text-gray-900 break-all bg-gray-50 p-3 rounded",
+                                            {
+                                                if derived_address.read().is_empty() {
+                                                    "bc1p...".to_string()
+                                                } else {
+                                                    derived_address.read().clone()
+                                                }
                                             }
                                         }
                                     }
@@ -290,15 +289,20 @@ pub(crate) fn Spend() -> Element {
                             "Signed Transaction"
                         }
 
-                        div { class: "mt-4 grid grid-cols-3 gap-y-6 gap-x-4 sm:grid-cols-2",
-                            div { class: "col-span-3",
+                        div { class: "mt-5 border-t border-gray-200 pt-5",
+                            div { class: "sm:col-span-6",
+                                label {
+                                    r#for: "signed-tx",
+                                    class: "block text-sm font-medium text-gray-500",
+                                    "Signed Transaction"
+                                }
                                 div { class: "mt-1",
                                     textarea {
                                         id: "signed-tx",
                                         readonly: "true",
                                         rows: "4",
                                         class: "shadow-sm block w-full sm:text-sm border-gray-300 rounded-md p-2 border bg-gray-50",
-                                        placeholder: signed_tx_str,
+                                        value: signed_tx_str,
                                     }
                                 }
                             }
@@ -306,7 +310,7 @@ pub(crate) fn Spend() -> Element {
 
                         div { class: "mt-5 flex flex-col space-y-3 sm:flex-row sm:space-y-0 sm:space-x-3",
                             CopyButton {
-                                text: "Signature",
+                                text: "Transaction",
                                 clipboard_text: signed_tx_str,
                             }
                             ContinueButton {
