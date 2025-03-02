@@ -111,6 +111,7 @@ pub(crate) fn sign_escrow_tx(
 }
 
 /// Types of escrow transactions.
+#[allow(dead_code)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub(crate) enum EscrowType<'a> {
     /// Collaborative escrow transaction.

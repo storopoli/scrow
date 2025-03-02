@@ -44,7 +44,7 @@ pub(crate) fn parse_network(network: &str) -> Result<Network, Error> {
     }
 }
 
-/// Parses an escrow type string into a [`EscrowType`].
+/// Parses an escrow type string into a [`EscrowScript`].
 pub(crate) fn parse_escrow_type(escrow_type: &str) -> Result<EscrowScript, Error> {
     match escrow_type {
         "A" => Ok(EscrowScript::A),

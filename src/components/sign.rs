@@ -409,7 +409,7 @@ pub(crate) fn Sign() -> Element {
                     }
                 }
 
-                // Result Section (would be shown after form submission)
+                // Result Section (would be shown after button click)
                 div { class: "mt-8 bg-white shadow overflow-hidden sm:rounded-lg",
                     div { class: "px-4 py-5 sm:p-6",
                         h3 { class: "text-lg leading-6 font-medium text-gray-900",
