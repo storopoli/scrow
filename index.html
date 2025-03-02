@@ -11,14 +11,14 @@
         <meta content="text/html;charset=utf-8" http-equiv="Content-Type" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta charset="UTF-8" />
-    <link rel="preload" as="script" href="/./assets/scrow-5d28534022d6bb00.js" crossorigin><link rel="preload" as="fetch" type="application/wasm" href="/./assets/scrow_bg-9d449ceedd55a236.wasm" crossorigin></head>
+    <link rel="preload" as="script" href="/./assets/scrow-0be33079c8b8768b.js" crossorigin><link rel="preload" as="fetch" type="application/wasm" href="/./assets/scrow_bg-f3b87f64c0476d28.wasm" crossorigin></head>
     <body>
         <div id="main"></div>
     <script>
             // We can't use a module script here because we need to start the script immediately when streaming
-            import("/./assets/scrow-5d28534022d6bb00.js").then(
+            import("/./assets/scrow-0be33079c8b8768b.js").then(
                 ({ default: init }) => {
-                init("/./assets/scrow_bg-9d449ceedd55a236.wasm").then((wasm) => {
+                init("/./assets/scrow_bg-f3b87f64c0476d28.wasm").then((wasm) => {
                     if (wasm.__wbindgen_start == undefined) {
                     wasm.main();
                     }
