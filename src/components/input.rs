@@ -173,3 +173,64 @@ pub(crate) fn NetworkInput(label: String, id: String) -> Element {
         }
     }
 }
+
+/// Timelock input validation component.
+#[component]
+pub(crate) fn TimelockInput(
+    mut update_day_var: Signal<String>,
+    mut update_hour_var: Signal<String>,
+) -> Element {
+    rsx! {
+        div { class: "sm:col-span-3",
+            div { class: "grid grid-cols-2 gap-4",
+                div {
+                    label {
+                        r#for: "timelock-days",
+                        class: "block text-sm font-medium text-gray-700",
+                        "Timelock (Days)"
+                    }
+                    div { class: "mt-1",
+                        input {
+                            r#type: "number",
+                            min: "0",
+                            step: "1",
+                            name: "timelock-days",
+                            id: "timelock-days",
+                            class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
+                            placeholder: "0",
+                            oninput: move |event| {
+                                #[cfg(debug_assertions)]
+                                trace!(% update_day_var, event_value =% event.value(), "Set timelock days");
+                                update_day_var.set(event.value());
+                            },
+                        }
+                    }
+                }
+                div {
+                    label {
+                        r#for: "timelock-hours",
+                        class: "block text-sm font-medium text-gray-700",
+                        "Timelock (Hours)"
+                    }
+                    div { class: "mt-1",
+                        input {
+                            r#type: "number",
+                            min: "0",
+                            step: "1",
+                            max: "23",
+                            name: "timelock-hours",
+                            id: "timelock-hours",
+                            class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
+                            placeholder: "0",
+                            oninput: move |event| {
+                                #[cfg(debug_assertions)]
+                                trace!(% update_hour_var, event_value =% event.value(), "Set timelock hours");
+                                update_hour_var.set(event.value());
+                            },
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

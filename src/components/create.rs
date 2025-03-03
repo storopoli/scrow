@@ -18,7 +18,7 @@ use crate::{
 
 use super::{
     BitcoinInput, ContinueButton, CopyButton, FeeRateInput, Footer, NetworkInput, NpubInput,
-    NpubInputDerivedAddress, PrimaryButton,
+    NpubInputDerivedAddress, PrimaryButton, TimelockInput,
 };
 
 /// Create escrow transaction component.
@@ -30,8 +30,8 @@ pub(crate) fn Create() -> Element {
     let amount_buyer = use_signal(String::new);
     let amount_seller = use_signal(String::new);
     let fee_rate = use_signal(|| "1".to_string());
-    let mut timelock_days = use_signal(String::new);
-    let mut timelock_hours = use_signal(String::new);
+    let timelock_days = use_signal(String::new);
+    let timelock_hours = use_signal(String::new);
     let mut funding_txid = use_signal(String::new);
     let mut escrow_address_str = use_signal(String::new);
     let mut escrow_transaction = use_signal(String::new);
@@ -95,57 +95,9 @@ pub(crate) fn Create() -> Element {
                                         update_var: npub_arbitrator,
                                     }
 
-
-                                    div { class: "sm:col-span-3",
-                                        div { class: "grid grid-cols-2 gap-4",
-                                            div {
-                                                label {
-                                                    r#for: "timelock-days",
-                                                    class: "block text-sm font-medium text-gray-700",
-                                                    "Timelock (Days)"
-                                                }
-                                                div { class: "mt-1",
-                                                    input {
-                                                        r#type: "number",
-                                                        min: "0",
-                                                        step: "1",
-                                                        name: "timelock-days",
-                                                        id: "timelock-days",
-                                                        class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
-                                                        placeholder: "0",
-                                                        oninput: move |event| {
-                                                            #[cfg(debug_assertions)]
-                                                            trace!(% timelock_days, event_value =% event.value(), "Set timelock days");
-                                                            timelock_days.set(event.value());
-                                                        },
-                                                    }
-                                                }
-                                            }
-                                            div {
-                                                label {
-                                                    r#for: "timelock-hours",
-                                                    class: "block text-sm font-medium text-gray-700",
-                                                    "Timelock (Hours)"
-                                                }
-                                                div { class: "mt-1",
-                                                    input {
-                                                        r#type: "number",
-                                                        min: "0",
-                                                        step: "1",
-                                                        max: "23",
-                                                        name: "timelock-hours",
-                                                        id: "timelock-hours",
-                                                        class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
-                                                        placeholder: "0",
-                                                        oninput: move |event| {
-                                                            #[cfg(debug_assertions)]
-                                                            trace!(% timelock_hours, event_value =% event.value(), "Set timelock hours");
-                                                            timelock_hours.set(event.value());
-                                                        },
-                                                    }
-                                                }
-                                            }
-                                        }
+                                    TimelockInput {
+                                        update_day_var: timelock_days,
+                                        update_hour_var: timelock_hours,
                                     }
                                 }
                             }

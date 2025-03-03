@@ -19,7 +19,7 @@ pub(crate) use create::Create;
 pub(crate) use footer::Footer;
 pub(crate) use home::Home;
 pub(crate) use input::{
-    BitcoinInput, FeeRateInput, NetworkInput, NpubInput, NpubInputDerivedAddress,
+    BitcoinInput, FeeRateInput, NetworkInput, NpubInput, NpubInputDerivedAddress, TimelockInput,
 };
 pub(crate) use navbar::Navbar;
 pub(crate) use settings::Settings;
