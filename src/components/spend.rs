@@ -15,7 +15,7 @@ use crate::{
 
 use super::{
     BitcoinInput, ContinueButton, CopyButton, FeeRateInput, Footer, NetworkInput,
-    NpubInputDerivedAddress, PrimaryButton,
+    NpubInputDerivedAddress, NsecInput, PrimaryButton,
 };
 
 /// Spend from resolution address component.
@@ -27,7 +27,7 @@ pub(crate) fn Spend() -> Element {
     let amount = use_signal(String::new);
     let fee_rate = use_signal(|| "1".to_string());
     let derived_address = use_signal(String::new);
-    let mut nsec = use_signal(String::new);
+    let nsec = use_signal(String::new);
     let mut signed_tx_str = use_signal(String::new);
     rsx! {
         main { class: "max-w-7xl mx-auto py-6 sm:px-6 lg:px-8",
@@ -123,28 +123,7 @@ pub(crate) fn Spend() -> Element {
                                     }
                                 }
 
-                                div { class: "sm:col-span-3",
-                                    label {
-                                        r#for: "nsec",
-                                        class: "block text-sm font-medium text-gray-700",
-                                        "Your Nostr Secret Key (nsec)"
-                                    }
-                                    div { class: "mt-1",
-                                        input {
-                                            r#type: "password",
-                                            name: "nsec",
-                                            id: "nsec",
-                                            class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
-                                            placeholder: "nsec...",
-                                            oninput: move |event| {
-                                                nsec.set(event.value());
-                                            },
-                                        }
-                                    }
-                                    p { class: "mt-2 text-xs text-red-600",
-                                        "Your key is never stored or transmitted. All signing happens locally."
-                                    }
-                                }
+                                NsecInput { update_var: nsec }
                             }
 
                             div { class: "pt-5",
