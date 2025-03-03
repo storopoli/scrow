@@ -257,6 +257,9 @@
   .z-3 {
     z-index: 3;
   }
+  .z-9 {
+    z-index: 9;
+  }
   .col-span-2 {
     grid-column: span 2 / span 2;
   }

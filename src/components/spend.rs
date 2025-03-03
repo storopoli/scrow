@@ -13,7 +13,9 @@ use crate::{
     util::{P2TR_TX_WEIGHT_FUNDING, parse_network, parse_nsec},
 };
 
-use super::{ContinueButton, CopyButton, Footer, NpubInputDerivedAddress, PrimaryButton};
+use super::{
+    BitcoinInput, ContinueButton, CopyButton, Footer, NpubInputDerivedAddress, PrimaryButton,
+};
 
 /// Spend from resolution address component.
 #[component]
@@ -21,7 +23,7 @@ pub(crate) fn Spend() -> Element {
     let npub = use_signal(String::new);
     let mut escrow_txid = use_signal(String::new);
     let mut destination_address = use_signal(String::new);
-    let mut btc_amount = use_signal(String::new);
+    let amount = use_signal(String::new);
     let mut fee_rate = use_signal(|| "1".to_string());
     let derived_address = use_signal(String::new);
     let mut nsec = use_signal(String::new);
@@ -114,29 +116,10 @@ pub(crate) fn Spend() -> Element {
                                     }
                                 }
 
-                                div { class: "sm:col-span-3",
-                                    label {
-                                        r#for: "amount",
-                                        class: "block text-sm font-medium text-gray-700",
-                                        "Total Locked Amount (BTC)"
-                                    }
-                                    div { class: "mt-1",
-                                        input {
-                                            r#type: "number",
-                                            min: "0.00000001",
-                                            max: "100.0",
-                                            step: "0.00000001",
-                                            name: "amount",
-                                            id: "amount",
-                                            class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
-                                            placeholder: "0.00000000",
-                                            oninput: move |event| {
-                                                #[cfg(debug_assertions)]
-                                                trace!(% btc_amount, event_value =% event.value(), "Set BTC amount");
-                                                btc_amount.set(event.value());
-                                            },
-                                        }
-                                    }
+                                BitcoinInput {
+                                    id: "amount",
+                                    label: "Total Locked Amount (BTC)",
+                                    update_var: amount,
                                 }
 
                                 div { class: "sm:col-span-3",
@@ -210,11 +193,11 @@ pub(crate) fn Spend() -> Element {
                                         onclick: move |_| {
                                             #[cfg(debug_assertions)]
                                             trace!(
-                                                % npub, % btc_amount, % NETWORK, % escrow_txid, % derived_address,
+                                                % npub, % amount, % NETWORK, % escrow_txid, % derived_address,
                                                 "Clicked Sign Transaction"
                                             );
                                             let nsec = parse_nsec(&nsec.read()).unwrap();
-                                            let btc_amount = Amount::from_btc(btc_amount.read().parse::<f64>().unwrap())
+                                            let btc_amount = Amount::from_btc(amount.read().parse::<f64>().unwrap())
                                                 .unwrap();
                                             let network = parse_network(&NETWORK.read()).unwrap();
                                             let escrow_txid = escrow_txid.read().parse::<Txid>().unwrap();

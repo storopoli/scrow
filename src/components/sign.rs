@@ -16,7 +16,7 @@ use crate::{
     },
 };
 
-use super::{ContinueButton, CopyButton, Footer, NpubInput, PrimaryButton};
+use super::{BitcoinInput, ContinueButton, CopyButton, Footer, NpubInput, PrimaryButton};
 
 /// Sign escrow transaction component.
 #[component]
@@ -28,7 +28,7 @@ pub(crate) fn Sign() -> Element {
     let npub_seller = use_signal(String::new);
     let mut nsec = use_signal(String::new);
     let npub_arbitrator = use_signal(String::new);
-    let mut btc_amount_total = use_signal(String::new);
+    let amount_total = use_signal(String::new);
     let mut timelock_days = use_signal(String::new);
     let mut timelock_hours = use_signal(String::new);
     let mut funding_txid = use_signal(String::new);
@@ -147,29 +147,10 @@ pub(crate) fn Sign() -> Element {
                                     }
                                 }
 
-                                div { class: "sm:col-span-3",
-                                    label {
-                                        r#for: "amount",
-                                        class: "block text-sm font-medium text-gray-700",
-                                        "Total Locked Escrow Amount (BTC)"
-                                    }
-                                    div { class: "mt-1",
-                                        input {
-                                            r#type: "number",
-                                            min: "0.00000001",
-                                            max: "100.0",
-                                            step: "0.00000001",
-                                            name: "amount",
-                                            id: "amount",
-                                            class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
-                                            placeholder: "0.00000000",
-                                            oninput: move |event| {
-                                                #[cfg(debug_assertions)]
-                                                trace!(% btc_amount_total, event_value =% event.value(), "Set total BTC amount");
-                                                btc_amount_total.set(event.value());
-                                            },
-                                        }
-                                    }
+                                BitcoinInput {
+                                    id: "amount",
+                                    label: "Total Locked Escrow Amount (BTC)",
+                                    update_var: amount_total,
                                 }
 
                                 div { class: "sm:col-span-3",
@@ -271,8 +252,8 @@ pub(crate) fn Sign() -> Element {
                                         onclick: move |_| {
                                             #[cfg(debug_assertions)]
                                             trace!(
-                                                % npub_buyer, % npub_seller, % btc_amount_total, % NETWORK, %
-                                                npub_arbitrator, % timelock_days, % timelock_hours, % escrow_type,
+                                                % npub_buyer, % npub_seller, % amount_total, % NETWORK, % npub_arbitrator, %
+                                                timelock_days, % timelock_hours, % escrow_type,
                                                 "Clicked Generate Transaction"
                                             );
                                             let npub_buyer = parse_npub(&npub_buyer.read()).unwrap();
@@ -280,7 +261,7 @@ pub(crate) fn Sign() -> Element {
                                             let nsec = parse_nsec(&nsec.read()).unwrap();
                                             let escrow_type = parse_escrow_type(&escrow_type.read()).unwrap();
                                             let btc_amount_total = Amount::from_btc(
-                                                    btc_amount_total.read().parse::<f64>().unwrap(),
+                                                    amount_total.read().parse::<f64>().unwrap(),
                                                 )
                                                 .unwrap();
                                             let network = parse_network(&NETWORK.read()).unwrap();

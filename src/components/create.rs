@@ -17,7 +17,8 @@ use crate::{
 };
 
 use super::{
-    ContinueButton, CopyButton, Footer, NpubInput, NpubInputDerivedAddress, PrimaryButton,
+    BitcoinInput, ContinueButton, CopyButton, Footer, NpubInput, NpubInputDerivedAddress,
+    PrimaryButton,
 };
 
 /// Create escrow transaction component.
@@ -26,8 +27,8 @@ pub(crate) fn Create() -> Element {
     let npub_buyer = use_signal(String::new);
     let npub_seller = use_signal(String::new);
     let npub_arbitrator = use_signal(String::new);
-    let mut btc_amount_buyer = use_signal(String::new);
-    let mut btc_amount_seller = use_signal(String::new);
+    let amount_buyer = use_signal(String::new);
+    let amount_seller = use_signal(String::new);
     let mut fee_rate = use_signal(|| "1".to_string());
     let mut timelock_days = use_signal(String::new);
     let mut timelock_hours = use_signal(String::new);
@@ -60,58 +61,16 @@ pub(crate) fn Create() -> Element {
                                     update_address: derived_address_seller,
                                 }
 
-                                div { class: "sm:col-span-3",
-                                    label {
-                                        r#for: "amount_buyer",
-                                        class: "block text-sm font-medium text-gray-700",
-                                        "Buyer Escrow Amount (BTC)"
-                                    }
-                                    div { class: "mt-1",
-                                        input {
-                                            r#type: "number",
-                                            min: "0.00000001",
-                                            max: "100.0",
-                                            step: "0.00000001",
-                                            name: "amount_buyer",
-                                            id: "amount_buyer",
-                                            class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
-                                            placeholder: "0.00000000",
-                                            oninput: move |event| {
-                                                #[cfg(debug_assertions)]
-                                                trace!(
-                                                    % btc_amount_buyer, event_value =% event.value(), "Set buyer's BTC amount"
-                                                );
-                                                btc_amount_buyer.set(event.value());
-                                            },
-                                        }
-                                    }
+                                BitcoinInput {
+                                    id: "amount_buyer",
+                                    label: "Buyer Escrow Amount (BTC)",
+                                    update_var: amount_buyer,
                                 }
 
-                                div { class: "sm:col-span-3",
-                                    label {
-                                        r#for: "amount_seller",
-                                        class: "block text-sm font-medium text-gray-700",
-                                        "Seller Escrow Amount (BTC)"
-                                    }
-                                    div { class: "mt-1",
-                                        input {
-                                            r#type: "number",
-                                            min: "0.00000001",
-                                            max: "100.0",
-                                            step: "0.00000001",
-                                            name: "amount_seller",
-                                            id: "amount_seller",
-                                            class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
-                                            placeholder: "0.00000000",
-                                            oninput: move |event| {
-                                                #[cfg(debug_assertions)]
-                                                trace!(
-                                                    % btc_amount_seller, event_value =% event.value(), "Set seller's BTC amount"
-                                                );
-                                                btc_amount_seller.set(event.value());
-                                            },
-                                        }
-                                    }
+                                BitcoinInput {
+                                    id: "amount_seller",
+                                    label: "Seller Escrow Amount (BTC)",
+                                    update_var: amount_seller,
                                 }
 
                                 div { class: "sm:col-span-3",
@@ -300,8 +259,8 @@ pub(crate) fn Create() -> Element {
                                     onclick: move |_| {
                                         #[cfg(debug_assertions)]
                                         trace!(
-                                            % npub_buyer, % npub_seller, % btc_amount_buyer, % btc_amount_seller, %
-                                            fee_rate, % NETWORK, % npub_arbitrator, % timelock_days, % timelock_hours,
+                                            % npub_buyer, % npub_seller, % amount_buyer, % amount_seller, % fee_rate, %
+                                            NETWORK, % npub_arbitrator, % timelock_days, % timelock_hours,
                                             "Clicked Generate Address"
                                         );
                                         let npub_buyer = parse_npub(&npub_buyer.read()).unwrap();
@@ -415,18 +374,18 @@ pub(crate) fn Create() -> Element {
                                     onclick: move |_| {
                                         #[cfg(debug_assertions)]
                                         trace!(
-                                            % npub_buyer, % npub_seller, % btc_amount_buyer, % btc_amount_seller, %
-                                            fee_rate, % NETWORK, % npub_arbitrator, % timelock_days, % timelock_hours,
+                                            % npub_buyer, % npub_seller, % amount_buyer, % amount_seller, % fee_rate, %
+                                            NETWORK, % npub_arbitrator, % timelock_days, % timelock_hours,
                                             "Clicked Generate Transaction"
                                         );
                                         let npub_buyer = parse_npub(&npub_buyer.read()).unwrap();
                                         let npub_seller = parse_npub(&npub_seller.read()).unwrap();
                                         let btc_amount_buyer = Amount::from_btc(
-                                                btc_amount_buyer.read().parse::<f64>().unwrap(),
+                                                amount_buyer.read().parse::<f64>().unwrap(),
                                             )
                                             .unwrap();
                                         let btc_amount_seller = Amount::from_btc(
-                                                btc_amount_seller.read().parse::<f64>().unwrap(),
+                                                amount_seller.read().parse::<f64>().unwrap(),
                                             )
                                             .unwrap();
                                         let fee_rate = fee_rate.read().parse::<u64>().unwrap();
