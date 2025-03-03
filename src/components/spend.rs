@@ -15,14 +15,14 @@ use crate::{
 
 use super::{
     BitcoinInput, ContinueButton, CopyButton, FeeRateInput, Footer, NetworkInput,
-    NpubInputDerivedAddress, NsecInput, PrimaryButton,
+    NpubInputDerivedAddress, NsecInput, PrimaryButton, TxidInput,
 };
 
 /// Spend from resolution address component.
 #[component]
 pub(crate) fn Spend() -> Element {
     let npub = use_signal(String::new);
-    let mut escrow_txid = use_signal(String::new);
+    let escrow_txid = use_signal(String::new);
     let mut destination_address = use_signal(String::new);
     let amount = use_signal(String::new);
     let fee_rate = use_signal(|| "1".to_string());
@@ -47,26 +47,9 @@ pub(crate) fn Spend() -> Element {
                                     update_address: derived_address,
                                 }
 
-                                div { class: "sm:col-span-3",
-                                    label {
-                                        r#for: "escrow-txid",
-                                        class: "block text-sm font-medium text-gray-700",
-                                        "Escrow Resolution Transaction ID"
-                                    }
-                                    div { class: "mt-1",
-                                        input {
-                                            r#type: "text",
-                                            name: "escrow-txid",
-                                            id: "escrow-txid",
-                                            class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
-                                            placeholder: "txid...",
-                                            oninput: move |event| {
-                                                #[cfg(debug_assertions)]
-                                                trace!(% escrow_txid, event_value =% event.value(), "Set escrow's txid");
-                                                escrow_txid.set(event.value());
-                                            },
-                                        }
-                                    }
+                                TxidInput {
+                                    label: "Escrow Resolution Transaction ID",
+                                    update_var: escrow_txid,
                                 }
 
                                 div { class: "sm:col-span-3",

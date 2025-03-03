@@ -18,7 +18,7 @@ use crate::{
 
 use super::{
     BitcoinInput, ContinueButton, CopyButton, EscrowTypeInput, Footer, NetworkInput, NpubInput,
-    NsecInput, PrimaryButton, TimelockInput,
+    NsecInput, PrimaryButton, TimelockInput, TxidInput,
 };
 
 /// Sign escrow transaction component.
@@ -34,7 +34,7 @@ pub(crate) fn Sign() -> Element {
     let amount_total = use_signal(String::new);
     let timelock_days = use_signal(String::new);
     let timelock_hours = use_signal(String::new);
-    let mut funding_txid = use_signal(String::new);
+    let funding_txid = use_signal(String::new);
     let var_name = rsx! {
         main { class: "max-w-7xl mx-auto py-6 sm:px-6 lg:px-8",
             div { class: "px-4 py-6 sm:px-0",
@@ -83,28 +83,9 @@ pub(crate) fn Sign() -> Element {
                                     update_var: npub_seller,
                                 }
 
-                                div { class: "sm:col-span-3",
-                                    label {
-                                        r#for: "txid",
-                                        class: "block text-sm font-medium text-gray-700",
-                                        "Funding Transaction ID"
-                                    }
-                                    div { class: "mt-1",
-                                        input {
-                                            r#type: "text",
-                                            name: "txid",
-                                            id: "txid",
-                                            class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
-                                            placeholder: "txid...",
-                                            oninput: move |event| {
-                                                #[cfg(debug_assertions)]
-                                                trace!(
-                                                    % funding_txid, event_value =% event.value(), "Set funding transaction ID"
-                                                );
-                                                funding_txid.set(event.value());
-                                            },
-                                        }
-                                    }
+                                TxidInput {
+                                    label: "Funding Transaction ID",
+                                    update_var: funding_txid,
                                 }
 
                                 BitcoinInput {

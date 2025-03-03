@@ -292,3 +292,31 @@ pub(crate) fn NsecInput(mut update_var: Signal<String>) -> Element {
         }
     }
 }
+
+/// Transaction ID input validation component.
+#[component]
+pub(crate) fn TxidInput(label: String, mut update_var: Signal<String>) -> Element {
+    rsx! {
+        div { class: "sm:col-span-3",
+            label {
+                r#for: "txid",
+                class: "block text-sm font-medium text-gray-700",
+                {label}
+            }
+            div { class: "mt-1",
+                input {
+                    r#type: "text",
+                    name: "txid",
+                    id: "txid",
+                    class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
+                    placeholder: "txid...",
+                    oninput: move |event| {
+                        #[cfg(debug_assertions)]
+                        trace!(% update_var, event_value =% event.value(), "Set funding transaction ID");
+                        update_var.set(event.value());
+                    },
+                }
+            }
+        }
+    }
+}
