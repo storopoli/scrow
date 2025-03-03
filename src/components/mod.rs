@@ -18,7 +18,7 @@ pub(crate) use combine::Combine;
 pub(crate) use create::Create;
 pub(crate) use footer::Footer;
 pub(crate) use home::Home;
-pub(crate) use input::{BitcoinInput, NpubInput, NpubInputDerivedAddress};
+pub(crate) use input::{BitcoinInput, FeeRateInput, NpubInput, NpubInputDerivedAddress};
 pub(crate) use navbar::Navbar;
 pub(crate) use settings::Settings;
 pub(crate) use sign::Sign;

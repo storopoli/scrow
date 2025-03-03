@@ -14,7 +14,8 @@ use crate::{
 };
 
 use super::{
-    BitcoinInput, ContinueButton, CopyButton, Footer, NpubInputDerivedAddress, PrimaryButton,
+    BitcoinInput, ContinueButton, CopyButton, FeeRateInput, Footer, NpubInputDerivedAddress,
+    PrimaryButton,
 };
 
 /// Spend from resolution address component.
@@ -24,7 +25,7 @@ pub(crate) fn Spend() -> Element {
     let mut escrow_txid = use_signal(String::new);
     let mut destination_address = use_signal(String::new);
     let amount = use_signal(String::new);
-    let mut fee_rate = use_signal(|| "1".to_string());
+    let fee_rate = use_signal(|| "1".to_string());
     let derived_address = use_signal(String::new);
     let mut nsec = use_signal(String::new);
     let mut signed_tx_str = use_signal(String::new);
@@ -122,28 +123,10 @@ pub(crate) fn Spend() -> Element {
                                     update_var: amount,
                                 }
 
-                                div { class: "sm:col-span-3",
-                                    label {
-                                        r#for: "fee",
-                                        class: "block text-sm font-medium text-gray-700",
-                                        "Fee rate (sats/vByte)"
-                                    }
-                                    div { class: "mt-1",
-                                        input {
-                                            r#type: "number",
-                                            min: "1",
-                                            step: "1",
-                                            name: "fee",
-                                            id: "fee",
-                                            class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
-                                            placeholder: "1",
-                                            oninput: move |event| {
-                                                #[cfg(debug_assertions)]
-                                                trace!(% fee_rate, event_value =% event.value(), "Set fee rate");
-                                                fee_rate.set(event.value());
-                                            },
-                                        }
-                                    }
+                                FeeRateInput {
+                                    id: "fee",
+                                    label: "Fee rate (sats/vByte)",
+                                    update_var: fee_rate,
                                 }
 
                                 div { class: "sm:col-span-3",

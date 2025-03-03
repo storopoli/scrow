@@ -112,3 +112,34 @@ pub fn BitcoinInput(mut update_var: Signal<String>, label: String, id: String) -
         }
     }
 }
+
+/// Fee rate input validation component.
+#[component]
+pub fn FeeRateInput(mut update_var: Signal<String>, label: String, id: String) -> Element {
+    rsx! {
+
+        div { class: "sm:col-span-3",
+            label {
+                r#for: id.as_str(),
+                class: "block text-sm font-medium text-gray-700",
+                {label}
+            }
+            div { class: "mt-1",
+                input {
+                    r#type: "number",
+                    min: "1",
+                    step: "1",
+                    name: id.as_str(),
+                    id: id.as_str(),
+                    class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
+                    placeholder: "1",
+                    oninput: move |event| {
+                        #[cfg(debug_assertions)]
+                        trace!(% update_var, event_value =% event.value(), "Set seller's BTC amount");
+                        update_var.set(event.value());
+                    },
+                }
+            }
+        }
+    }
+}
