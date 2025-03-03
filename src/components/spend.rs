@@ -10,20 +10,20 @@ use crate::{
     NETWORK, Route,
     sign::sign_resolution_tx,
     tx::resolution_tx,
-    util::{P2TR_TX_WEIGHT_FUNDING, npub_to_address, parse_network, parse_npub, parse_nsec},
+    util::{P2TR_TX_WEIGHT_FUNDING, parse_network, parse_nsec},
 };
 
-use super::{ContinueButton, CopyButton, Footer, PrimaryButton};
+use super::{ContinueButton, CopyButton, Footer, NpubInputDerivedAddress, PrimaryButton};
 
 /// Spend from resolution address component.
 #[component]
 pub(crate) fn Spend() -> Element {
-    let mut npub = use_signal(String::new);
+    let npub = use_signal(String::new);
     let mut escrow_txid = use_signal(String::new);
     let mut destination_address = use_signal(String::new);
     let mut btc_amount = use_signal(String::new);
     let mut fee_rate = use_signal(|| "1".to_string());
-    let mut derived_address = use_signal(String::new);
+    let derived_address = use_signal(String::new);
     let mut nsec = use_signal(String::new);
     let mut signed_tx_str = use_signal(String::new);
     rsx! {
@@ -60,32 +60,11 @@ pub(crate) fn Spend() -> Element {
                                     }
                                 }
 
-                                div { class: "sm:col-span-3",
-                                    label {
-                                        r#for: "npub",
-                                        class: "block text-sm font-medium text-gray-700",
-                                        "Your Nostr Public Key (npub)"
-                                    }
-                                    div { class: "mt-1",
-                                        input {
-                                            r#type: "text",
-                                            name: "npub",
-                                            id: "npub",
-                                            class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
-                                            placeholder: "npub...",
-                                            oninput: move |event| {
-                                                #[cfg(debug_assertions)]
-                                                trace!(% npub, event_value =% event.value(), "Set npub");
-                                                npub.set(event.value());
-                                                let parsed_npub = parse_npub(&npub.read()).unwrap();
-                                                let parsed_network = parse_network(&NETWORK.read()).unwrap();
-                                                let derived_address_str = npub_to_address(&parsed_npub, parsed_network)
-                                                    .unwrap()
-                                                    .to_string();
-                                                derived_address.set(derived_address_str);
-                                            },
-                                        }
-                                    }
+                                NpubInputDerivedAddress {
+                                    id: "npub",
+                                    label: "Your Nostr Public Key (npub)",
+                                    update_var: npub,
+                                    update_address: derived_address,
                                 }
 
                                 div { class: "sm:col-span-3",
@@ -191,10 +170,10 @@ pub(crate) fn Spend() -> Element {
                                     div { class: "mt-1",
                                         div { class: "text-sm text-gray-900 break-all bg-gray-50 p-3 rounded",
                                             {
-                                                if derived_address.read().is_empty() {
+                                                if derived_address.read().to_string().is_empty() {
                                                     "bc1p...".to_string()
                                                 } else {
-                                                    derived_address.read().clone()
+                                                    derived_address.read().clone().to_string()
                                                 }
                                             }
                                         }

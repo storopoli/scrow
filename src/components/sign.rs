@@ -16,7 +16,7 @@ use crate::{
     },
 };
 
-use super::{ContinueButton, CopyButton, Footer, PrimaryButton};
+use super::{ContinueButton, CopyButton, Footer, NpubInput, PrimaryButton};
 
 /// Sign escrow transaction component.
 #[component]
@@ -24,10 +24,10 @@ pub(crate) fn Sign() -> Element {
     let mut unsigned_tx = use_signal(String::new);
     let mut signature = use_signal(String::new);
     let mut escrow_type = use_signal(String::new);
-    let mut npub_buyer = use_signal(String::new);
-    let mut npub_seller = use_signal(String::new);
+    let npub_buyer = use_signal(String::new);
+    let npub_seller = use_signal(String::new);
     let mut nsec = use_signal(String::new);
-    let mut npub_arbitrator = use_signal(String::new);
+    let npub_arbitrator = use_signal(String::new);
     let mut btc_amount_total = use_signal(String::new);
     let mut timelock_days = use_signal(String::new);
     let mut timelock_hours = use_signal(String::new);
@@ -111,49 +111,18 @@ pub(crate) fn Sign() -> Element {
                                         }
                                     }
                                 }
-                                div { class: "sm:col-span-3",
-                                    label {
-                                        r#for: "npub_buyer",
-                                        class: "block text-sm font-medium text-gray-700",
-                                        "Buyer Nostr Public Key (npub)"
-                                    }
-                                    div { class: "mt-1",
-                                        input {
-                                            r#type: "text",
-                                            name: "npub_buyer",
-                                            id: "npub_buyer",
-                                            class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
-                                            placeholder: "npub...",
-                                            oninput: move |event| {
-                                                #[cfg(debug_assertions)]
-                                                trace!(% npub_buyer, event_value =% event.value(), "Set buyer's npub");
-                                                npub_buyer.set(event.value());
-                                            },
-                                        }
-                                    }
+                                NpubInput {
+                                    id: "npub_buyer",
+                                    label: "Buyer Nostr Public Key (npub)",
+                                    update_var: npub_buyer,
                                 }
 
-                                div { class: "sm:col-span-3",
-                                    label {
-                                        r#for: "npub_seller",
-                                        class: "block text-sm font-medium text-gray-700",
-                                        "Seller Nostr Public Key (npub)"
-                                    }
-                                    div { class: "mt-1",
-                                        input {
-                                            r#type: "text",
-                                            name: "npub_seller",
-                                            id: "npub_seller",
-                                            class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
-                                            placeholder: "npub...",
-                                            oninput: move |event| {
-                                                #[cfg(debug_assertions)]
-                                                trace!(% npub_seller, event_value =% event.value(), "Set seller's npub");
-                                                npub_seller.set(event.value());
-                                            },
-                                        }
-                                    }
+                                NpubInput {
+                                    id: "npub_seller",
+                                    label: "Seller Nostr Public Key (npub)",
+                                    update_var: npub_seller,
                                 }
+
                                 div { class: "sm:col-span-3",
                                     label {
                                         r#for: "txid",
@@ -235,26 +204,11 @@ pub(crate) fn Sign() -> Element {
                                 }
 
                                 div { class: "mt-4 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6",
-                                    div { class: "sm:col-span-3",
-                                        label {
-                                            r#for: "arbitrator",
-                                            class: "block text-sm font-medium text-gray-700",
-                                            "Arbitrator Nostr Public Key (npub)"
-                                        }
-                                        div { class: "mt-1",
-                                            input {
-                                                r#type: "text",
-                                                name: "arbitrator",
-                                                id: "arbitrator",
-                                                class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
-                                                placeholder: "npub...",
-                                                oninput: move |event| {
-                                                    #[cfg(debug_assertions)]
-                                                    trace!(% npub_arbitrator, event_value =% event.value(), "Set arbitrator's npub");
-                                                    npub_arbitrator.set(event.value());
-                                                },
-                                            }
-                                        }
+
+                                    NpubInput {
+                                        id: "npub_arbitrator",
+                                        label: "Arbitrator Nostr Public Key (npub)",
+                                        update_var: npub_arbitrator,
                                     }
 
                                     div { class: "sm:col-span-3",
