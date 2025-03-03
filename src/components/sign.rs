@@ -17,8 +17,8 @@ use crate::{
 };
 
 use super::{
-    BitcoinInput, ContinueButton, CopyButton, Footer, NetworkInput, NpubInput, PrimaryButton,
-    TimelockInput,
+    BitcoinInput, ContinueButton, CopyButton, EscrowTypeInput, Footer, NetworkInput, NpubInput,
+    PrimaryButton, TimelockInput,
 };
 
 /// Sign escrow transaction component.
@@ -26,7 +26,7 @@ use super::{
 pub(crate) fn Sign() -> Element {
     let mut unsigned_tx = use_signal(String::new);
     let mut signature = use_signal(String::new);
-    let mut escrow_type = use_signal(String::new);
+    let escrow_type = use_signal(String::new);
     let npub_buyer = use_signal(String::new);
     let npub_seller = use_signal(String::new);
     let mut nsec = use_signal(String::new);
@@ -69,28 +69,8 @@ pub(crate) fn Sign() -> Element {
                             div { class: "grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6",
                                 NetworkInput { id: "network", label: "Bitcoin Network" }
 
-                                div { class: "sm:col-span-3",
-                                    label {
-                                        r#for: "escrow-type",
-                                        class: "block text-sm font-medium text-gray-700",
-                                        "Escrow Type"
-                                    }
-                                    div { class: "mt-1",
-                                        select {
-                                            id: "escrow-type",
-                                            name: "escrow-type",
-                                            class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
-                                            oninput: move |event| {
-                                                #[cfg(debug_assertions)]
-                                                trace!(% escrow_type, event_value =% event.value(), "Set escrow type");
-                                                escrow_type.set(event.value());
-                                            },
-                                            option { value: "A", "A - Collaborative (2-of-2)" }
-                                            option { value: "B", "B - Dispute: First Party + Arbitrator" }
-                                            option { value: "C", "C - Dispute: Second Party + Arbitrator" }
-                                        }
-                                    }
-                                }
+                                EscrowTypeInput { update_var: escrow_type }
+
                                 NpubInput {
                                     id: "npub_buyer",
                                     label: "Buyer Nostr Public Key (npub)",
