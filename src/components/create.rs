@@ -235,9 +235,9 @@ pub(crate) fn Create() -> Element {
                                 }
                                 p { class: "mt-2 text-xs text-red-600",
                                     "Deposit a single transaction to the escrow address and inform the transaction ID.
-                                                                    This transaction will be used to fund the escrow address.
-                                                                    Note that it should be a coinjoin transaction between buyer and seller,
-                                                                    i.e. should have only one output: the escrow address with the whole total escrow amount."
+                                    This transaction will be used to fund the escrow address.
+                                    Note that it should be a coinjoin transaction between buyer and seller,
+                                    i.e. should have only one output: the escrow address with the whole total escrow amount."
                                 }
                                 div { class: "mt-1",
                                     input {

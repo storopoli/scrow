@@ -176,7 +176,6 @@ pub(crate) fn Sign() -> Element {
                                         update_day_var: timelock_days,
                                         update_hour_var: timelock_hours,
                                     }
-                                
                                 }
                             }
 
