@@ -12,7 +12,7 @@ use crate::{
 
 /// Nostr `npub` input validation component.
 #[component]
-pub fn NpubInput(mut update_var: Signal<String>, label: String, id: String) -> Element {
+pub(crate) fn NpubInput(mut update_var: Signal<String>, label: String, id: String) -> Element {
     rsx! {
         div { class: "sm:col-span-3",
             label {
@@ -40,7 +40,7 @@ pub fn NpubInput(mut update_var: Signal<String>, label: String, id: String) -> E
 
 /// Nostr `npub` input validation component that also derives the address.
 #[component]
-pub fn NpubInputDerivedAddress(
+pub(crate) fn NpubInputDerivedAddress(
     mut update_var: Signal<String>,
     mut update_address: Signal<String>,
     label: String,
@@ -84,7 +84,7 @@ pub fn NpubInputDerivedAddress(
 
 /// Bitcoin BTC amount input validation component.
 #[component]
-pub fn BitcoinInput(mut update_var: Signal<String>, label: String, id: String) -> Element {
+pub(crate) fn BitcoinInput(mut update_var: Signal<String>, label: String, id: String) -> Element {
     rsx! {
         div { class: "sm:col-span-3",
             label {
@@ -115,7 +115,7 @@ pub fn BitcoinInput(mut update_var: Signal<String>, label: String, id: String) -
 
 /// Fee rate input validation component.
 #[component]
-pub fn FeeRateInput(mut update_var: Signal<String>, label: String, id: String) -> Element {
+pub(crate) fn FeeRateInput(mut update_var: Signal<String>, label: String, id: String) -> Element {
     rsx! {
         div { class: "sm:col-span-3",
             label {
@@ -145,7 +145,7 @@ pub fn FeeRateInput(mut update_var: Signal<String>, label: String, id: String) -
 
 /// Network input validation component.
 #[component]
-pub fn NetworkInput(label: String, id: String) -> Element {
+pub(crate) fn NetworkInput(label: String, id: String) -> Element {
     rsx! {
         div { class: "sm:col-span-3",
             label {
