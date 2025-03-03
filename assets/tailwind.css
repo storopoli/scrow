@@ -293,6 +293,12 @@
   .m-6 {
     margin: calc(var(--spacing) * 6);
   }
+  .m-7 {
+    margin: calc(var(--spacing) * 7);
+  }
+  .m-7\! {
+    margin: calc(var(--spacing) * 7) !important;
+  }
   .-mx-2 {
     margin-inline: calc(var(--spacing) * -2);
   }
@@ -598,6 +604,12 @@
   }
   .p-6 {
     padding: calc(var(--spacing) * 6);
+  }
+  .p-7 {
+    padding: calc(var(--spacing) * 7);
+  }
+  .p-\[\14 q-\] {
+    padding: q-;
   }
   .px-1 {
     padding-inline: calc(var(--spacing) * 1);

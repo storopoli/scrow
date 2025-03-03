@@ -14,8 +14,8 @@ use crate::{
 };
 
 use super::{
-    BitcoinInput, ContinueButton, CopyButton, FeeRateInput, Footer, NpubInputDerivedAddress,
-    PrimaryButton,
+    BitcoinInput, ContinueButton, CopyButton, FeeRateInput, Footer, NetworkInput,
+    NpubInputDerivedAddress, PrimaryButton,
 };
 
 /// Spend from resolution address component.
@@ -38,30 +38,7 @@ pub(crate) fn Spend() -> Element {
                     div { class: "px-4 py-5 sm:p-6",
                         div { class: "space-y-6",
                             div { class: "grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6",
-                                div { class: "sm:col-span-3",
-                                    label {
-                                        r#for: "network",
-                                        class: "block text-sm font-medium text-gray-700",
-                                        "Bitcoin Network"
-                                    }
-                                    div { class: "mt-1",
-                                        select {
-                                            id: "network",
-                                            name: "network",
-                                            class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
-                                            oninput: move |event| {
-                                                #[cfg(debug_assertions)]
-                                                trace!(% NETWORK, event_value =% event.value(), "Set network");
-                                                *NETWORK.write() = event.value();
-                                            },
-                                            value: NETWORK.read().clone(),
-                                            option { value: "Mainnet", "Mainnet" }
-                                            option { value: "Testnet", "Testnet" }
-                                            option { value: "Signet", "Signet" }
-                                            option { value: "Regtest", "Regtest" }
-                                        }
-                                    }
-                                }
+                                NetworkInput { id: "network", label: "Bitcoin Network" }
 
                                 NpubInputDerivedAddress {
                                     id: "npub",

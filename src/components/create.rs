@@ -17,7 +17,7 @@ use crate::{
 };
 
 use super::{
-    BitcoinInput, ContinueButton, CopyButton, FeeRateInput, Footer, NpubInput,
+    BitcoinInput, ContinueButton, CopyButton, FeeRateInput, Footer, NetworkInput, NpubInput,
     NpubInputDerivedAddress, PrimaryButton,
 };
 
@@ -79,30 +79,7 @@ pub(crate) fn Create() -> Element {
                                     update_var: fee_rate,
                                 }
 
-                                div { class: "sm:col-span-3",
-                                    label {
-                                        r#for: "network",
-                                        class: "block text-sm font-medium text-gray-700",
-                                        "Bitcoin Network"
-                                    }
-                                    div { class: "mt-1",
-                                        select {
-                                            id: "network",
-                                            name: "network",
-                                            class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
-                                            oninput: move |event| {
-                                                #[cfg(debug_assertions)]
-                                                trace!(% NETWORK, event_value =% event.value(), "Set network");
-                                                *NETWORK.write() = event.value();
-                                            },
-                                            value: NETWORK.read().clone(),
-                                            option { value: "Mainnet", "Mainnet" }
-                                            option { value: "Testnet", "Testnet" }
-                                            option { value: "Signet", "Signet" }
-                                            option { value: "Regtest", "Regtest" }
-                                        }
-                                    }
-                                }
+                                NetworkInput { id: "network", label: "Bitcoin Network" }
                             }
 
                             div { class: "border-t border-gray-200 pt-6",

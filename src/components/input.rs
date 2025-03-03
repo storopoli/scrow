@@ -117,7 +117,6 @@ pub fn BitcoinInput(mut update_var: Signal<String>, label: String, id: String) -
 #[component]
 pub fn FeeRateInput(mut update_var: Signal<String>, label: String, id: String) -> Element {
     rsx! {
-
         div { class: "sm:col-span-3",
             label {
                 r#for: id.as_str(),
@@ -138,6 +137,37 @@ pub fn FeeRateInput(mut update_var: Signal<String>, label: String, id: String) -
                         trace!(% update_var, event_value =% event.value(), "Set seller's BTC amount");
                         update_var.set(event.value());
                     },
+                }
+            }
+        }
+    }
+}
+
+/// Network input validation component.
+#[component]
+pub fn NetworkInput(label: String, id: String) -> Element {
+    rsx! {
+        div { class: "sm:col-span-3",
+            label {
+                r#for: id.as_str(),
+                class: "block text-sm font-medium text-gray-700",
+                {label}
+            }
+            div { class: "mt-1",
+                select {
+                    id: "network",
+                    name: "network",
+                    class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
+                    oninput: move |event| {
+                        #[cfg(debug_assertions)]
+                        trace!(% NETWORK, event_value =% event.value(), "Set network");
+                        *NETWORK.write() = event.value();
+                    },
+                    value: NETWORK.read().clone(),
+                    option { value: "Mainnet", "Mainnet" }
+                    option { value: "Testnet", "Testnet" }
+                    option { value: "Signet", "Signet" }
+                    option { value: "Regtest", "Regtest" }
                 }
             }
         }
