@@ -1,5 +1,9 @@
 name: CI
 
+env:
+  CARGO_TERM_COLOR: always
+  DIOXUS_VERSION: 0.6.3
+
 on:
   pull_request:
   push:
@@ -19,6 +23,7 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
+            ~/.cargo/bin
             target
           key: cargo-${{ runner.os }}-formatting-v4-${{ hashFiles('**/Cargo.toml', '**/Cargo.lock') }}
           restore-keys: |
@@ -33,6 +38,35 @@ jobs:
       - name: Check formatting
         run: |
           cargo fmt -- --check
+
+  dioxus-format:
+    name: Check Dioxus formatting
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            ~/.cargo/bin
+            target
+          key: cargo-${{ runner.os }}-rust-dioxus-v2-${{ hashFiles('**/Cargo.toml', '**/Cargo.lock') }}
+          restore-keys: |
+            cargo-${{ runner.os }}-rust-dioxus-v2-
+              cargo-${{ runner.os }}-
+
+      - name: Install Dioxus
+        run: cargo install dioxus-cli@${{ env.DIOXUS_VERSION }}
+
+      - name: Check Dioxus formatting
+        run: dx fmt --check
 
   docs:
     name: Check docs
