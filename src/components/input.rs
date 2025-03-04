@@ -199,9 +199,7 @@ pub(crate) fn EsploraInput() -> Element {
                     },
                 }
             }
-            p { class: "mt-2 text-xs text-gray-500",
-                "Default for mainnet: https://mempool.space/api"
-            }
+            p { class: "mt-2 text-xs text-gray-500", "Default for mainnet: https://mempool.space/api" }
         }
     }
 }

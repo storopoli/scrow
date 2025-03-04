@@ -104,7 +104,7 @@ pub(crate) fn Combine() -> Element {
                                     SignatureInput {
                                         update_var: signature_arbitrator,
                                         label: "Arbitrator Signature",
-                                        id: "signaturearb"
+                                        id: "signaturearb",
                                     }
                                 }
                             }
