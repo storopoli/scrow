@@ -18,7 +18,6 @@ use crate::{
 
 use super::{
     BitcoinInput, ContinueButton, CopyButton, EscrowTypeInput, Footer, NetworkInput, NpubInput,
-    NsecInput, PrimaryButton, TimelockInput, TransactionInput, TxidInput,
     NsecInput, PrimaryButton, SignatureOutput, TimelockInput, TransactionInput, TxidInput,
 };
 
@@ -69,8 +68,9 @@ pub(crate) fn Sign() -> Element {
                                 }
 
                                 TxidInput {
-                                    label: "Funding Transaction ID",
+                                    label: "Escrow funding Transaction ID",
                                     update_var: funding_txid,
+                                    warning: "",
                                 }
 
                                 BitcoinInput {

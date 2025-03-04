@@ -50,6 +50,7 @@ pub(crate) fn Spend() -> Element {
                                 TxidInput {
                                     label: "Escrow Resolution Transaction ID",
                                     update_var: escrow_txid,
+                                    warning: "",
                                 }
 
                                 div { class: "sm:col-span-3",

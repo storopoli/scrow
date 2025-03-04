@@ -324,13 +324,21 @@ pub(crate) fn NsecInput(mut update_var: Signal<String>) -> Element {
 
 /// Transaction ID input validation component.
 #[component]
-pub(crate) fn TxidInput(mut update_var: Signal<String>, label: String) -> Element {
+pub(crate) fn TxidInput(mut update_var: Signal<String>, label: String, warning: String) -> Element {
     rsx! {
         div { class: "sm:col-span-3",
             label {
                 r#for: "txid",
                 class: "block text-sm font-medium text-gray-700",
                 {label}
+            }
+            if !warning.is_empty() {
+                p { class: "mt-2 text-xs text-red-600",
+                    "Deposit a single transaction to the escrow address and inform the transaction ID.
+                    This transaction will be used to fund the escrow address.
+                    Note that it should be a coinjoin transaction between buyer and seller,
+                    i.e. should have only one output: the escrow address with the whole total escrow amount."
+                }
             }
             div { class: "mt-1",
                 input {

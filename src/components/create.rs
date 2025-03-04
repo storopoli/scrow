@@ -18,7 +18,7 @@ use crate::{
 
 use super::{
     BitcoinInput, ContinueButton, CopyButton, FeeRateInput, Footer, NetworkInput, NpubInput,
-    NpubInputDerivedAddress, PrimaryButton, TimelockInput, TransactionOutput,
+    NpubInputDerivedAddress, PrimaryButton, TimelockInput, TransactionOutput, TxidInput,
 };
 
 /// Create escrow transaction component.
@@ -32,7 +32,7 @@ pub(crate) fn Create() -> Element {
     let fee_rate = use_signal(|| "1".to_string());
     let timelock_days = use_signal(String::new);
     let timelock_hours = use_signal(String::new);
-    let mut funding_txid = use_signal(String::new);
+    let funding_txid = use_signal(String::new);
     let mut escrow_address_str = use_signal(String::new);
     let mut escrow_transaction = use_signal(String::new);
     let mut derived_address_buyer = use_signal(String::new);
@@ -227,32 +227,13 @@ pub(crate) fn Create() -> Element {
                             "Escrow Details"
                         }
                         div { class: "mt-4 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6",
-                            div { class: "sm:col-span-3",
-                                label {
-                                    r#for: "funding_txid",
-                                    class: "block text-md font-medium text-gray-700",
-                                    "Escrow funding Transaction ID"
-                                }
-                                p { class: "mt-2 text-xs text-red-600",
-                                    "Deposit a single transaction to the escrow address and inform the transaction ID.
-                                    This transaction will be used to fund the escrow address.
-                                    Note that it should be a coinjoin transaction between buyer and seller,
-                                    i.e. should have only one output: the escrow address with the whole total escrow amount."
-                                }
-                                div { class: "mt-1",
-                                    input {
-                                        r#type: "text",
-                                        name: "funding_txid",
-                                        id: "funding_txid",
-                                        class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
-                                        placeholder: "txid...",
-                                        oninput: move |event| {
-                                            #[cfg(debug_assertions)]
-                                            trace!(% funding_txid, event_value =% event.value(), "Set funding_txid");
-                                            funding_txid.set(event.value());
-                                        },
-                                    }
-                                }
+                            TxidInput {
+                                update_var: funding_txid,
+                                label: "Escrow funding Transaction ID",
+                                warning: "Deposit a single transaction to the escrow address and inform the transaction ID.
+                                This transaction will be used to fund the escrow address.
+                                Note that it should be a coinjoin transaction between buyer and seller,
+                                i.e. should have only one output: the escrow address with the whole total escrow amount.",
                             }
                         }
 
