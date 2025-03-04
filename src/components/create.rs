@@ -16,20 +16,24 @@ use crate::{
     },
 };
 
-use super::{ContinueButton, CopyButton, Footer, PrimaryButton};
+use super::{
+    BitcoinInput, ContinueButton, CopyButton, DerivedAddressOutput, FeeRateInput, Footer,
+    NetworkInput, NpubInput, NpubInputDerivedAddress, PrimaryButton, TimelockInput,
+    TransactionOutput, TxidInput,
+};
 
 /// Create escrow transaction component.
 #[component]
 pub(crate) fn Create() -> Element {
-    let mut npub_buyer = use_signal(String::new);
-    let mut npub_seller = use_signal(String::new);
-    let mut npub_arbitrator = use_signal(String::new);
-    let mut btc_amount_buyer = use_signal(String::new);
-    let mut btc_amount_seller = use_signal(String::new);
-    let mut fee_rate = use_signal(|| "1".to_string());
-    let mut timelock_days = use_signal(String::new);
-    let mut timelock_hours = use_signal(String::new);
-    let mut funding_txid = use_signal(String::new);
+    let npub_buyer = use_signal(String::new);
+    let npub_seller = use_signal(String::new);
+    let npub_arbitrator = use_signal(String::new);
+    let amount_buyer = use_signal(String::new);
+    let amount_seller = use_signal(String::new);
+    let fee_rate = use_signal(|| "1".to_string());
+    let timelock_days = use_signal(String::new);
+    let timelock_hours = use_signal(String::new);
+    let funding_txid = use_signal(String::new);
     let mut escrow_address_str = use_signal(String::new);
     let mut escrow_transaction = use_signal(String::new);
     let mut derived_address_buyer = use_signal(String::new);
@@ -43,152 +47,42 @@ pub(crate) fn Create() -> Element {
                     div { class: "px-4 py-5 sm:p-6",
                         div { class: "space-y-6",
                             div { class: "grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6",
-                                div { class: "sm:col-span-3",
-                                    label {
-                                        r#for: "npub_buyer",
-                                        class: "block text-sm font-medium text-gray-700",
-                                        "Buyer Nostr Public Key (npub)"
-                                    }
-                                    div { class: "mt-1",
-                                        input {
-                                            r#type: "text",
-                                            name: "npub_buyer",
-                                            id: "npub_buyer",
-                                            class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
-                                            placeholder: "npub...",
-                                            oninput: move |event| {
-                                                #[cfg(debug_assertions)]
-                                                trace!(% npub_buyer, event_value =% event.value(), "Set buyer's npub");
-                                                npub_buyer.set(event.value());
-                                            },
-                                        }
-                                    }
+
+                                NpubInputDerivedAddress {
+                                    id: "npub_buyer",
+                                    label: "Buyer Nostr Public Key (npub)",
+                                    update_var: npub_buyer,
+                                    update_address: derived_address_buyer,
+                                    col_span: 3,
                                 }
 
-                                div { class: "sm:col-span-3",
-                                    label {
-                                        r#for: "npub_seller",
-                                        class: "block text-sm font-medium text-gray-700",
-                                        "Seller Nostr Public Key (npub)"
-                                    }
-                                    div { class: "mt-1",
-                                        input {
-                                            r#type: "text",
-                                            name: "npub_seller",
-                                            id: "npub_seller",
-                                            class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
-                                            placeholder: "npub...",
-                                            oninput: move |event| {
-                                                #[cfg(debug_assertions)]
-                                                trace!(% npub_seller, event_value =% event.value(), "Set seller's npub");
-                                                npub_seller.set(event.value());
-                                            },
-                                        }
-                                    }
+                                NpubInputDerivedAddress {
+                                    id: "npub_seller",
+                                    label: "Seller Nostr Public Key (npub)",
+                                    update_var: npub_seller,
+                                    update_address: derived_address_seller,
+                                    col_span: 3,
                                 }
 
-                                div { class: "sm:col-span-3",
-                                    label {
-                                        r#for: "amount_buyer",
-                                        class: "block text-sm font-medium text-gray-700",
-                                        "Buyer Escrow Amount (BTC)"
-                                    }
-                                    div { class: "mt-1",
-                                        input {
-                                            r#type: "number",
-                                            min: "0.00000001",
-                                            max: "100.0",
-                                            step: "0.00000001",
-                                            name: "amount_buyer",
-                                            id: "amount_buyer",
-                                            class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
-                                            placeholder: "0.00000000",
-                                            oninput: move |event| {
-                                                #[cfg(debug_assertions)]
-                                                trace!(
-                                                    % btc_amount_buyer, event_value =% event.value(), "Set buyer's BTC amount"
-                                                );
-                                                btc_amount_buyer.set(event.value());
-                                            },
-                                        }
-                                    }
+                                BitcoinInput {
+                                    id: "amount_buyer",
+                                    label: "Buyer Escrow Amount (BTC)",
+                                    update_var: amount_buyer,
                                 }
 
-                                div { class: "sm:col-span-3",
-                                    label {
-                                        r#for: "amount_seller",
-                                        class: "block text-sm font-medium text-gray-700",
-                                        "Seller Escrow Amount (BTC)"
-                                    }
-                                    div { class: "mt-1",
-                                        input {
-                                            r#type: "number",
-                                            min: "0.00000001",
-                                            max: "100.0",
-                                            step: "0.00000001",
-                                            name: "amount_seller",
-                                            id: "amount_seller",
-                                            class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
-                                            placeholder: "0.00000000",
-                                            oninput: move |event| {
-                                                #[cfg(debug_assertions)]
-                                                trace!(
-                                                    % btc_amount_seller, event_value =% event.value(), "Set seller's BTC amount"
-                                                );
-                                                btc_amount_seller.set(event.value());
-                                            },
-                                        }
-                                    }
+                                BitcoinInput {
+                                    id: "amount_seller",
+                                    label: "Seller Escrow Amount (BTC)",
+                                    update_var: amount_seller,
                                 }
 
-                                div { class: "sm:col-span-3",
-                                    label {
-                                        r#for: "fee",
-                                        class: "block text-sm font-medium text-gray-700",
-                                        "Fee rate (sats/vByte)"
-                                    }
-                                    div { class: "mt-1",
-                                        input {
-                                            r#type: "number",
-                                            min: "1",
-                                            step: "1",
-                                            name: "fee",
-                                            id: "fee",
-                                            class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
-                                            placeholder: "1",
-                                            oninput: move |event| {
-                                                #[cfg(debug_assertions)]
-                                                trace!(% fee_rate, event_value =% event.value(), "Set fee rate");
-                                                fee_rate.set(event.value());
-                                            },
-                                        }
-                                    }
+                                FeeRateInput {
+                                    id: "fee",
+                                    label: "Fee rate (sats/vByte)",
+                                    update_var: fee_rate,
                                 }
 
-                                div { class: "sm:col-span-3",
-                                    label {
-                                        r#for: "network",
-                                        class: "block text-sm font-medium text-gray-700",
-                                        "Bitcoin Network"
-                                    }
-                                    div { class: "mt-1",
-                                        select {
-                                            id: "network",
-                                            name: "network",
-                                            class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
-                                            oninput: move |event| {
-                                                #[cfg(debug_assertions)]
-                                                trace!(% NETWORK, event_value =% event.value(), "Set network");
-                                                *NETWORK.write() = event.value();
-                                            },
-                                            value: NETWORK.read().clone(),
-                                            option { value: "Mainnet", "Mainnet" }
-                                            option { value: "Testnet", "Testnet" }
-                                            option { value: "Signet", "Signet" }
-                                            option { value: "Regtest", "Regtest" }
-                                        }
-                                    }
-                                }
+                                NetworkInput { id: "network", label: "Bitcoin Network" }
                             }
 
                             div { class: "border-t border-gray-200 pt-6",
@@ -197,136 +91,45 @@ pub(crate) fn Create() -> Element {
                                 }
 
                                 div { class: "mt-4 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6",
-                                    div { class: "sm:col-span-3",
-                                        label {
-                                            r#for: "arbitrator",
-                                            class: "block text-sm font-medium text-gray-700",
-                                            "Arbitrator Nostr Public Key (npub)"
-                                        }
-                                        div { class: "mt-1",
-                                            input {
-                                                r#type: "text",
-                                                name: "arbitrator",
-                                                id: "arbitrator",
-                                                class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
-                                                placeholder: "npub...",
-                                                oninput: move |event| {
-                                                    #[cfg(debug_assertions)]
-                                                    trace!(% npub_arbitrator, event_value =% event.value(), "Set arbitrator's npub");
-                                                    npub_arbitrator.set(event.value());
-                                                },
-                                            }
-                                        }
+
+                                    NpubInput {
+                                        id: "npub_arbitrator",
+                                        label: "Arbitrator Nostr Public Key (npub)",
+                                        update_var: npub_arbitrator,
                                     }
 
-                                    div { class: "sm:col-span-3",
-                                        div { class: "grid grid-cols-2 gap-4",
-                                            div {
-                                                label {
-                                                    r#for: "timelock-days",
-                                                    class: "block text-sm font-medium text-gray-700",
-                                                    "Timelock (Days)"
-                                                }
-                                                div { class: "mt-1",
-                                                    input {
-                                                        r#type: "number",
-                                                        min: "0",
-                                                        step: "1",
-                                                        name: "timelock-days",
-                                                        id: "timelock-days",
-                                                        class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
-                                                        placeholder: "0",
-                                                        oninput: move |event| {
-                                                            #[cfg(debug_assertions)]
-                                                            trace!(% timelock_days, event_value =% event.value(), "Set timelock days");
-                                                            timelock_days.set(event.value());
-                                                        },
-                                                    }
-                                                }
-                                            }
-                                            div {
-                                                label {
-                                                    r#for: "timelock-hours",
-                                                    class: "block text-sm font-medium text-gray-700",
-                                                    "Timelock (Hours)"
-                                                }
-                                                div { class: "mt-1",
-                                                    input {
-                                                        r#type: "number",
-                                                        min: "0",
-                                                        step: "1",
-                                                        max: "23",
-                                                        name: "timelock-hours",
-                                                        id: "timelock-hours",
-                                                        class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
-                                                        placeholder: "0",
-                                                        oninput: move |event| {
-                                                            #[cfg(debug_assertions)]
-                                                            trace!(% timelock_hours, event_value =% event.value(), "Set timelock hours");
-                                                            timelock_hours.set(event.value());
-                                                        },
-                                                    }
-                                                }
-                                            }
-                                        }
+                                    TimelockInput {
+                                        update_day_var: timelock_days,
+                                        update_hour_var: timelock_hours,
                                     }
                                 }
                             }
 
                             div { class: "border-t border-gray-200 pt-6",
                                 div { class: "grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6",
-                                    div { class: "col-span-2",
-                                        dt { class: "text-lg font-medium text-gray-900",
-                                            "Deposit Address"
-                                        }
-                                        dd {
-                                            id: "escrow-address",
-                                            class: "mt-1 text-sm text-gray-900 break-all bg-gray-50 p-3 rounded",
-                                            {
-                                                if escrow_address_str.read().is_empty() {
-                                                    "bc1p...".to_string()
-                                                } else {
-                                                    escrow_address_str.read().clone()
-                                                }
-                                            }
-                                        }
+                                    DerivedAddressOutput {
+                                        update_var: escrow_address_str,
+                                        label: "Deposit Address",
+                                        id: "escrow-address",
+                                        col_span: 3,
                                     }
                                 }
                             }
 
                             div { class: "border-t border-gray-200 pt-6",
                                 div { class: "grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6",
-                                    div { class: "col-span-3",
-                                        dt { class: "text-lg font-medium text-gray-900",
-                                            "Buyer Resolution Address"
-                                        }
-                                        dd {
-                                            id: "buyer-address",
-                                            class: "mt-1 text-sm text-gray-900 break-all bg-gray-50 p-3 rounded",
-                                            {
-                                                if derived_address_buyer.read().is_empty() {
-                                                    "bc1p...".to_string()
-                                                } else {
-                                                    derived_address_buyer.read().clone()
-                                                }
-                                            }
-                                        }
+                                    DerivedAddressOutput {
+                                        update_var: derived_address_buyer,
+                                        label: "Buyer's Resolution Address",
+                                        id: "buyer-address",
+                                        col_span: 3,
                                     }
-                                    div { class: "col-span-3",
-                                        dt { class: "text-lg font-medium text-gray-900",
-                                            "Seller Resolution Address"
-                                        }
-                                        dd {
-                                            id: "buyer-address",
-                                            class: "mt-1 text-sm text-gray-900 break-all bg-gray-50 p-3 rounded",
-                                            {
-                                                if derived_address_seller.read().is_empty() {
-                                                    "bc1p...".to_string()
-                                                } else {
-                                                    derived_address_seller.read().clone()
-                                                }
-                                            }
-                                        }
+
+                                    DerivedAddressOutput {
+                                        update_var: derived_address_seller,
+                                        label: "Seller's Resolution Address",
+                                        id: "seller-address",
+                                        col_span: 3,
                                     }
                                 }
                             }
@@ -341,8 +144,8 @@ pub(crate) fn Create() -> Element {
                                     onclick: move |_| {
                                         #[cfg(debug_assertions)]
                                         trace!(
-                                            % npub_buyer, % npub_seller, % btc_amount_buyer, % btc_amount_seller, %
-                                            fee_rate, % NETWORK, % npub_arbitrator, % timelock_days, % timelock_hours,
+                                            % npub_buyer, % npub_seller, % amount_buyer, % amount_seller, % fee_rate, %
+                                            NETWORK, % npub_arbitrator, % timelock_days, % timelock_hours,
                                             "Clicked Generate Address"
                                         );
                                         let npub_buyer = parse_npub(&npub_buyer.read()).unwrap();
@@ -398,52 +201,24 @@ pub(crate) fn Create() -> Element {
                             "Escrow Details"
                         }
                         div { class: "mt-4 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6",
-                            div { class: "sm:col-span-3",
-                                label {
-                                    r#for: "funding_txid",
-                                    class: "block text-md font-medium text-gray-700",
-                                    "Escrow funding Transaction ID"
-                                }
-                                p { class: "mt-2 text-xs text-red-600",
-                                    "Deposit a single transaction to the escrow address and inform the transaction ID.
-                                                                    This transaction will be used to fund the escrow address.
-                                                                    Note that it should be a coinjoin transaction between buyer and seller,
-                                                                    i.e. should have only one output: the escrow address with the whole total escrow amount."
-                                }
-                                div { class: "mt-1",
-                                    input {
-                                        r#type: "text",
-                                        name: "funding_txid",
-                                        id: "funding_txid",
-                                        class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
-                                        placeholder: "txid...",
-                                        oninput: move |event| {
-                                            #[cfg(debug_assertions)]
-                                            trace!(% funding_txid, event_value =% event.value(), "Set funding_txid");
-                                            funding_txid.set(event.value());
-                                        },
-                                    }
-                                }
+                            TxidInput {
+                                update_var: funding_txid,
+                                label: "Escrow funding Transaction ID",
+                                warning: "Deposit a single transaction to the escrow address and inform the transaction ID.
+                                This transaction will be used to fund the escrow address.
+                                Note that it should be a coinjoin transaction between buyer and seller,
+                                i.e. should have only one output: the escrow address with the whole total escrow amount.",
                             }
                         }
 
 
                         div { class: "mt-5 border-t border-gray-200 pt-5",
                             dl { class: "grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2",
-
-                                div { class: "sm:col-span-2",
-                                    dt { class: "text-sm font-medium text-gray-500",
-                                        "Unsigned Escrow Resolution Transaction"
-                                    }
-                                    dd { class: "mt-1 text-sm text-gray-900",
-                                        textarea {
-                                            id: "escrow-transaction",
-                                            readonly: "true",
-                                            class: "w-full h-32 p-3 border border-gray-300 rounded-md bg-gray-50 focus:ring-indigo-500 focus:border-indigo-500",
-                                            placeholder: "Transaction data will appear here...",
-                                            value: escrow_transaction,
-                                        }
-                                    }
+                                TransactionOutput {
+                                    update_var: escrow_transaction,
+                                    label: "Unsigned Escrow Resolution Transaction",
+                                    id: "escrow-tx",
+                                    placeholder: "Transaction data will appear here...",
                                 }
                             }
 
@@ -456,18 +231,18 @@ pub(crate) fn Create() -> Element {
                                     onclick: move |_| {
                                         #[cfg(debug_assertions)]
                                         trace!(
-                                            % npub_buyer, % npub_seller, % btc_amount_buyer, % btc_amount_seller, %
-                                            fee_rate, % NETWORK, % npub_arbitrator, % timelock_days, % timelock_hours,
+                                            % npub_buyer, % npub_seller, % amount_buyer, % amount_seller, % fee_rate, %
+                                            NETWORK, % npub_arbitrator, % timelock_days, % timelock_hours,
                                             "Clicked Generate Transaction"
                                         );
                                         let npub_buyer = parse_npub(&npub_buyer.read()).unwrap();
                                         let npub_seller = parse_npub(&npub_seller.read()).unwrap();
                                         let btc_amount_buyer = Amount::from_btc(
-                                                btc_amount_buyer.read().parse::<f64>().unwrap(),
+                                                amount_buyer.read().parse::<f64>().unwrap(),
                                             )
                                             .unwrap();
                                         let btc_amount_seller = Amount::from_btc(
-                                                btc_amount_seller.read().parse::<f64>().unwrap(),
+                                                amount_seller.read().parse::<f64>().unwrap(),
                                             )
                                             .unwrap();
                                         let fee_rate = fee_rate.read().parse::<u64>().unwrap();

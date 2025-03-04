@@ -18,6 +18,7 @@ jobs:
       pages: write
     steps:
       - uses: actions/checkout@v4
+
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: wasm32-unknown-unknown
@@ -27,6 +28,7 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
+            ~/.cargo/bin
             target
           key: cargo-${{ runner.os }}-rust-dioxus-v2-${{ hashFiles('**/Cargo.toml', '**/Cargo.lock') }}
           restore-keys: |
@@ -34,7 +36,7 @@ jobs:
               cargo-${{ runner.os }}-
 
       - name: Install Dioxus
-        run: cargo install dioxus-cli@${{ env.DIOXUS_VERSION }}
+        run: cargo install dioxus-cli@${{ env.DIOXUS_VERSION }} --force
 
       - name: Build app
         run: dx bundle --release

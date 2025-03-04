@@ -195,6 +195,9 @@ pub(crate) fn Navbar() -> Element {
                         id: "home",
                         class: if is_active(Route::Home {}) { "bg-indigo-50 border-indigo-500 text-indigo-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium" } else { "border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800 block pl-3 pr-4 py-2 border-l-4 text-base font-medium" },
                         aria_current: if is_active(Route::Home {}) { "page" } else { "" },
+                        onclick: move |_| {
+                            *is_menu_open.write() = false;
+                        },
                         to: Route::Home {},
                         "Home"
                     }
@@ -202,6 +205,9 @@ pub(crate) fn Navbar() -> Element {
                         id: "create",
                         class: if is_active(Route::Create {}) { "bg-indigo-50 border-indigo-500 text-indigo-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium" } else { "border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800 block pl-3 pr-4 py-2 border-l-4 text-base font-medium" },
                         aria_current: if is_active(Route::Create {}) { "page" } else { "" },
+                        onclick: move |_| {
+                            *is_menu_open.write() = false;
+                        },
                         to: Route::Create {},
                         "Create"
                     }
@@ -209,6 +215,9 @@ pub(crate) fn Navbar() -> Element {
                         id: "sign",
                         class: if is_active(Route::Sign {}) { "bg-indigo-50 border-indigo-500 text-indigo-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium" } else { "border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800 block pl-3 pr-4 py-2 border-l-4 text-base font-medium" },
                         aria_current: if is_active(Route::Sign {}) { "page" } else { "" },
+                        onclick: move |_| {
+                            *is_menu_open.write() = false;
+                        },
                         to: Route::Sign {},
                         "Sign"
                     }
@@ -216,6 +225,9 @@ pub(crate) fn Navbar() -> Element {
                         id: "combine",
                         class: if is_active(Route::Combine {}) { "bg-indigo-50 border-indigo-500 text-indigo-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium" } else { "border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800 block pl-3 pr-4 py-2 border-l-4 text-base font-medium" },
                         aria_current: if is_active(Route::Combine {}) { "page" } else { "" },
+                        onclick: move |_| {
+                            *is_menu_open.write() = false;
+                        },
                         to: Route::Combine {},
                         "Combine"
                     }
@@ -223,6 +235,9 @@ pub(crate) fn Navbar() -> Element {
                         id: "broadcast",
                         class: if is_active(Route::Broadcast {}) { "bg-indigo-50 border-indigo-500 text-indigo-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium" } else { "border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800 block pl-3 pr-4 py-2 border-l-4 text-base font-medium" },
                         aria_current: if is_active(Route::Broadcast {}) { "page" } else { "" },
+                        onclick: move |_| {
+                            *is_menu_open.write() = false;
+                        },
                         to: Route::Broadcast {},
                         "Broadcast"
                     }
@@ -230,6 +245,9 @@ pub(crate) fn Navbar() -> Element {
                         id: "spend",
                         class: if is_active(Route::Spend {}) { "bg-indigo-50 border-indigo-500 text-indigo-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium" } else { "border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800 block pl-3 pr-4 py-2 border-l-4 text-base font-medium" },
                         aria_current: if is_active(Route::Spend {}) { "page" } else { "" },
+                        onclick: move |_| {
+                            *is_menu_open.write() = false;
+                        },
                         to: Route::Spend {},
                         "Spend"
                     }

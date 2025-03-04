@@ -15,22 +15,25 @@ use crate::{
     util::{days_to_blocks, hours_to_blocks, parse_escrow_type, parse_npub},
 };
 
-use super::{ContinueButton, CopyButton, Footer, PrimaryButton};
+use super::{
+    ContinueButton, CopyButton, EscrowTypeInput, Footer, NpubInput, PrimaryButton, SignatureInput,
+    TimelockInput, TransactionInput, TransactionOutput,
+};
 
 /// Combine escrow transaction component.
 #[component]
 pub(crate) fn Combine() -> Element {
-    let mut unsigned_tx = use_signal(String::new);
+    let unsigned_tx = use_signal(String::new);
     let mut signed_tx_str = use_signal(String::new);
-    let mut escrow_type = use_signal(String::new);
-    let mut npub_buyer = use_signal(String::new);
-    let mut npub_seller = use_signal(String::new);
-    let mut signature_1 = use_signal(String::new);
-    let mut signature_2 = use_signal(String::new);
-    let mut npub_arbitrator = use_signal(String::new);
-    let mut timelock_days = use_signal(String::new);
-    let mut timelock_hours = use_signal(String::new);
-    let mut signature_arbitrator = use_signal(String::new);
+    let escrow_type = use_signal(String::new);
+    let npub_buyer = use_signal(String::new);
+    let npub_seller = use_signal(String::new);
+    let signature_1 = use_signal(String::new);
+    let signature_2 = use_signal(String::new);
+    let npub_arbitrator = use_signal(String::new);
+    let timelock_days = use_signal(String::new);
+    let timelock_hours = use_signal(String::new);
+    let signature_arbitrator = use_signal(String::new);
     rsx! {
         main { class: "max-w-7xl mx-auto py-6 sm:px-6 lg:px-8",
             div { class: "px-4 py-6 sm:px-0",
@@ -39,140 +42,41 @@ pub(crate) fn Combine() -> Element {
                 div { class: "bg-white shadow overflow-hidden sm:rounded-lg",
                     div { class: "px-4 py-5 sm:p-6",
                         div { class: "space-y-6",
-                            div { class: "sm:col-span-6",
-                                label {
-                                    r#for: "unsigned-tx",
-                                    class: "block text-sm font-medium text-gray-700",
-                                    "Unsigned Transaction String"
-                                }
-                                div { class: "mt-1",
-                                    textarea {
-                                        id: "unsigned-tx",
-                                        name: "unsigned-tx",
-                                        rows: "4",
-                                        class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
-                                        placeholder: "Paste the unsigned transaction here...",
-                                        oninput: move |event| {
-                                            #[cfg(debug_assertions)]
-                                            trace!(% unsigned_tx, event_value =% event.value(), "Set unsigned transaction");
-                                            unsigned_tx.set(event.value());
-                                        },
-                                        value: unsigned_tx,
-                                    }
-                                }
+
+                            TransactionInput {
+                                update_var: unsigned_tx,
+                                label: "Unsigned Transaction",
+                                id: "unsigned-tx",
                             }
 
+
                             div { class: "grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6",
-                                div { class: "sm:col-span-3",
-                                    label {
-                                        r#for: "npub1",
-                                        class: "block text-sm font-medium text-gray-700",
-                                        "First Party Nostr Public Key (npub)"
-                                    }
-                                    div { class: "mt-1",
-                                        input {
-                                            r#type: "text",
-                                            name: "npub1",
-                                            id: "npub1",
-                                            class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
-                                            placeholder: "npub...",
-                                            oninput: move |event| {
-                                                #[cfg(debug_assertions)]
-                                                trace!(% npub_buyer, event_value =% event.value(), "Set buyer's npub");
-                                                npub_buyer.set(event.value());
-                                            },
-                                        }
-                                    }
+
+                                NpubInput {
+                                    id: "npub_1",
+                                    label: "First Nostr Public Key (npub)",
+                                    update_var: npub_buyer,
                                 }
 
-                                div { class: "sm:col-span-3",
-                                    label {
-                                        r#for: "npub2",
-                                        class: "block text-sm font-medium text-gray-700",
-                                        "Second Party Nostr Public Key (npub)"
-                                    }
-                                    div { class: "mt-1",
-                                        input {
-                                            r#type: "text",
-                                            name: "npub2",
-                                            id: "npub2",
-                                            class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
-                                            placeholder: "npub...",
-                                            oninput: move |event| {
-                                                #[cfg(debug_assertions)]
-                                                trace!(% npub_seller, event_value =% event.value(), "Set seller's npub");
-                                                npub_seller.set(event.value());
-                                            },
-                                        }
-                                    }
+                                NpubInput {
+                                    id: "npub_2",
+                                    label: "Second Nostr Public Key (npub)",
+                                    update_var: npub_seller,
                                 }
 
-                                div { class: "sm:col-span-3",
-                                    label {
-                                        r#for: "signature1",
-                                        class: "block text-sm font-medium text-gray-700",
-                                        "First Signature"
-                                    }
-                                    div { class: "mt-1",
-                                        textarea {
-                                            id: "signature1",
-                                            name: "signature1",
-                                            rows: "2",
-                                            class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
-                                            placeholder: "Paste signature here...",
-                                            oninput: move |event| {
-                                                #[cfg(debug_assertions)]
-                                                trace!(% signature_1, event_value =% event.value(), "Set signature 1");
-                                                signature_1.set(event.value());
-                                            },
-                                        }
-                                    }
+                                SignatureInput {
+                                    update_var: signature_1,
+                                    label: "First Signature",
+                                    id: "signature1",
                                 }
 
-                                div { class: "sm:col-span-3",
-                                    label {
-                                        r#for: "signature2",
-                                        class: "block text-sm font-medium text-gray-700",
-                                        "Second Signature"
-                                    }
-                                    div { class: "mt-1",
-                                        textarea {
-                                            id: "signature2",
-                                            name: "signature2",
-                                            rows: "2",
-                                            class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
-                                            placeholder: "Paste signature here...",
-                                            oninput: move |event| {
-                                                #[cfg(debug_assertions)]
-                                                trace!(% signature_2, event_value =% event.value(), "Set signature 2");
-                                                signature_2.set(event.value());
-                                            },
-                                        }
-                                    }
+                                SignatureInput {
+                                    update_var: signature_2,
+                                    label: "Second Signature",
+                                    id: "signature2",
                                 }
 
-                                div { class: "sm:col-span-3",
-                                    label {
-                                        r#for: "escrow-type",
-                                        class: "block text-sm font-medium text-gray-700",
-                                        "Escrow Type"
-                                    }
-                                    div { class: "mt-1",
-                                        select {
-                                            id: "escrow-type",
-                                            name: "escrow-type",
-                                            class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
-                                            oninput: move |event| {
-                                                #[cfg(debug_assertions)]
-                                                trace!(% escrow_type, event_value =% event.value(), "Set escrow type");
-                                                escrow_type.set(event.value());
-                                            },
-                                            option { value: "A", "A - Collaborative (2-of-2)" }
-                                            option { value: "B", "B - Dispute: First Party + Arbitrator" }
-                                            option { value: "C", "C - Dispute: Second Party + Arbitrator" }
-                                        }
-                                    }
-                                }
+                                EscrowTypeInput { update_var: escrow_type }
                             }
 
                             div {
@@ -183,108 +87,30 @@ pub(crate) fn Combine() -> Element {
                                 }
 
                                 div { class: "mt-4 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6",
-                                    div { class: "sm:col-span-3",
-                                        label {
-                                            r#for: "arbitrator",
-                                            class: "block text-sm font-medium text-gray-700",
-                                            "Arbitrator Nostr Public Key (npub)"
-                                        }
-                                        div { class: "mt-1",
-                                            input {
-                                                r#type: "text",
-                                                name: "arbitrator",
-                                                id: "arbitrator",
-                                                class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
-                                                placeholder: "npub...",
-                                                oninput: move |event| {
-                                                    #[cfg(debug_assertions)]
-                                                    trace!(% npub_arbitrator, event_value =% event.value(), "Set arbitrator's npub");
-                                                    npub_arbitrator.set(event.value());
-                                                },
-                                            }
-                                        }
+
+                                    NpubInput {
+                                        id: "npub_arbitrator",
+                                        label: "Arbitrator Nostr Public Key (npub)",
+                                        update_var: npub_arbitrator,
                                     }
 
-                                    div { class: "sm:col-span-3",
-                                        div { class: "grid grid-cols-2 gap-4",
-                                            div {
-                                                label {
-                                                    r#for: "timelock-days",
-                                                    class: "block text-sm font-medium text-gray-700",
-                                                    "Timelock (Days)"
-                                                }
-                                                div { class: "mt-1",
-                                                    input {
-                                                        r#type: "number",
-                                                        min: "0",
-                                                        name: "timelock-days",
-                                                        id: "timelock-days",
-                                                        class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
-                                                        placeholder: "0",
-                                                        oninput: move |event| {
-                                                            #[cfg(debug_assertions)]
-                                                            trace!(% timelock_days, event_value =% event.value(), "Set timelock days");
-                                                            timelock_days.set(event.value());
-                                                        },
-                                                    }
-                                                }
-                                            }
-                                            div {
-                                                label {
-                                                    r#for: "timelock-hours",
-                                                    class: "block text-sm font-medium text-gray-700",
-                                                    "Timelock (Hours)"
-                                                }
-                                                div { class: "mt-1",
-                                                    input {
-                                                        r#type: "number",
-                                                        min: "0",
-                                                        max: "23",
-                                                        name: "timelock-hours",
-                                                        id: "timelock-hours",
-                                                        class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
-                                                        placeholder: "0",
-                                                        oninput: move |event| {
-                                                            #[cfg(debug_assertions)]
-                                                            trace!(% timelock_hours, event_value =% event.value(), "Set timelock hours");
-                                                            timelock_hours.set(event.value());
-                                                        },
-                                                    }
-                                                }
-                                            }
-                                        }
+
+                                    TimelockInput {
+                                        update_day_var: timelock_days,
+                                        update_hour_var: timelock_hours,
                                     }
 
-                                    div { class: "sm:col-span-3",
-                                        label {
-                                            r#for: "signaturearb",
-                                            class: "block text-sm font-medium text-gray-700",
-                                            "Arbitrator Signature"
-                                        }
-                                        div { class: "mt-1",
-                                            textarea {
-                                                id: "signaturearb",
-                                                name: "signaturearb",
-                                                rows: "2",
-                                                class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
-                                                placeholder: "Paste signature here...",
-                                                oninput: move |event| {
-                                                    #[cfg(debug_assertions)]
-                                                    trace!(
-                                                        % signature_arbitrator, event_value =% event.value(),
-                                                        "Set signature arbitrator"
-                                                    );
-                                                    signature_arbitrator.set(event.value());
-                                                },
-                                            }
-                                        }
+
+                                    SignatureInput {
+                                        update_var: signature_arbitrator,
+                                        label: "Arbitrator Signature",
+                                        id: "signaturearb",
                                     }
                                 }
                             }
 
                             div { class: "pt-5",
                                 div { class: "flex justify-end",
-                                    // TODO: Use PrimaryButton with a custom onclick
                                     PrimaryButton {
                                         onclick: move |_| {
                                             #[cfg(debug_assertions)]
@@ -389,24 +215,11 @@ pub(crate) fn Combine() -> Element {
                             "Signed Transaction"
                         }
 
-                        div { class: "mt-5 border-t border-gray-200 pt-5",
-                            div { class: "sm:col-span-6",
-                                label {
-                                    r#for: "signed-tx",
-                                    class: "block text-sm font-medium text-gray-500",
-                                    "Signed Transaction"
-                                }
-                                div { class: "mt-1",
-                                    textarea {
-                                        id: "signed-tx",
-                                        readonly: "true",
-                                        rows: "4",
-                                        class: "shadow-sm block w-full sm:text-sm border-gray-300 rounded-md p-2 border bg-gray-50",
-                                        placeholder: "Signed transaction will appear here...",
-                                        value: signed_tx_str,
-                                    }
-                                }
-                            }
+                        TransactionOutput {
+                            update_var: signed_tx_str,
+                            label: "",
+                            id: "signed-tx",
+                            placeholder: "Signed transaction will appear here...",
                         }
 
                         div { class: "mt-5 flex flex-col space-y-3 sm:flex-row sm:space-y-0 sm:space-x-3",

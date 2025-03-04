@@ -7,15 +7,15 @@ use dioxus::prelude::*;
 #[cfg(debug_assertions)]
 use dioxus::logger::tracing::{info, trace};
 
+use crate::ESPLORA_ENDPOINT;
 use crate::esplora::{broadcast_transaction, create_client};
-use crate::{ESPLORA_ENDPOINT, NETWORK};
 
-use super::{Footer, PrimaryButton};
+use super::{Footer, NetworkInput, PrimaryButton, TransactionInput};
 
 /// Broadcast escrow transaction component.
 #[component]
 pub(crate) fn Broadcast() -> Element {
-    let mut signed_tx = use_signal(String::new);
+    let signed_tx = use_signal(String::new);
     let mut broadcast_result_str = use_signal(String::new);
     let mut broadcasted_txid = use_signal(String::new);
     let esplora_base_url = use_memo(move || {
@@ -34,54 +34,14 @@ pub(crate) fn Broadcast() -> Element {
                 div { class: "bg-white shadow overflow-hidden sm:rounded-lg",
                     div { class: "px-4 py-5 sm:p-6",
                         div { class: "space-y-6",
-                            div { class: "sm:col-span-6",
-                                label {
-                                    r#for: "signed-tx",
-                                    class: "block text-sm font-medium text-gray-700",
-                                    "Signed Transaction String"
-                                }
-                                div { class: "mt-1",
-                                    textarea {
-                                        id: "signed-tx",
-                                        name: "signed-tx",
-                                        rows: "4",
-                                        class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
-                                        placeholder: "Paste the signed transaction here...",
-                                        oninput: move |event| {
-                                            #[cfg(debug_assertions)]
-                                            trace!(% signed_tx, event_value =% event.value(), "Set signed transaction");
-                                            signed_tx.set(event.value());
-                                        },
-                                        value: signed_tx,
-                                    }
-                                }
+                            TransactionInput {
+                                update_var: signed_tx,
+                                label: "Signed Transaction",
+                                id: "signed-tx",
                             }
 
                             div { class: "grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6",
-                                div { class: "sm:col-span-3",
-                                    label {
-                                        r#for: "network",
-                                        class: "block text-sm font-medium text-gray-700",
-                                        "Bitcoin Network"
-                                    }
-                                    div { class: "mt-1",
-                                        select {
-                                            id: "network",
-                                            name: "network",
-                                            class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
-                                            oninput: move |event| {
-                                                #[cfg(debug_assertions)]
-                                                trace!(% NETWORK, event_value =% event.value(), "Set network");
-                                                *NETWORK.write() = event.value();
-                                            },
-                                            value: NETWORK.read().clone(),
-                                            option { value: "Mainnet", "Mainnet" }
-                                            option { value: "Testnet", "Testnet" }
-                                            option { value: "Signet", "Signet" }
-                                            option { value: "Regtest", "Regtest" }
-                                        }
-                                    }
-                                }
+                                NetworkInput { id: "network", label: "Bitcoin Network" }
                             }
 
                             div { class: "pt-5",
