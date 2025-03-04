@@ -5,6 +5,7 @@ use dioxus::prelude::*;
 
 #[cfg(debug_assertions)]
 use dioxus::logger::tracing::trace;
+use secp256k1::schnorr;
 
 use crate::{
     ESPLORA_ENDPOINT, NETWORK,
@@ -572,6 +573,29 @@ pub(crate) fn TransactionInput(
 /// Signature input validation component.
 #[component]
 pub(crate) fn SignatureInput(mut update_var: Signal<String>, label: String, id: String) -> Element {
+    let mut has_error = use_signal(|| false);
+
+    let mut validate_signature = move |input: &str| {
+        // For empty inputs, don't show an error
+        if input.is_empty() {
+            *has_error.write() = false;
+            update_var.set(input.to_string());
+            return;
+        }
+
+        // Validate signature using `rust-bitcoin`
+        let is_valid = input.parse::<schnorr::Signature>().is_ok();
+
+        *has_error.write() = !is_valid;
+        update_var.set(input.to_string());
+    };
+
+    let input_class = if *has_error.read() {
+        "shadow-sm focus:ring-red-500 focus:border-red-500 block w-full sm:text-sm border-red-300 rounded-md p-2 border bg-red-50"
+    } else {
+        "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
+    };
+
     rsx! {
         div { class: "sm:col-span-6",
             label {
@@ -581,23 +605,25 @@ pub(crate) fn SignatureInput(mut update_var: Signal<String>, label: String, id: 
             }
             div { class: "mt-1",
                 textarea {
-                    id: "unsigned-tx",
-                    name: "unsigned-tx",
+                    id: id.as_str(),
+                    name: id.as_str(),
                     rows: "4",
-                    class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
+                    class: input_class,
                     placeholder: "Paste the signature here...",
                     oninput: move |event| {
                         #[cfg(debug_assertions)]
                         trace!(% update_var, event_value =% event.value(), "Set signature");
-                        update_var.set(event.value());
+                        validate_signature(&event.value());
                     },
                     value: update_var,
                 }
             }
+            if *has_error.read() {
+                p { class: "mt-2 text-xs text-red-600", "Invalid signature format." }
+            }
         }
     }
 }
-
 /// Address input validation component.
 #[component]
 pub(crate) fn AddressInput(mut update_var: Signal<String>) -> Element {
