@@ -19,6 +19,7 @@ use crate::{
 use super::{
     BitcoinInput, ContinueButton, CopyButton, EscrowTypeInput, Footer, NetworkInput, NpubInput,
     NsecInput, PrimaryButton, TimelockInput, TransactionInput, TxidInput,
+    NsecInput, PrimaryButton, SignatureOutput, TimelockInput, TransactionInput, TxidInput,
 };
 
 /// Sign escrow transaction component.
@@ -208,18 +209,7 @@ pub(crate) fn Sign() -> Element {
                             "Signature"
                         }
 
-                        div { class: "sm:col-span-6",
-                            div { class: "mt-1",
-                                textarea {
-                                    id: "signature",
-                                    readonly: "true",
-                                    rows: "4",
-                                    class: "shadow-sm block w-full sm:text-sm border-gray-300 rounded-md p-2 border bg-gray-50",
-                                    placeholder: "Signature will appear here...",
-                                    value: signature,
-                                }
-                            }
-                        }
+                        SignatureOutput { update_var: signature }
 
                         div { class: "mt-5 flex flex-col space-y-3 sm:flex-row sm:space-y-0 sm:space-x-3",
                             CopyButton { text: "Signature", clipboard_text: signature }

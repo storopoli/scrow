@@ -2,9 +2,6 @@
 
 use dioxus::prelude::*;
 
-#[cfg(debug_assertions)]
-use dioxus::logger::tracing::trace;
-
 /// Transaction output component.
 #[component]
 pub(crate) fn TransactionOutput(
@@ -27,6 +24,25 @@ pub(crate) fn TransactionOutput(
                     rows: "4",
                     class: "shadow-sm block w-full sm:text-sm border-gray-300 rounded-md p-2 border bg-gray-50",
                     placeholder: placeholder.as_str(),
+                    value: update_var,
+                }
+            }
+        }
+    }
+}
+
+/// Signature output component.
+#[component]
+pub(crate) fn SignatureOutput(mut update_var: Signal<String>) -> Element {
+    rsx! {
+        div { class: "sm:col-span-6",
+            div { class: "mt-1",
+                textarea {
+                    id: "signature",
+                    readonly: "true",
+                    rows: "4",
+                    class: "shadow-sm block w-full sm:text-sm border-gray-300 rounded-md p-2 border bg-gray-50",
+                    placeholder: "Signature will appear here...",
                     value: update_var,
                 }
             }

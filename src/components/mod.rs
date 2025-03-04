@@ -24,7 +24,7 @@ pub(crate) use input::{
     NpubInputDerivedAddress, NsecInput, SignatureInput, TimelockInput, TransactionInput, TxidInput,
 };
 pub(crate) use navbar::Navbar;
-pub(crate) use output::TransactionOutput;
+pub(crate) use output::{SignatureOutput, TransactionOutput};
 pub(crate) use settings::Settings;
 pub(crate) use sign::Sign;
 pub(crate) use spend::Spend;
