@@ -1,6 +1,5 @@
 //! Combine escrow signatures component.
 
-use bitcoin::hex::prelude::*;
 use bitcoin::{Transaction, consensus, hex::DisplayHex};
 use dioxus::prelude::*;
 
@@ -122,8 +121,8 @@ pub(crate) fn Combine() -> Element {
                                             let npub_buyer = parse_npub(&npub_buyer.read()).unwrap();
                                             let npub_seller = parse_npub(&npub_seller.read()).unwrap();
                                             let escrow_type = parse_escrow_type(&escrow_type.read()).unwrap();
-                                            let unsigned_tx: Transaction = consensus::deserialize(
-                                                    Vec::from_hex(&unsigned_tx.read()).unwrap().as_ref(),
+                                            let unsigned_tx: Transaction = consensus::encode::deserialize_hex(
+                                                    &unsigned_tx.read(),
                                                 )
                                                 .unwrap();
                                             let signatures: Vec<schnorr::Signature> = vec![

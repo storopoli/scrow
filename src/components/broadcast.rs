@@ -1,6 +1,5 @@
 //! Broadcast escrow transaction component.
 
-use bitcoin::hex::prelude::*;
 use bitcoin::{Transaction, consensus};
 use dioxus::prelude::*;
 
@@ -51,8 +50,8 @@ pub(crate) fn Broadcast() -> Element {
                                             #[cfg(debug_assertions)]
                                             info!(% ESPLORA_ENDPOINT, "Created esplora client");
                                             let esplora_client = create_client(&ESPLORA_ENDPOINT.read()).unwrap();
-                                            let signed_tx: Transaction = consensus::deserialize(
-                                                    Vec::from_hex(&signed_tx.read()).unwrap().as_ref(),
+                                            let signed_tx: Transaction = consensus::encode::deserialize_hex(
+                                                    &signed_tx.read(),
                                                 )
                                                 .unwrap();
                                             let txid = signed_tx.compute_txid();

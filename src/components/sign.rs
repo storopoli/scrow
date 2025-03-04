@@ -1,6 +1,5 @@
 //! Sign escrow transaction component.
 
-use bitcoin::hex::prelude::*;
 use bitcoin::{Amount, Transaction, TxOut, consensus};
 use dioxus::prelude::*;
 
@@ -123,8 +122,8 @@ pub(crate) fn Sign() -> Element {
                                                 )
                                                 .unwrap();
                                             let network = parse_network(&NETWORK.read()).unwrap();
-                                            let unsigned_tx: Transaction = consensus::deserialize(
-                                                    Vec::from_hex(&unsigned_tx.read()).unwrap().as_ref(),
+                                            let unsigned_tx: Transaction = consensus::encode::deserialize_hex(
+                                                    &unsigned_tx.read(),
                                                 )
                                                 .unwrap();
                                             let signature_str = if !npub_arbitrator.read().is_empty() {

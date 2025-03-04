@@ -1,6 +1,6 @@
 [package]
 name = "scrow"
-version = "0.1.1"
+version = "0.2.0"
 edition = "2024"
 authors = [
     "Jose Storopoli <jose@storopoli.com>",
@@ -20,7 +20,6 @@ bitcoin = { version = "0.32.5", default-features = false, features = [
 ] }
 secp256k1 = { version = "0.29.0", features = ["global-context"] }
 nostr = "0.39.0"
-serde = { version = "1.0.218", features = ["derive"] }
 thiserror = "2.0.11"
 esplora-client = { version = "0.11.0", default-features = false, features = [
     "tokio",
@@ -48,8 +47,15 @@ web = ["dioxus/web"]
 desktop = ["dioxus/desktop"]
 mobile = ["dioxus/mobile"]
 
-[lints.rust]
-unsafe_code = "forbid" # Forbid unsafe code
+[lints]
+rust.missing_debug_implementations = "warn"
+rust.rust_2018_idioms = { level = "deny", priority = -1 }
+rust.unreachable_pub = "warn"
+rust.unused_crate_dependencies = "deny"
+rust.unused_must_use = "deny"
+rust.unsafe_code = "forbid"
+rust.missing_docs = "warn"
+rustdoc.all = "warn"
 
 [profile.release]
 opt-level = "z"   # Optimized for size, use 3 for speed

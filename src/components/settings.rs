@@ -4,11 +4,13 @@ use dioxus::prelude::*;
 
 use crate::{ESPLORA_ENDPOINT, NETWORK};
 
-use super::{EsploraInput, Footer, NetworkInput, SecondaryButton};
+use super::{EsploraInput, Footer, NetworkInput, PrimaryButton, SecondaryButton};
 
 /// Settings component.
 #[component]
 pub(crate) fn Settings() -> Element {
+    let settings_saved = use_signal(|| false);
+
     // Read the current values from global state
     rsx! {
         main { class: "max-w-7xl mx-auto py-6 sm:px-6 lg:px-8",
@@ -36,12 +38,28 @@ pub(crate) fn Settings() -> Element {
                                         },
                                         text: "Restore Defaults",
                                     }
-                                    // TODO: Use PrimaryButton with a custom onclick
-                                    button {
-                                        r#type: "button",
-                                        class: "inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500",
-                                        "Save Settings"
+                                    PrimaryButton {
+                                        onclick: move |_| {},
+                                        text: "Save Settings",
                                     }
+                                }
+                            }
+                            if *settings_saved.read() {
+                                div {
+                                    class: "flex items-center text-sm text-green-600 mt-2",
+                                    aria_hidden: true,
+                                    svg {
+                                        class: "h-5 w-5 text-green-500 mr-1",
+                                        xmlns: "http://www.w3.org/2000/svg",
+                                        view_box: "0 0 20 20",
+                                        fill: "currentColor",
+                                        path {
+                                            fill_rule: "evenodd",
+                                            d: "M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z",
+                                            clip_rule: "evenodd",
+                                        }
+                                    }
+                                    "Settings saved successfully!"
                                 }
                             }
                         }
@@ -55,7 +73,7 @@ pub(crate) fn Settings() -> Element {
                         }
 
                         div { class: "mt-2 max-w-xl text-sm text-gray-500",
-                            p { "Version: 0.1.1" }
+                            p { "Version: 0.2.0" }
                             p { class: "mt-2",
                                 "A Bitcoin non-custodial peer-to-peer dispute resolution tool. All code is open source and runs entirely in your browser."
                             }
