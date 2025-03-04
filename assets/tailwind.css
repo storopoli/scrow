@@ -250,6 +250,12 @@
   .z-0 {
     z-index: 0;
   }
+  .z-1 {
+    z-index: 1;
+  }
+  .m-8 {
+    margin: calc(var(--spacing) * 8);
+  }
   .-mx-2 {
     margin-inline: calc(var(--spacing) * -2);
   }

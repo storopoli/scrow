@@ -1,6 +1,6 @@
 //! Input Validation Components.
 
-use bitcoin::Txid;
+use bitcoin::{Address, Txid};
 use dioxus::prelude::*;
 
 #[cfg(debug_assertions)]
@@ -378,7 +378,6 @@ pub(crate) fn TxidInput(mut update_var: Signal<String>, label: String, warning: 
     let mut has_error = use_signal(|| false);
 
     let mut validate_txid = move |input: &str| {
-        // Txid should be 64 hex characters
         let is_valid = input.is_empty() || input.parse::<Txid>().is_ok();
         *has_error.write() = !is_valid && !input.is_empty();
         update_var.set(input.to_string());
@@ -493,6 +492,25 @@ pub(crate) fn SignatureInput(mut update_var: Signal<String>, label: String, id: 
 /// Address input validation component.
 #[component]
 pub(crate) fn AddressInput(mut update_var: Signal<String>) -> Element {
+    let mut has_error = use_signal(|| false);
+
+    let mut validate_address = move |input: &str| {
+        let is_valid = input.parse::<Address<_>>().is_ok()
+            && input
+                .parse::<Address<_>>()
+                .and_then(|a| a.require_network(parse_network(&NETWORK.read()).unwrap()))
+                .is_ok();
+
+        *has_error.write() = !is_valid && !input.is_empty();
+        update_var.set(input.to_string());
+    };
+
+    let input_class = if *has_error.read() {
+        "shadow-sm focus:ring-red-500 focus:border-red-500 block w-full sm:text-sm border-red-300 rounded-md p-2 border bg-red-50"
+    } else {
+        "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
+    };
+
     rsx! {
         div { class: "sm:col-span-3",
             label {
@@ -505,13 +523,18 @@ pub(crate) fn AddressInput(mut update_var: Signal<String>) -> Element {
                     r#type: "text",
                     name: "destination-address",
                     id: "destination-address",
-                    class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
+                    class: input_class,
                     placeholder: "Enter your destination address...",
                     oninput: move |event| {
                         #[cfg(debug_assertions)]
                         trace!(% update_var, event_value =% event.value(), "Set address");
-                        update_var.set(event.value());
+                        validate_address(&event.value());
                     },
+                }
+            }
+            if *has_error.read() {
+                p { class: "mt-2 text-xs text-red-600",
+                    "Invalid Bitcoin address format. Please check and try again."
                 }
             }
         }
