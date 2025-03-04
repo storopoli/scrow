@@ -17,6 +17,7 @@ use crate::{
 
 use super::{
     ContinueButton, CopyButton, EscrowTypeInput, Footer, NpubInput, PrimaryButton, TimelockInput,
+    TransactionInput,
 };
 
 /// Combine escrow transaction component.
@@ -41,28 +42,13 @@ pub(crate) fn Combine() -> Element {
                 div { class: "bg-white shadow overflow-hidden sm:rounded-lg",
                     div { class: "px-4 py-5 sm:p-6",
                         div { class: "space-y-6",
-                            div { class: "sm:col-span-6",
-                                label {
-                                    r#for: "unsigned-tx",
-                                    class: "block text-sm font-medium text-gray-700",
-                                    "Unsigned Transaction String"
-                                }
-                                div { class: "mt-1",
-                                    textarea {
-                                        id: "unsigned-tx",
-                                        name: "unsigned-tx",
-                                        rows: "4",
-                                        class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
-                                        placeholder: "Paste the unsigned transaction here...",
-                                        oninput: move |event| {
-                                            #[cfg(debug_assertions)]
-                                            trace!(% unsigned_tx, event_value =% event.value(), "Set unsigned transaction");
-                                            unsigned_tx.set(event.value());
-                                        },
-                                        value: unsigned_tx,
-                                    }
-                                }
+
+                            TransactionInput {
+                                update_var: unsigned_tx,
+                                label: "Unsigned Transaction",
+                                id: "unsigned-tx",
                             }
+
 
                             div { class: "grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6",
 

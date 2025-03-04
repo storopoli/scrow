@@ -295,7 +295,7 @@ pub(crate) fn NsecInput(mut update_var: Signal<String>) -> Element {
 
 /// Transaction ID input validation component.
 #[component]
-pub(crate) fn TxidInput(label: String, mut update_var: Signal<String>) -> Element {
+pub(crate) fn TxidInput(mut update_var: Signal<String>, label: String) -> Element {
     rsx! {
         div { class: "sm:col-span-3",
             label {
@@ -315,6 +315,39 @@ pub(crate) fn TxidInput(label: String, mut update_var: Signal<String>) -> Elemen
                         trace!(% update_var, event_value =% event.value(), "Set funding transaction ID");
                         update_var.set(event.value());
                     },
+                }
+            }
+        }
+    }
+}
+
+/// Transaction input validation component.
+#[component]
+pub(crate) fn TransactionInput(
+    mut update_var: Signal<String>,
+    label: String,
+    id: String,
+) -> Element {
+    rsx! {
+        div { class: "sm:col-span-6",
+            label {
+                r#for: "unsigned-tx",
+                class: "block text-sm font-medium text-gray-700",
+                {label}
+            }
+            div { class: "mt-1",
+                textarea {
+                    id: id.as_str(),
+                    name: id.as_str(),
+                    rows: "4",
+                    class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
+                    placeholder: "Paste the transaction here...",
+                    oninput: move |event| {
+                        #[cfg(debug_assertions)]
+                        trace!(% update_var, event_value =% event.value(), "Set transaction");
+                        update_var.set(event.value());
+                    },
+                    value: update_var,
                 }
             }
         }
