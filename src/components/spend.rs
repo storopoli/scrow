@@ -15,7 +15,7 @@ use crate::{
 
 use super::{
     BitcoinInput, ContinueButton, CopyButton, FeeRateInput, Footer, NetworkInput,
-    NpubInputDerivedAddress, NsecInput, PrimaryButton, TxidInput,
+    NpubInputDerivedAddress, NsecInput, PrimaryButton, TransactionOutput, TxidInput,
 };
 
 /// Spend from resolution address component.
@@ -173,23 +173,11 @@ pub(crate) fn Spend() -> Element {
                             "Signed Transaction"
                         }
 
-                        div { class: "mt-5 border-t border-gray-200 pt-5",
-                            div { class: "sm:col-span-6",
-                                label {
-                                    r#for: "signed-tx",
-                                    class: "block text-sm font-medium text-gray-500",
-                                    "Signed Transaction"
-                                }
-                                div { class: "mt-1",
-                                    textarea {
-                                        id: "signed-tx",
-                                        readonly: "true",
-                                        rows: "4",
-                                        class: "shadow-sm block w-full sm:text-sm border-gray-300 rounded-md p-2 border bg-gray-50",
-                                        value: signed_tx_str,
-                                    }
-                                }
-                            }
+                        TransactionOutput {
+                            update_var: signed_tx_str,
+                            label: "",
+                            id: "signed-tx",
+                            placeholder: "Signed transaction will appear here...",
                         }
 
                         div { class: "mt-5 flex flex-col space-y-3 sm:flex-row sm:space-y-0 sm:space-x-3",

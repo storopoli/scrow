@@ -8,6 +8,7 @@ pub(crate) mod footer;
 pub(crate) mod home;
 pub(crate) mod input;
 pub(crate) mod navbar;
+pub(crate) mod output;
 pub(crate) mod settings;
 pub(crate) mod sign;
 pub(crate) mod spend;
@@ -23,6 +24,7 @@ pub(crate) use input::{
     NpubInputDerivedAddress, NsecInput, SignatureInput, TimelockInput, TransactionInput, TxidInput,
 };
 pub(crate) use navbar::Navbar;
+pub(crate) use output::TransactionOutput;
 pub(crate) use settings::Settings;
 pub(crate) use sign::Sign;
 pub(crate) use spend::Spend;

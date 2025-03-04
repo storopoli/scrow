@@ -18,7 +18,7 @@ use crate::{
 
 use super::{
     BitcoinInput, ContinueButton, CopyButton, FeeRateInput, Footer, NetworkInput, NpubInput,
-    NpubInputDerivedAddress, PrimaryButton, TimelockInput,
+    NpubInputDerivedAddress, PrimaryButton, TimelockInput, TransactionOutput,
 };
 
 /// Create escrow transaction component.
@@ -259,20 +259,11 @@ pub(crate) fn Create() -> Element {
 
                         div { class: "mt-5 border-t border-gray-200 pt-5",
                             dl { class: "grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2",
-
-                                div { class: "sm:col-span-2",
-                                    dt { class: "text-sm font-medium text-gray-500",
-                                        "Unsigned Escrow Resolution Transaction"
-                                    }
-                                    dd { class: "mt-1 text-sm text-gray-900",
-                                        textarea {
-                                            id: "escrow-transaction",
-                                            readonly: "true",
-                                            class: "w-full h-32 p-3 border border-gray-300 rounded-md bg-gray-50 focus:ring-indigo-500 focus:border-indigo-500",
-                                            placeholder: "Transaction data will appear here...",
-                                            value: escrow_transaction,
-                                        }
-                                    }
+                                TransactionOutput {
+                                    update_var: escrow_transaction,
+                                    label: "Unsigned Escrow Resolution Transaction",
+                                    id: "escrow-tx",
+                                    placeholder: "Transaction data will appear here...",
                                 }
                             }
 
