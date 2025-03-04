@@ -259,6 +259,27 @@ pub(crate) fn FeeRateInput(mut update_var: Signal<String>, label: String, id: St
 /// Network input validation component.
 #[component]
 pub(crate) fn NetworkInput(label: String, id: String) -> Element {
+    // Function to get the default endpoint for a network
+    let get_default_endpoint = |network: &str| -> String {
+        match network {
+            "Mainnet" => "https://mempool.space/api",
+            "Testnet" => "https://mempool.space/testnet/api",
+            "Signet" => "https://mempool.space/signet/api",
+            "Regtest" => "http://127.0.0.1:3002/api",
+            _ => "https://mempool.space/api",
+        }
+        .to_string()
+    };
+
+    let update_esplora_endpoint = move |network: &str| {
+        // Set appropriate Esplora endpoint based on selected network
+        let endpoint = get_default_endpoint(network);
+        *ESPLORA_ENDPOINT.write() = endpoint;
+    };
+
+    // Get the default endpoint for the current network
+    let default_endpoint = get_default_endpoint(&NETWORK.read());
+
     rsx! {
         div { class: "sm:col-span-3",
             label {
@@ -274,7 +295,9 @@ pub(crate) fn NetworkInput(label: String, id: String) -> Element {
                     oninput: move |event| {
                         #[cfg(debug_assertions)]
                         trace!(% NETWORK, event_value =% event.value(), "Set network");
-                        *NETWORK.write() = event.value();
+                        let network_value = event.value();
+                        *NETWORK.write() = network_value.clone();
+                        update_esplora_endpoint(&network_value);
                     },
                     value: NETWORK.read().clone(),
                     option { value: "Mainnet", "Mainnet" }
@@ -283,6 +306,9 @@ pub(crate) fn NetworkInput(label: String, id: String) -> Element {
                     option { value: "Regtest", "Regtest" }
                 }
             }
+            // Using two separate paragraphs
+            p { class: "mt-2 text-xs text-gray-500", "Default Esplora endpoint: {default_endpoint}" }
+            p { class: "text-xs text-gray-500", "Current Esplora endpoint: {ESPLORA_ENDPOINT.read()}" }
         }
     }
 }
