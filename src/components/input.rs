@@ -8,7 +8,7 @@ use dioxus::logger::tracing::trace;
 
 use crate::{
     ESPLORA_ENDPOINT, NETWORK,
-    util::{npub_to_address, parse_network, parse_npub},
+    util::{npub_to_address, parse_network, parse_npub, parse_nsec},
 };
 
 /// Nostr `npub` input validation component.
@@ -346,6 +346,20 @@ pub(crate) fn EscrowTypeInput(mut update_var: Signal<String>) -> Element {
 /// Nostr `nsec` input validation component.
 #[component]
 pub(crate) fn NsecInput(mut update_var: Signal<String>) -> Element {
+    let mut has_error = use_signal(|| false);
+
+    let mut validate_nsec = move |input: &str| {
+        let is_valid = input.is_empty() || parse_nsec(input).is_ok();
+        *has_error.write() = !is_valid && !input.is_empty();
+        update_var.set(input.to_string());
+    };
+
+    let input_class = if *has_error.read() {
+        "shadow-sm focus:ring-red-500 focus:border-red-500 block w-full sm:text-sm border-red-300 rounded-md p-2 border bg-red-50"
+    } else {
+        "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
+    };
+
     rsx! {
         div { class: "sm:col-span-3",
             label {
@@ -358,15 +372,21 @@ pub(crate) fn NsecInput(mut update_var: Signal<String>) -> Element {
                     r#type: "password",
                     name: "nsec",
                     id: "nsec",
-                    class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
+                    class: input_class,
                     placeholder: "nsec...",
                     oninput: move |event| {
-                        update_var.set(event.value());
+                        validate_nsec(&event.value());
                     },
                 }
             }
-            p { class: "mt-2 text-xs text-red-600",
-                "Your key is never stored or transmitted. All signing happens locally."
+            if *has_error.read() {
+                p { class: "mt-2 text-xs text-red-600",
+                    "Invalid nsec format. Please enter a valid Nostr secret key."
+                }
+            } else {
+                p { class: "mt-2 text-xs text-red-600",
+                    "Your key is never stored or transmitted. All signing happens locally."
+                }
             }
         }
     }
@@ -420,7 +440,7 @@ pub(crate) fn TxidInput(mut update_var: Signal<String>, label: String, warning: 
             }
             if *has_error.read() {
                 p { class: "mt-2 text-xs text-red-600",
-                    "Invalid transaction ID. It should be a 64-character hexadecimal string."
+                    "Invalid transaction ID. Please enter a valid transaction ID."
                 }
             }
         }
