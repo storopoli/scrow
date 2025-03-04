@@ -19,8 +19,8 @@ pub(crate) use create::Create;
 pub(crate) use footer::Footer;
 pub(crate) use home::Home;
 pub(crate) use input::{
-    BitcoinInput, EscrowTypeInput, FeeRateInput, NetworkInput, NpubInput, NpubInputDerivedAddress,
-    NsecInput, SignatureInput, TimelockInput, TransactionInput, TxidInput,
+    BitcoinInput, EscrowTypeInput, EsploraInput, FeeRateInput, NetworkInput, NpubInput,
+    NpubInputDerivedAddress, NsecInput, SignatureInput, TimelockInput, TransactionInput, TxidInput,
 };
 pub(crate) use navbar::Navbar;
 pub(crate) use settings::Settings;

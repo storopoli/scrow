@@ -2,12 +2,9 @@
 
 use dioxus::prelude::*;
 
-#[cfg(debug_assertions)]
-use dioxus::logger::tracing::trace;
-
 use crate::{ESPLORA_ENDPOINT, NETWORK};
 
-use super::{Footer, NetworkInput, SecondaryButton};
+use super::{EsploraInput, Footer, NetworkInput, SecondaryButton};
 
 /// Settings component.
 #[component]
@@ -27,31 +24,7 @@ pub(crate) fn Settings() -> Element {
                                     label: "Default Bitcoin Network",
                                 }
 
-                                div { class: "sm:col-span-6",
-                                    label {
-                                        r#for: "esplora-url",
-                                        class: "block text-sm font-medium text-gray-700",
-                                        "Esplora API Backend URL"
-                                    }
-                                    div { class: "mt-1",
-                                        input {
-                                            r#type: "url",
-                                            name: "esplora-url",
-                                            id: "esplora-url",
-                                            class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
-                                            placeholder: "https://mempool.space/api",
-                                            value: ESPLORA_ENDPOINT.read().clone(),
-                                            oninput: move |event| {
-                                                #[cfg(debug_assertions)]
-                                                trace!(% ESPLORA_ENDPOINT, event_value =% event.value(), "Set Eslora endpoint");
-                                                *ESPLORA_ENDPOINT.write() = event.value();
-                                            },
-                                        }
-                                    }
-                                    p { class: "mt-2 text-xs text-gray-500",
-                                        "Default for mainnet: https://mempool.space/api"
-                                    }
-                                }
+                                EsploraInput {}
                             }
 
                             div { class: "pt-5",
