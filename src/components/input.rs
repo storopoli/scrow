@@ -13,6 +13,20 @@ use crate::{
 /// Nostr `npub` input validation component.
 #[component]
 pub(crate) fn NpubInput(mut update_var: Signal<String>, label: String, id: String) -> Element {
+    let mut has_error = use_signal(|| false);
+    let mut validate_npub = move |input: &str| {
+        let result = parse_npub(input);
+        *has_error.write() = result.is_err() && !input.is_empty();
+        if result.is_ok() || input.is_empty() {
+            update_var.set(input.to_string());
+        }
+    };
+
+    let input_class = if *has_error.read() {
+        "shadow-sm focus:ring-red-500 focus:border-red-500 block w-full sm:text-sm border-red-300 rounded-md p-2 border bg-red-50"
+    } else {
+        "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
+    };
     rsx! {
         div { class: "sm:col-span-3",
             label {
@@ -25,13 +39,18 @@ pub(crate) fn NpubInput(mut update_var: Signal<String>, label: String, id: Strin
                     r#type: "text",
                     name: id.as_str(),
                     id: id.as_str(),
-                    class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
+                    class: input_class,
                     placeholder: "npub...",
                     oninput: move |event| {
                         #[cfg(debug_assertions)]
                         trace!(% id, % update_var, event_value =% event.value(), "Set npub");
-                        update_var.set(event.value());
+                        validate_npub(&event.value());
                     },
+                }
+            }
+            if *has_error.read() {
+                p { class: "mt-2 text-xs text-red-600",
+                    "Invalid npub format. Please enter a valid Nostr public key."
                 }
             }
         }
@@ -47,6 +66,41 @@ pub(crate) fn NpubInputDerivedAddress(
     id: String,
     col_span: u8,
 ) -> Element {
+    let mut has_error = use_signal(|| false);
+
+    let mut validate_and_derive = move |input: &str| {
+        let parsed_npub = parse_npub(input);
+        has_error.set(parsed_npub.is_err() && !input.is_empty());
+
+        update_var.set(input.to_string());
+
+        if let Ok(parsed_npub) = parsed_npub {
+            if let Ok(parsed_network) = parse_network(&NETWORK.read()) {
+                if let Ok(address) = npub_to_address(&parsed_npub, parsed_network) {
+                    let derived_address_str = address.to_string();
+                    #[cfg(debug_assertions)]
+                    trace!(
+                        % derived_address_str, % update_address, event_value =% input,
+                        "Set derived address"
+                    );
+                    update_address.set(derived_address_str);
+                    return;
+                }
+            }
+        }
+
+        // Clear the address if validation fails
+        if !input.is_empty() {
+            update_address.set(String::new());
+        }
+    };
+
+    let input_class = if *has_error.read() {
+        "shadow-sm focus:ring-red-500 focus:border-red-500 block w-full sm:text-sm border-red-300 rounded-md p-2 border bg-red-50"
+    } else {
+        "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
+    };
+
     rsx! {
         div { class: format!("sm:col-span-{col_span}").as_str(),
             label {
@@ -59,24 +113,18 @@ pub(crate) fn NpubInputDerivedAddress(
                     r#type: "text",
                     name: id.as_str(),
                     id: id.as_str(),
-                    class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
+                    class: input_class,
                     placeholder: "npub...",
                     oninput: move |event| {
                         #[cfg(debug_assertions)]
                         trace!(% id, % update_var, event_value =% event.value(), "Set npub");
-                        update_var.set(event.value());
-                        let parsed_npub = parse_npub(&update_var.read()).unwrap();
-                        let parsed_network = parse_network(&NETWORK.read()).unwrap();
-                        let derived_address_str = npub_to_address(&parsed_npub, parsed_network)
-                            .unwrap()
-                            .to_string();
-                        #[cfg(debug_assertions)]
-                        trace!(
-                            % id, % derived_address_str, % update_address, event_value =% event.value(),
-                            "Set derived address"
-                        );
-                        update_address.set(derived_address_str);
+                        validate_and_derive(&event.value());
                     },
+                }
+            }
+            if *has_error.read() {
+                p { class: "mt-2 text-xs text-red-600",
+                    "Invalid npub format. Please enter a valid Nostr public key."
                 }
             }
         }
