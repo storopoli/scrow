@@ -45,9 +45,10 @@ pub(crate) fn NpubInputDerivedAddress(
     mut update_address: Signal<String>,
     label: String,
     id: String,
+    col_span: u8,
 ) -> Element {
     rsx! {
-        div { class: "sm:col-span-3",
+        div { class: format!("sm:col-span-{col_span}").as_str(),
             label {
                 r#for: id.as_str(),
                 class: "block text-sm font-medium text-gray-700",

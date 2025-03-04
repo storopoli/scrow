@@ -17,8 +17,9 @@ use crate::{
 };
 
 use super::{
-    BitcoinInput, ContinueButton, CopyButton, FeeRateInput, Footer, NetworkInput, NpubInput,
-    NpubInputDerivedAddress, PrimaryButton, TimelockInput, TransactionOutput, TxidInput,
+    BitcoinInput, ContinueButton, CopyButton, DerivedAddressOutput, FeeRateInput, Footer,
+    NetworkInput, NpubInput, NpubInputDerivedAddress, PrimaryButton, TimelockInput,
+    TransactionOutput, TxidInput,
 };
 
 /// Create escrow transaction component.
@@ -52,6 +53,7 @@ pub(crate) fn Create() -> Element {
                                     label: "Buyer Nostr Public Key (npub)",
                                     update_var: npub_buyer,
                                     update_address: derived_address_buyer,
+                                    col_span: 3,
                                 }
 
                                 NpubInputDerivedAddress {
@@ -59,6 +61,7 @@ pub(crate) fn Create() -> Element {
                                     label: "Seller Nostr Public Key (npub)",
                                     update_var: npub_seller,
                                     update_address: derived_address_seller,
+                                    col_span: 3,
                                 }
 
                                 BitcoinInput {
@@ -104,58 +107,29 @@ pub(crate) fn Create() -> Element {
 
                             div { class: "border-t border-gray-200 pt-6",
                                 div { class: "grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6",
-                                    div { class: "col-span-2",
-                                        dt { class: "text-lg font-medium text-gray-900",
-                                            "Deposit Address"
-                                        }
-                                        dd {
-                                            id: "escrow-address",
-                                            class: "mt-1 text-sm text-gray-900 break-all bg-gray-50 p-3 rounded",
-                                            {
-                                                if escrow_address_str.read().is_empty() {
-                                                    "bc1p...".to_string()
-                                                } else {
-                                                    escrow_address_str.read().clone()
-                                                }
-                                            }
-                                        }
+                                    DerivedAddressOutput {
+                                        update_var: escrow_address_str,
+                                        label: "Deposit Address",
+                                        id: "escrow-address",
+                                        col_span: 3,
                                     }
                                 }
                             }
 
                             div { class: "border-t border-gray-200 pt-6",
                                 div { class: "grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6",
-                                    div { class: "col-span-3",
-                                        dt { class: "text-lg font-medium text-gray-900",
-                                            "Buyer Resolution Address"
-                                        }
-                                        dd {
-                                            id: "buyer-address",
-                                            class: "mt-1 text-sm text-gray-900 break-all bg-gray-50 p-3 rounded",
-                                            {
-                                                if derived_address_buyer.read().is_empty() {
-                                                    "bc1p...".to_string()
-                                                } else {
-                                                    derived_address_buyer.read().clone()
-                                                }
-                                            }
-                                        }
+                                    DerivedAddressOutput {
+                                        update_var: derived_address_buyer,
+                                        label: "Buyer's Resolution Address",
+                                        id: "buyer-address",
+                                        col_span: 3,
                                     }
-                                    div { class: "col-span-3",
-                                        dt { class: "text-lg font-medium text-gray-900",
-                                            "Seller Resolution Address"
-                                        }
-                                        dd {
-                                            id: "buyer-address",
-                                            class: "mt-1 text-sm text-gray-900 break-all bg-gray-50 p-3 rounded",
-                                            {
-                                                if derived_address_seller.read().is_empty() {
-                                                    "bc1p...".to_string()
-                                                } else {
-                                                    derived_address_seller.read().clone()
-                                                }
-                                            }
-                                        }
+
+                                    DerivedAddressOutput {
+                                        update_var: derived_address_seller,
+                                        label: "Seller's Resolution Address",
+                                        id: "seller-address",
+                                        col_span: 3,
                                     }
                                 }
                             }

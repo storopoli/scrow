@@ -45,6 +45,7 @@ pub(crate) fn Spend() -> Element {
                                     label: "Your Nostr Public Key (npub)",
                                     update_var: npub,
                                     update_address: derived_address,
+                                    col_span: 3,
                                 }
 
                                 TxidInput {
