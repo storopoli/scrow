@@ -497,6 +497,17 @@ pub(crate) fn TimelockInput(
 /// Escrow type input validation component.
 #[component]
 pub(crate) fn EscrowTypeInput(mut update_var: Signal<String>) -> Element {
+    // Initialize the signal with "A" when the component is first created
+    use_effect(move || {
+        // Only set the default value if the current value is empty
+        if update_var.read().is_empty() {
+            update_var.set("A".to_string());
+        }
+    });
+
+    #[allow(clippy::redundant_closure)]
+    let current_value = use_memo(move || update_var());
+
     rsx! {
         div { class: "sm:col-span-3",
             label {
@@ -514,6 +525,7 @@ pub(crate) fn EscrowTypeInput(mut update_var: Signal<String>) -> Element {
                         trace!(% update_var, event_value =% event.value(), "Set escrow type");
                         update_var.set(event.value());
                     },
+                    value: current_value,
                     option { value: "A", "A - Collaborative (2-of-2)" }
                     option { value: "B", "B - Dispute: First Party + Arbitrator" }
                     option { value: "C", "C - Dispute: Second Party + Arbitrator" }
