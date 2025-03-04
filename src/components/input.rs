@@ -1,6 +1,6 @@
 //! Input Validation Components.
 
-use bitcoin::{Address, Amount, Txid};
+use bitcoin::{Address, Amount, FeeRate, Txid};
 use dioxus::prelude::*;
 
 #[cfg(debug_assertions)]
@@ -198,6 +198,33 @@ pub(crate) fn BitcoinInput(mut update_var: Signal<String>, label: String, id: St
 /// Fee rate input validation component.
 #[component]
 pub(crate) fn FeeRateInput(mut update_var: Signal<String>, label: String, id: String) -> Element {
+    let mut has_error = use_signal(|| false);
+
+    let mut validate_fee_rate = move |input: &str| {
+        if input.is_empty() {
+            *has_error.write() = false;
+            update_var.set(input.to_string());
+            return;
+        }
+
+        match input.parse::<u64>() {
+            Ok(rate) => {
+                let is_valid = rate > 0 && FeeRate::from_sat_per_vb(rate).is_some();
+                *has_error.write() = !is_valid;
+                update_var.set(input.to_string());
+            }
+            Err(_) => {
+                *has_error.write() = true;
+            }
+        }
+    };
+
+    let input_class = if *has_error.read() {
+        "shadow-sm focus:ring-red-500 focus:border-red-500 block w-full sm:text-sm border-red-300 rounded-md p-2 border bg-red-50"
+    } else {
+        "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
+    };
+
     rsx! {
         div { class: "sm:col-span-3",
             label {
@@ -212,14 +239,17 @@ pub(crate) fn FeeRateInput(mut update_var: Signal<String>, label: String, id: St
                     step: "1",
                     name: id.as_str(),
                     id: id.as_str(),
-                    class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
+                    class: input_class,
                     placeholder: "1",
                     oninput: move |event| {
                         #[cfg(debug_assertions)]
-                        trace!(% update_var, event_value =% event.value(), "Set seller's BTC amount");
-                        update_var.set(event.value());
+                        trace!(% update_var, event_value =% event.value(), "Set fee rate");
+                        validate_fee_rate(&event.value());
                     },
                 }
+            }
+            if *has_error.read() {
+                p { class: "mt-2 text-xs text-red-600", "Fee rate must be a positive integer." }
             }
         }
     }
