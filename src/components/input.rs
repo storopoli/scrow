@@ -1,6 +1,6 @@
 //! Input Validation Components.
 
-use bitcoin::{Address, Txid};
+use bitcoin::{Address, Amount, Txid};
 use dioxus::prelude::*;
 
 #[cfg(debug_assertions)]
@@ -135,6 +135,33 @@ pub(crate) fn NpubInputDerivedAddress(
 /// Bitcoin BTC amount input validation component.
 #[component]
 pub(crate) fn BitcoinInput(mut update_var: Signal<String>, label: String, id: String) -> Element {
+    let mut has_error = use_signal(|| false);
+
+    let mut validate_amount = move |input: &str| {
+        if input.is_empty() {
+            *has_error.write() = false;
+            update_var.set(input.to_string());
+            return;
+        }
+
+        match input.parse::<f64>() {
+            Ok(amount) => {
+                let is_valid = Amount::from_btc(amount).is_ok();
+                *has_error.write() = !is_valid;
+                update_var.set(input.to_string());
+            }
+            Err(_) => {
+                *has_error.write() = true;
+            }
+        }
+    };
+
+    let input_class = if *has_error.read() {
+        "shadow-sm focus:ring-red-500 focus:border-red-500 block w-full sm:text-sm border-red-300 rounded-md p-2 border bg-red-50"
+    } else {
+        "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
+    };
+
     rsx! {
         div { class: "sm:col-span-3",
             label {
@@ -150,13 +177,18 @@ pub(crate) fn BitcoinInput(mut update_var: Signal<String>, label: String, id: St
                     step: "0.00000001",
                     name: id.as_str(),
                     id: id.as_str(),
-                    class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
+                    class: input_class,
                     placeholder: "0.00000000",
                     oninput: move |event| {
                         #[cfg(debug_assertions)]
-                        trace!(% update_var, event_value =% event.value(), "Set seller's BTC amount");
-                        update_var.set(event.value());
+                        trace!(% update_var, event_value =% event.value(), "Set Bitcoin amount");
+                        validate_amount(&event.value());
                     },
+                }
+            }
+            if *has_error.read() {
+                p { class: "mt-2 text-xs text-red-600",
+                    "Amount must be between 0.00000001 and 100 BTC."
                 }
             }
         }
