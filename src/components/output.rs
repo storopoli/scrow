@@ -49,3 +49,29 @@ pub(crate) fn SignatureOutput(mut update_var: Signal<String>) -> Element {
         }
     }
 }
+
+/// Derived address output component.
+#[component]
+pub(crate) fn DerivedAddressOutput(
+    mut update_var: Signal<String>,
+    label: String,
+    id: String,
+    col_span: u8,
+) -> Element {
+    rsx! {
+        div { class: format!("col-span-{col_span}").as_str(),
+            dt { class: "text-lg font-medium text-gray-900", {label} }
+            dd {
+                id: id.as_str(),
+                class: "mt-1 text-sm text-gray-900 break-all bg-gray-50 p-3 rounded",
+                {
+                    if update_var.read().is_empty() {
+                        "bc1p...".to_string()
+                    } else {
+                        update_var.read().clone()
+                    }
+                }
+            }
+        }
+    }
+}

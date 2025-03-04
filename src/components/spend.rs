@@ -14,7 +14,7 @@ use crate::{
 };
 
 use super::{
-    BitcoinInput, ContinueButton, CopyButton, FeeRateInput, Footer, NetworkInput,
+    AddressInput, BitcoinInput, ContinueButton, CopyButton, FeeRateInput, Footer, NetworkInput,
     NpubInputDerivedAddress, NsecInput, PrimaryButton, TransactionOutput, TxidInput,
 };
 
@@ -23,7 +23,7 @@ use super::{
 pub(crate) fn Spend() -> Element {
     let npub = use_signal(String::new);
     let escrow_txid = use_signal(String::new);
-    let mut destination_address = use_signal(String::new);
+    let destination_address = use_signal(String::new);
     let amount = use_signal(String::new);
     let fee_rate = use_signal(|| "1".to_string());
     let derived_address = use_signal(String::new);
@@ -54,30 +54,7 @@ pub(crate) fn Spend() -> Element {
                                     warning: "",
                                 }
 
-                                div { class: "sm:col-span-3",
-                                    label {
-                                        r#for: "destination-address",
-                                        class: "block text-sm font-medium text-gray-700",
-                                        "Your Destination Address"
-                                    }
-                                    div { class: "mt-1",
-                                        input {
-                                            r#type: "text",
-                                            name: "destination-address",
-                                            id: "destination-address",
-                                            class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
-                                            placeholder: "Enter your destination address...",
-                                            oninput: move |event| {
-                                                #[cfg(debug_assertions)]
-                                                trace!(
-                                                    % destination_address, event_value =% event.value(),
-                                                    "Set destination address"
-                                                );
-                                                destination_address.set(event.value());
-                                            },
-                                        }
-                                    }
-                                }
+                                AddressInput { update_var: destination_address }
 
                                 BitcoinInput {
                                     id: "amount",

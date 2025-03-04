@@ -420,3 +420,31 @@ pub(crate) fn SignatureInput(mut update_var: Signal<String>, label: String, id: 
         }
     }
 }
+
+/// Address input validation component.
+#[component]
+pub(crate) fn AddressInput(mut update_var: Signal<String>) -> Element {
+    rsx! {
+        div { class: "sm:col-span-3",
+            label {
+                r#for: "destination-address",
+                class: "block text-sm font-medium text-gray-700",
+                "Your Destination Address"
+            }
+            div { class: "mt-1",
+                input {
+                    r#type: "text",
+                    name: "destination-address",
+                    id: "destination-address",
+                    class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
+                    placeholder: "Enter your destination address...",
+                    oninput: move |event| {
+                        #[cfg(debug_assertions)]
+                        trace!(% update_var, event_value =% event.value(), "Set address");
+                        update_var.set(event.value());
+                    },
+                }
+            }
+        }
+    }
+}
