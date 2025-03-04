@@ -263,7 +263,7 @@ pub(crate) fn NetworkInput(label: String, id: String) -> Element {
     let get_default_endpoint = |network: &str| -> String {
         match network {
             "Mainnet" => "https://mempool.space/api",
-            "Testnet" => "https://mempool.space/testnet/api",
+            "Testnet" => "https://mempool.space/testnet4/api",
             "Signet" => "https://mempool.space/signet/api",
             "Regtest" => "http://127.0.0.1:3002/api",
             _ => "https://mempool.space/api",
