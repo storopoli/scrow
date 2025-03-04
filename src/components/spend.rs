@@ -14,8 +14,9 @@ use crate::{
 };
 
 use super::{
-    AddressInput, BitcoinInput, ContinueButton, CopyButton, FeeRateInput, Footer, NetworkInput,
-    NpubInputDerivedAddress, NsecInput, PrimaryButton, TransactionOutput, TxidInput,
+    AddressInput, BitcoinInput, ContinueButton, CopyButton, DerivedAddressOutput, FeeRateInput,
+    Footer, NetworkInput, NpubInputDerivedAddress, NsecInput, PrimaryButton, TransactionOutput,
+    TxidInput,
 };
 
 /// Spend from resolution address component.
@@ -68,21 +69,11 @@ pub(crate) fn Spend() -> Element {
                                     update_var: fee_rate,
                                 }
 
-                                div { class: "sm:col-span-3",
-                                    label { class: "block text-sm font-medium text-gray-700",
-                                        "Your Resolution Address"
-                                    }
-                                    div { class: "mt-1",
-                                        div { class: "text-sm text-gray-900 break-all bg-gray-50 p-3 rounded",
-                                            {
-                                                if derived_address.read().to_string().is_empty() {
-                                                    "bc1p...".to_string()
-                                                } else {
-                                                    derived_address.read().clone().to_string()
-                                                }
-                                            }
-                                        }
-                                    }
+                                DerivedAddressOutput {
+                                    update_var: derived_address,
+                                    label: "Your Resolution Address",
+                                    id: "derived-address",
+                                    col_span: 3,
                                 }
 
                                 NsecInput { update_var: nsec }

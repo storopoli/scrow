@@ -59,11 +59,11 @@ pub(crate) fn DerivedAddressOutput(
     col_span: u8,
 ) -> Element {
     rsx! {
-        div { class: format!("col-span-{col_span}").as_str(),
-            dt { class: "text-lg font-medium text-gray-900", {label} }
+        div { class: format!("sm:col-span-{col_span}").as_str(),
+            dt { class: "block text-sm font-medium text-gray-500", {label} }
             dd {
                 id: id.as_str(),
-                class: "mt-1 text-sm text-gray-900 break-all bg-gray-50 p-3 rounded",
+                class: "mt-1 text-sm text-gray-900 break-all bg-gray-50 p-2 rounded-md border border-gray-300 shadow-sm",
                 {
                     if update_var.read().is_empty() {
                         "bc1p...".to_string()
