@@ -16,24 +16,24 @@ use crate::{
 };
 
 use super::{
-    ContinueButton, CopyButton, EscrowTypeInput, Footer, NpubInput, PrimaryButton, TimelockInput,
-    TransactionInput,
+    ContinueButton, CopyButton, EscrowTypeInput, Footer, NpubInput, PrimaryButton, SignatureInput,
+    TimelockInput, TransactionInput,
 };
 
 /// Combine escrow transaction component.
 #[component]
 pub(crate) fn Combine() -> Element {
-    let mut unsigned_tx = use_signal(String::new);
+    let unsigned_tx = use_signal(String::new);
     let mut signed_tx_str = use_signal(String::new);
     let escrow_type = use_signal(String::new);
     let npub_buyer = use_signal(String::new);
     let npub_seller = use_signal(String::new);
-    let mut signature_1 = use_signal(String::new);
-    let mut signature_2 = use_signal(String::new);
+    let signature_1 = use_signal(String::new);
+    let signature_2 = use_signal(String::new);
     let npub_arbitrator = use_signal(String::new);
     let timelock_days = use_signal(String::new);
     let timelock_hours = use_signal(String::new);
-    let mut signature_arbitrator = use_signal(String::new);
+    let signature_arbitrator = use_signal(String::new);
     rsx! {
         main { class: "max-w-7xl mx-auto py-6 sm:px-6 lg:px-8",
             div { class: "px-4 py-6 sm:px-0",
@@ -64,48 +64,16 @@ pub(crate) fn Combine() -> Element {
                                     update_var: npub_seller,
                                 }
 
-                                div { class: "sm:col-span-3",
-                                    label {
-                                        r#for: "signature1",
-                                        class: "block text-sm font-medium text-gray-700",
-                                        "First Signature"
-                                    }
-                                    div { class: "mt-1",
-                                        textarea {
-                                            id: "signature1",
-                                            name: "signature1",
-                                            rows: "2",
-                                            class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
-                                            placeholder: "Paste signature here...",
-                                            oninput: move |event| {
-                                                #[cfg(debug_assertions)]
-                                                trace!(% signature_1, event_value =% event.value(), "Set signature 1");
-                                                signature_1.set(event.value());
-                                            },
-                                        }
-                                    }
+                                SignatureInput {
+                                    update_var: signature_1,
+                                    label: "First Signature",
+                                    id: "signature1",
                                 }
 
-                                div { class: "sm:col-span-3",
-                                    label {
-                                        r#for: "signature2",
-                                        class: "block text-sm font-medium text-gray-700",
-                                        "Second Signature"
-                                    }
-                                    div { class: "mt-1",
-                                        textarea {
-                                            id: "signature2",
-                                            name: "signature2",
-                                            rows: "2",
-                                            class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
-                                            placeholder: "Paste signature here...",
-                                            oninput: move |event| {
-                                                #[cfg(debug_assertions)]
-                                                trace!(% signature_2, event_value =% event.value(), "Set signature 2");
-                                                signature_2.set(event.value());
-                                            },
-                                        }
-                                    }
+                                SignatureInput {
+                                    update_var: signature_2,
+                                    label: "Second Signature",
+                                    id: "signature2",
                                 }
 
                                 EscrowTypeInput { update_var: escrow_type }
@@ -133,36 +101,16 @@ pub(crate) fn Combine() -> Element {
                                     }
 
 
-                                    div { class: "sm:col-span-3",
-                                        label {
-                                            r#for: "signaturearb",
-                                            class: "block text-sm font-medium text-gray-700",
-                                            "Arbitrator Signature"
-                                        }
-                                        div { class: "mt-1",
-                                            textarea {
-                                                id: "signaturearb",
-                                                name: "signaturearb",
-                                                rows: "2",
-                                                class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
-                                                placeholder: "Paste signature here...",
-                                                oninput: move |event| {
-                                                    #[cfg(debug_assertions)]
-                                                    trace!(
-                                                        % signature_arbitrator, event_value =% event.value(),
-                                                        "Set signature arbitrator"
-                                                    );
-                                                    signature_arbitrator.set(event.value());
-                                                },
-                                            }
-                                        }
+                                    SignatureInput {
+                                        update_var: signature_arbitrator,
+                                        label: "Arbitrator Signature",
+                                        id: "signaturearb"
                                     }
                                 }
                             }
 
                             div { class: "pt-5",
                                 div { class: "flex justify-end",
-                                    // TODO: Use PrimaryButton with a custom onclick
                                     PrimaryButton {
                                         onclick: move |_| {
                                             #[cfg(debug_assertions)]
