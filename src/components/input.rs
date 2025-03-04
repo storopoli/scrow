@@ -322,6 +322,61 @@ pub(crate) fn TimelockInput(
     mut update_day_var: Signal<String>,
     mut update_hour_var: Signal<String>,
 ) -> Element {
+    let mut days_has_error = use_signal(|| false);
+    let mut hours_has_error = use_signal(|| false);
+
+    let mut validate_days = move |input: &str| {
+        if input.is_empty() {
+            *days_has_error.write() = false;
+            update_day_var.set(input.to_string());
+            return;
+        }
+
+        match input.parse::<u32>() {
+            Ok(days) => {
+                // A very large value (e.g., over 1,000 days) might be a mistake
+                let is_valid = days <= 1_000;
+                *days_has_error.write() = !is_valid;
+                update_day_var.set(input.to_string());
+            }
+            Err(_) => {
+                *days_has_error.write() = true;
+            }
+        }
+    };
+
+    let mut validate_hours = move |input: &str| {
+        if input.is_empty() {
+            *hours_has_error.write() = false;
+            update_hour_var.set(input.to_string());
+            return;
+        }
+
+        match input.parse::<u32>() {
+            Ok(hours) => {
+                // Hours should be 0-23
+                let is_valid = hours < 24;
+                *hours_has_error.write() = !is_valid;
+                update_hour_var.set(input.to_string());
+            }
+            Err(_) => {
+                *hours_has_error.write() = true;
+            }
+        }
+    };
+
+    let days_input_class = if *days_has_error.read() {
+        "shadow-sm focus:ring-red-500 focus:border-red-500 block w-full sm:text-sm border-red-300 rounded-md p-2 border bg-red-50"
+    } else {
+        "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
+    };
+
+    let hours_input_class = if *hours_has_error.read() {
+        "shadow-sm focus:ring-red-500 focus:border-red-500 block w-full sm:text-sm border-red-300 rounded-md p-2 border bg-red-50"
+    } else {
+        "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
+    };
+
     rsx! {
         div { class: "sm:col-span-3",
             div { class: "grid grid-cols-2 gap-4",
@@ -338,14 +393,17 @@ pub(crate) fn TimelockInput(
                             step: "1",
                             name: "timelock-days",
                             id: "timelock-days",
-                            class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
+                            class: days_input_class,
                             placeholder: "0",
                             oninput: move |event| {
                                 #[cfg(debug_assertions)]
                                 trace!(% update_day_var, event_value =% event.value(), "Set timelock days");
-                                update_day_var.set(event.value());
+                                validate_days(&event.value());
                             },
                         }
+                    }
+                    if *days_has_error.read() {
+                        p { class: "mt-2 text-xs text-red-600", "Days should be between 0 and 1,000." }
                     }
                 }
                 div {
@@ -362,14 +420,17 @@ pub(crate) fn TimelockInput(
                             max: "23",
                             name: "timelock-hours",
                             id: "timelock-hours",
-                            class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
+                            class: hours_input_class,
                             placeholder: "0",
                             oninput: move |event| {
                                 #[cfg(debug_assertions)]
                                 trace!(% update_hour_var, event_value =% event.value(), "Set timelock hours");
-                                update_hour_var.set(event.value());
+                                validate_hours(&event.value());
                             },
                         }
+                    }
+                    if *hours_has_error.read() {
+                        p { class: "mt-2 text-xs text-red-600", "Hours should be between 0 and 23." }
                     }
                 }
             }
