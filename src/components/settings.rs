@@ -73,7 +73,7 @@ pub(crate) fn Settings() -> Element {
                         }
 
                         div { class: "mt-2 max-w-xl text-sm text-gray-500",
-                            p { "Version: 0.1.1" }
+                            p { "Version: 0.2.0" }
                             p { class: "mt-2",
                                 "A Bitcoin non-custodial peer-to-peer dispute resolution tool. All code is open source and runs entirely in your browser."
                             }
