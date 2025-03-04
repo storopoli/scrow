@@ -36,7 +36,7 @@ jobs:
               cargo-${{ runner.os }}-
 
       - name: Install Dioxus
-        run: cargo install dioxus-cli@${{ env.DIOXUS_VERSION }}
+        run: cargo install dioxus-cli@${{ env.DIOXUS_VERSION }} --force
 
       - name: Build app
         run: dx bundle --release
