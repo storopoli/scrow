@@ -1,6 +1,6 @@
 # Satoshi Escrow
 
-Satoshi Escrow (`scrow`): A Bitcoin non-custodial peer-to-peer dispute resolution.
+Satoshi Escrow (`scrow`): A Bitcoin non-custodial peer-to-peer dispute resolution using Nostr keys.
 
 ## Motivation
 
