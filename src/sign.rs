@@ -174,7 +174,7 @@ mod tests {
     };
 
     use corepc_node::Node;
-    use dioxus::logger::tracing::debug;
+    use dioxus::logger::tracing::{debug, info};
     use nostr::nips::nip21::NostrURI;
     use tracing_subscriber::{EnvFilter, fmt, layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -381,6 +381,7 @@ mod tests {
             &taproot_spend_info,
         );
         trace!(transaction=%consensus::serialize(&signed).as_hex(), "Signed escrow");
+        info!(total_size=%signed.total_size(), "Signed Script A resolution transaction");
         let result = btc_client.send_raw_transaction(&signed);
         assert!(result.is_ok());
     }
@@ -468,6 +469,7 @@ mod tests {
             script_pubkey: funded_address.script_pubkey(),
         };
         let signed = sign_resolution_tx(&unsigned, &nsec_1, prevouts);
+        info!(total_size=%signed.total_size(), "Signed Script B resolution transaction");
         trace!(transaction=%consensus::serialize(&signed).as_hex(), "Signed funding");
 
         // Test if the transaction is valid.
@@ -661,6 +663,7 @@ mod tests {
         };
         let signed = sign_resolution_tx(&unsigned, &nsec_1, prevouts);
         trace!(transaction=%consensus::serialize(&signed).as_hex(), "Signed funding");
+        info!(total_size=%signed.total_size(), "Signed Script C resolution transaction");
 
         // Test if the transaction is valid.
         let result = btc_client.send_raw_transaction(&signed);

@@ -10,7 +10,7 @@ use crate::{
     NETWORK, Route,
     sign::sign_resolution_tx,
     tx::resolution_tx,
-    util::{P2TR_TX_WEIGHT_FUNDING, parse_network, parse_nsec},
+    util::{P2TR_TX_VBYTE_KEY_PATH, parse_network, parse_nsec},
 };
 
 use super::{
@@ -114,7 +114,7 @@ pub(crate) fn Spend() -> Element {
                                                 .require_network(network)
                                                 .unwrap();
                                             let fee_rate = fee_rate.read().parse::<u64>().unwrap();
-                                            let fee = Amount::from_sat(fee_rate * P2TR_TX_WEIGHT_FUNDING);
+                                            let fee = Amount::from_sat(fee_rate * P2TR_TX_VBYTE_KEY_PATH);
                                             let unsigned_tx = resolution_tx(
                                                 btc_amount,
                                                 escrow_txid,
