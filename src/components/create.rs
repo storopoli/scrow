@@ -21,8 +21,8 @@ use crate::{
 };
 
 use super::{
-    BitcoinInput, ContinueButton, CopyButton, DerivedAddressOutput, FeeRateSelector,
-    Footer, NetworkInput, NpubInput, NpubInputDerivedAddress, PrimaryButton, TimelockInput,
+    BitcoinInput, ContinueButton, CopyButton, DerivedAddressOutput, FeeRateSelector, Footer,
+    NetworkInput, NpubInput, NpubInputDerivedAddress, PrimaryButton, TimelockInput,
     TransactionOutput, TxidInput,
 };
 

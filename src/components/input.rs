@@ -237,24 +237,28 @@ pub fn FeeRateSelector(
         ("9", "9 blocks"),
         ("15", "15 blocks"),
         ("24", "24 blocks"),
-        ("144", "144 blocks")
+        ("144", "144 blocks"),
     ];
-    
+
     // Update fee rate when selected target changes or when fee estimates are updated
     use_effect(move || {
         to_owned![update_var, fee_estimates, selected_target];
-        
+
         if let Some(estimates) = fee_estimates.read().as_ref() {
             if let Some(fee) = estimates.get(&selected_target.read().parse::<u16>().unwrap_or(3)) {
                 let rounded_fee = fee.ceil() as u64;
                 update_var.set(rounded_fee.to_string());
-                
+
                 #[cfg(debug_assertions)]
-                trace!("Updated fee rate to {} for target {} blocks", rounded_fee, selected_target.read());
+                trace!(
+                    "Updated fee rate to {} for target {} blocks",
+                    rounded_fee,
+                    selected_target.read()
+                );
             }
         }
     });
-    
+
     let input_class = "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border";
     let select_class = "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border";
 
