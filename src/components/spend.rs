@@ -1,24 +1,35 @@
 //! Spend from resolution address component.
 
+use crate::error::Error;
+
 use bitcoin::{Address, Amount, TxOut, Txid, consensus, hex::DisplayHex};
 use dioxus::prelude::*;
+use std::collections::HashMap;
 
 #[cfg(debug_assertions)]
 use dioxus::logger::tracing::trace;
 
 use crate::{
-    NETWORK, Route,
+    ESPLORA_ENDPOINT, NETWORK, Route,
+    esplora::{create_client, get_fee_estimates},
     sign::sign_resolution_tx,
     tx::resolution_tx,
     util::{P2TR_TX_VBYTE_KEY_PATH, parse_network, parse_nsec},
 };
 
 use super::{
-    AddressInput, BitcoinInput, ContinueButton, CopyButton, DerivedAddressOutput, FeeRateInput,
+    AddressInput, BitcoinInput, ContinueButton, CopyButton, DerivedAddressOutput, FeeRateSelector,
     Footer, NetworkInput, NpubInputDerivedAddress, NsecInput, PrimaryButton, TransactionOutput,
     TxidInput, VoutInput,
 };
 
+/// Fetch fee rates from the configured Esplora endpoint.
+async fn fetch_fee_estimates() -> Result<HashMap<u16, f64>, Error> {
+    let esplora_client = create_client(&ESPLORA_ENDPOINT.read()).unwrap();
+    let fee_rates = get_fee_estimates(&esplora_client).await.unwrap();
+
+    Ok(fee_rates)
+}
 /// Spend from resolution address component.
 #[component]
 pub(crate) fn Spend() -> Element {
@@ -26,11 +37,33 @@ pub(crate) fn Spend() -> Element {
     let escrow_txid = use_signal(String::new);
     let destination_address = use_signal(String::new);
     let amount = use_signal(String::new);
-    let fee_rate = use_signal(|| "1".to_string());
+    let mut fee_rate = use_signal(String::new);
+    let fee_estimates = use_signal(|| Option::<HashMap<u16, f64>>::None);
     let vout = use_signal(|| "0".to_string());
     let derived_address = use_signal(String::new);
     let nsec = use_signal(String::new);
     let mut signed_tx_str = use_signal(String::new);
+
+    use_effect(move || {
+        to_owned![fee_estimates];
+
+        spawn(async move {
+            match fetch_fee_estimates().await {
+                Ok(estimates) => {
+                    #[cfg(debug_assertions)]
+                    trace!("Fee estimates fetched successfully: {:?}", estimates);
+                    fee_estimates.set(Some(estimates));
+                }
+                Err(e) => {
+                    #[cfg(debug_assertions)]
+                    trace!("Error fetching fee estimates: {}", e);
+                    // Fall back to 3 sat/vB
+                    fee_rate.set("3".to_string());
+                }
+            }
+        });
+    });
+
     rsx! {
         main { class: "max-w-7xl mx-auto py-6 sm:px-6 lg:px-8",
             div { class: "px-4 py-6 sm:px-0",
@@ -70,10 +103,12 @@ pub(crate) fn Spend() -> Element {
                                     update_var: amount,
                                 }
 
-                                FeeRateInput {
+                                FeeRateSelector {
                                     id: "fee",
-                                    label: "Fee rate (sats/vByte)",
+                                    label_input: "Fee rate (sats/vByte)",
+                                    label_dropdown: "Target Blocks",
                                     update_var: fee_rate,
+                                    fee_estimates,
                                 }
 
                                 DerivedAddressOutput {

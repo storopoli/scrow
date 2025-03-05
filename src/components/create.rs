@@ -1,13 +1,17 @@
 //! Create escrow transaction component.
 
+use crate::error::Error;
+
 use bitcoin::{Amount, Txid, consensus, hex::DisplayHex};
 use dioxus::prelude::*;
+use std::collections::HashMap;
 
 #[cfg(debug_assertions)]
 use dioxus::logger::tracing::{info, trace};
 
 use crate::{
-    NETWORK, Route,
+    ESPLORA_ENDPOINT, NETWORK, Route,
+    esplora::{create_client, get_fee_estimates},
     scripts::escrow_address,
     tx::escrow_tx,
     util::{
@@ -17,10 +21,18 @@ use crate::{
 };
 
 use super::{
-    BitcoinInput, ContinueButton, CopyButton, DerivedAddressOutput, FeeRateInput, Footer,
+    BitcoinInput, ContinueButton, CopyButton, DerivedAddressOutput, FeeRateSelector, Footer,
     NetworkInput, NpubInput, NpubInputDerivedAddress, PrimaryButton, TimelockInput,
     TransactionOutput, TxidInput,
 };
+
+/// Fetch fee rates from the configured Esplora endpoint.
+async fn fetch_fee_estimates() -> Result<HashMap<u16, f64>, Error> {
+    let esplora_client = create_client(&ESPLORA_ENDPOINT.read()).unwrap();
+    let fee_rates = get_fee_estimates(&esplora_client).await.unwrap();
+
+    Ok(fee_rates)
+}
 
 /// Create escrow transaction component.
 #[component]
@@ -30,7 +42,8 @@ pub(crate) fn Create() -> Element {
     let npub_arbitrator = use_signal(String::new);
     let amount_buyer = use_signal(String::new);
     let amount_seller = use_signal(String::new);
-    let fee_rate = use_signal(|| "1".to_string());
+    let mut fee_rate = use_signal(String::new);
+    let fee_estimates = use_signal(|| Option::<HashMap<u16, f64>>::None);
     let timelock_days = use_signal(String::new);
     let timelock_hours = use_signal(String::new);
     let funding_txid = use_signal(String::new);
@@ -38,6 +51,27 @@ pub(crate) fn Create() -> Element {
     let mut escrow_transaction = use_signal(String::new);
     let mut derived_address_buyer = use_signal(String::new);
     let mut derived_address_seller = use_signal(String::new);
+
+    use_effect(move || {
+        to_owned![fee_estimates];
+
+        spawn(async move {
+            match fetch_fee_estimates().await {
+                Ok(estimates) => {
+                    #[cfg(debug_assertions)]
+                    trace!("Fee estimates fetched successfully: {:?}", estimates);
+                    fee_estimates.set(Some(estimates));
+                }
+                Err(e) => {
+                    #[cfg(debug_assertions)]
+                    trace!("Error fetching fee estimates: {}", e);
+                    // Fall back to 3 sat/vB
+                    fee_rate.set("3".to_string());
+                }
+            }
+        });
+    });
+
     rsx! {
         main { class: "max-w-7xl mx-auto py-6 sm:px-6 lg:px-8",
             div { class: "px-4 py-6 sm:px-0",
@@ -76,10 +110,12 @@ pub(crate) fn Create() -> Element {
                                     update_var: amount_seller,
                                 }
 
-                                FeeRateInput {
+                                FeeRateSelector {
                                     id: "fee",
-                                    label: "Fee rate (sats/vByte)",
+                                    label_input: "Fee rate (sats/vByte)",
+                                    label_dropdown: "Target Blocks",
                                     update_var: fee_rate,
+                                    fee_estimates,
                                 }
 
                                 NetworkInput { id: "network", label: "Bitcoin Network" }
