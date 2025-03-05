@@ -246,7 +246,6 @@ pub(crate) fn Create() -> Element {
                                             )
                                             .unwrap();
                                         let fee_rate = fee_rate.read().parse::<u64>().unwrap();
-                                        // We always assume the highest transaction weight
                                         let fee = Amount::from_sat(fee_rate * P2TR_TX_VBYTE_C);
                                         let network = parse_network(&NETWORK.read()).unwrap();
                                         let funding_txid = funding_txid.read().parse::<Txid>().unwrap();
