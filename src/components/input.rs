@@ -804,3 +804,42 @@ pub(crate) fn AddressInput(mut update_var: Signal<String>) -> Element {
         }
     }
 }
+
+/// Vout input validation component (simple 0/1 option).
+#[component]
+pub(crate) fn VoutInput(mut update_var: Signal<String>, label: String, id: String) -> Element {
+    // Initialize with default value "0" if empty
+    use_effect(move || {
+        if update_var.read().is_empty() {
+            update_var.set("0".to_string());
+        }
+    });
+
+    #[allow(clippy::redundant_closure)]
+    let current_value = use_memo(move || update_var());
+
+    rsx! {
+        div { class: "sm:col-span-3",
+            label {
+                r#for: id.as_str(),
+                class: "block text-sm font-medium text-gray-700",
+                {label}
+            }
+            div { class: "mt-1",
+                select {
+                    id: id.as_str(),
+                    name: id.as_str(),
+                    class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border",
+                    oninput: move |event| {
+                        #[cfg(debug_assertions)]
+                        trace!(% update_var, event_value =% event.value(), "Set vout");
+                        update_var.set(event.value());
+                    },
+                    value: current_value,
+                    option { value: "0", "0" }
+                    option { value: "1", "1" }
+                }
+            }
+        }
+    }
+}

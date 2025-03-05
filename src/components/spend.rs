@@ -16,7 +16,7 @@ use crate::{
 use super::{
     AddressInput, BitcoinInput, ContinueButton, CopyButton, DerivedAddressOutput, FeeRateInput,
     Footer, NetworkInput, NpubInputDerivedAddress, NsecInput, PrimaryButton, TransactionOutput,
-    TxidInput,
+    TxidInput, VoutInput,
 };
 
 /// Spend from resolution address component.
@@ -27,6 +27,7 @@ pub(crate) fn Spend() -> Element {
     let destination_address = use_signal(String::new);
     let amount = use_signal(String::new);
     let fee_rate = use_signal(|| "1".to_string());
+    let vout = use_signal(|| "0".to_string());
     let derived_address = use_signal(String::new);
     let nsec = use_signal(String::new);
     let mut signed_tx_str = use_signal(String::new);
@@ -53,6 +54,12 @@ pub(crate) fn Spend() -> Element {
                                     label: "Escrow Resolution Transaction ID",
                                     update_var: escrow_txid,
                                     warning: "",
+                                }
+
+                                VoutInput {
+                                    id: "escrow_vout",
+                                    label: "Escrow Resolution Transaction Output Index",
+                                    update_var: vout,
                                 }
 
                                 AddressInput { update_var: destination_address }
@@ -93,6 +100,7 @@ pub(crate) fn Spend() -> Element {
                                                 .unwrap();
                                             let network = parse_network(&NETWORK.read()).unwrap();
                                             let escrow_txid = escrow_txid.read().parse::<Txid>().unwrap();
+                                            let vout = vout.read().parse::<u32>().unwrap();
                                             let derived_address = derived_address
                                                 .read()
                                                 .parse::<Address<_>>()
@@ -110,6 +118,7 @@ pub(crate) fn Spend() -> Element {
                                             let unsigned_tx = resolution_tx(
                                                 btc_amount,
                                                 escrow_txid,
+                                                vout,
                                                 &destination_address,
                                                 fee,
                                             );

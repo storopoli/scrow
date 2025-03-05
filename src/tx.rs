@@ -17,13 +17,14 @@ use crate::{error::Error, util::npub_to_address};
 pub(crate) fn resolution_tx(
     amount: Amount,
     funding_txid: Txid,
+    vout: u32,
     destination: &Address,
     fee: Amount,
 ) -> Transaction {
     // Parse stuff
     let prevout = OutPoint {
         txid: funding_txid,
-        vout: 0,
+        vout,
     };
 
     // Create the transaction

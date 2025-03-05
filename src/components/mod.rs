@@ -22,7 +22,7 @@ pub(crate) use home::Home;
 pub(crate) use input::{
     AddressInput, BitcoinInput, EscrowTypeInput, EsploraInput, FeeRateInput, NetworkInput,
     NpubInput, NpubInputDerivedAddress, NsecInput, SignatureInput, TimelockInput, TransactionInput,
-    TxidInput,
+    TxidInput, VoutInput,
 };
 pub(crate) use navbar::Navbar;
 pub(crate) use output::{DerivedAddressOutput, SignatureOutput, TransactionOutput};
