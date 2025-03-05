@@ -1,5 +1,5 @@
 //! Interactions with Esplora backends.
-#![allow(dead_code)] // TODO: Dynamic fee estimates
+#![allow(dead_code)]
 
 use std::collections::HashMap;
 
