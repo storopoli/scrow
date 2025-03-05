@@ -9,6 +9,7 @@ use secp256k1::schnorr;
 
 use crate::{
     ESPLORA_ENDPOINT, NETWORK,
+    esplora::FeeEstimate,
     util::{npub_to_address, parse_network, parse_npub, parse_nsec},
 };
 
@@ -196,9 +197,16 @@ pub(crate) fn BitcoinInput(mut update_var: Signal<String>, label: String, id: St
     }
 }
 
-/// Fee rate input validation component.
+/// Component to select the resolution transaction fee rate via input field or
+/// dropdown with fees fetched from Esplora and their expected confirmation targets.
 #[component]
-pub(crate) fn FeeRateInput(mut update_var: Signal<String>, label: String, id: String) -> Element {
+pub(crate) fn FeeRateSelector(
+    id: String,
+    label_input: String,
+    label_dropdown: String,
+    mut update_var: Signal<String>,
+    fee_estimates: Signal<Option<FeeEstimate>>,
+) -> Element {
     let mut has_error = use_signal(|| false);
 
     let mut validate_fee_rate = move |input: &str| {
@@ -220,33 +228,81 @@ pub(crate) fn FeeRateInput(mut update_var: Signal<String>, label: String, id: St
         }
     };
 
-    let input_class = if *has_error.read() {
-        "shadow-sm focus:ring-red-500 focus:border-red-500 block w-full sm:text-sm border-red-300 rounded-md p-2 border bg-red-50"
-    } else {
-        "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
-    };
+    let mut selected_target = use_signal(|| "3".to_string()); // Default to 3-block confirmation
+    // Simple confirmation options - show just the blocks
+    let confirmation_options = vec![
+        ("1", "1 block"),
+        ("3", "3 blocks"),
+        ("6", "6 blocks"),
+        ("9", "9 blocks"),
+        ("12", "12 blocks"),
+        ("15", "15 blocks"),
+        ("24", "24 blocks"),
+        ("144", "144 blocks"),
+    ];
+
+    // Update fee rate when selected target changes or when fee estimates are updated
+    use_effect(move || {
+        to_owned![update_var, fee_estimates, selected_target];
+
+        if let Some(estimates) = fee_estimates.read().as_ref() {
+            if let Some(fee) = estimates.get(&selected_target.read().parse::<u16>().unwrap_or(3)) {
+                let rounded_fee = fee.ceil() as u64;
+                update_var.set(rounded_fee.to_string());
+
+                #[cfg(debug_assertions)]
+                trace!(
+                    "Updated fee rate to {} for target {} blocks",
+                    rounded_fee,
+                    selected_target.read()
+                );
+            }
+        }
+    });
+
+    let input_class = "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border py-2 px-3";
+    let select_class = "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border py-2 px-3";
 
     rsx! {
         div { class: "sm:col-span-3",
-            label {
-                r#for: id.as_str(),
-                class: "block text-sm font-medium text-gray-700",
-                {label}
-            }
-            div { class: "mt-1",
-                input {
-                    r#type: "number",
-                    min: "1",
-                    step: "1",
-                    name: id.as_str(),
-                    id: id.as_str(),
-                    class: input_class,
-                    placeholder: "1",
-                    oninput: move |event| {
-                        #[cfg(debug_assertions)]
-                        trace!(% update_var, event_value =% event.value(), "Set fee rate");
-                        validate_fee_rate(&event.value());
-                    },
+            div { class: "grid grid-cols-2 gap-10 w-full",
+                div {
+                    span { class: "block text-sm font-medium text-gray-700", {label_input} }
+                    input {
+                        r#type: "number",
+                        min: "1",
+                        step: "1",
+                        name: id.as_str(),
+                        id: id.as_str(),
+                        class: input_class,
+                        placeholder: "1",
+                        value: "{update_var}",
+                        oninput: move |event| {
+                            #[cfg(debug_assertions)]
+                            trace!(% update_var, event_value =% event.value(), "Set fee rate");
+                            validate_fee_rate(&event.value());
+                        },
+                    }
+                }
+                div { class: "ml-3",
+                    span { class: "block text-sm font-medium text-gray-700", {label_dropdown} }
+                    select {
+                        id: "{id}_selector",
+                        class: select_class,
+                        onchange: move |evt| {
+                            selected_target.set(evt.value().to_string());
+                        },
+                        {
+                            confirmation_options
+                                .iter()
+                                .map(|(value, label)| {
+                                    let current_target = selected_target.read().clone();
+                                    rsx! {
+                                        option { value: "{value}", selected: current_target == *value, "{label}" }
+                                    }
+                                })
+                        }
+                    }
                 }
             }
             if *has_error.read() {

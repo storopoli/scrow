@@ -7,14 +7,15 @@ use dioxus::prelude::*;
 use dioxus::logger::tracing::trace;
 
 use crate::{
-    NETWORK, Route,
+    ESPLORA_ENDPOINT, NETWORK, Route,
+    esplora::{FeeEstimate, create_client, get_fee_estimates},
     sign::sign_resolution_tx,
     tx::resolution_tx,
     util::{P2TR_TX_VBYTE_KEY_PATH, parse_network, parse_nsec},
 };
 
 use super::{
-    AddressInput, BitcoinInput, ContinueButton, CopyButton, DerivedAddressOutput, FeeRateInput,
+    AddressInput, BitcoinInput, ContinueButton, CopyButton, DerivedAddressOutput, FeeRateSelector,
     Footer, NetworkInput, NpubInputDerivedAddress, NsecInput, PrimaryButton, TransactionOutput,
     TxidInput, VoutInput,
 };
@@ -26,11 +27,34 @@ pub(crate) fn Spend() -> Element {
     let escrow_txid = use_signal(String::new);
     let destination_address = use_signal(String::new);
     let amount = use_signal(String::new);
-    let fee_rate = use_signal(|| "1".to_string());
+    let mut fee_rate = use_signal(String::new);
+    let fee_estimates = use_signal(|| Option::<FeeEstimate>::None);
     let vout = use_signal(|| "0".to_string());
     let derived_address = use_signal(String::new);
     let nsec = use_signal(String::new);
     let mut signed_tx_str = use_signal(String::new);
+
+    use_effect(move || {
+        to_owned![fee_estimates];
+
+        spawn(async move {
+            let esplora_client = create_client(&ESPLORA_ENDPOINT.read()).unwrap();
+            match get_fee_estimates(&esplora_client).await {
+                Ok(estimates) => {
+                    #[cfg(debug_assertions)]
+                    trace!(?estimates, "Fee estimates fetched successfully",);
+                    fee_estimates.set(Some(estimates));
+                }
+                Err(e) => {
+                    #[cfg(debug_assertions)]
+                    trace!(%e, "Error fetching fee estimates: {}", e);
+                    // Fall back to 1 sat/vB
+                    fee_rate.set("1".to_string());
+                }
+            }
+        });
+    });
+
     rsx! {
         main { class: "max-w-7xl mx-auto py-6 sm:px-6 lg:px-8",
             div { class: "px-4 py-6 sm:px-0",
@@ -70,10 +94,12 @@ pub(crate) fn Spend() -> Element {
                                     update_var: amount,
                                 }
 
-                                FeeRateInput {
+                                FeeRateSelector {
                                     id: "fee",
-                                    label: "Fee rate (sats/vByte)",
+                                    label_input: "Fee rate (sats/vByte)",
+                                    label_dropdown: "Target Blocks",
                                     update_var: fee_rate,
+                                    fee_estimates,
                                 }
 
                                 DerivedAddressOutput {
