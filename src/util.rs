@@ -12,11 +12,24 @@ const BLOCKS_PER_DAY: u32 = 6 * 24;
 /// Number of Bitcoin blocks per hour assuming 10-minute intervals.
 const BLOCKS_PER_HOUR: u32 = 6;
 
-/// P2TR Transaction weight for 1 input and 1 output.
+/// P2TR Transaction virtual bytes for speding from a Nostr derived
+/// P2TR address using the key path spend.
+pub(crate) const P2TR_TX_VBYTE_KEY_PATH: u64 = 111;
+
+/// P2TR Transaction virtual bytes for [`EscrowType::A`].
+#[allow(dead_code)]
+pub(crate) const P2TR_TX_VBYTE_A: u64 = 196;
+
+/// P2TR Transaction virtual bytes for [`EscrowType::B`].
 ///
-/// Used to calculate the fee for the transaction that spends the escrow.
-/// This is a conservative measure to ensure sufficient fees.
-pub(crate) const P2TR_TX_WEIGHT_FUNDING: u64 = 200;
+/// NOTE: the amount is 212.75 but round it up.
+#[allow(dead_code)]
+pub(crate) const P2TR_TX_VBYTE_B: u64 = 213;
+
+/// P2TR Transaction virtual bytes for [`EscrowType::C`].
+///
+/// NOTE: the amount is 212.75 but round it up.
+pub(crate) const P2TR_TX_VBYTE_C: u64 = 213;
 
 /// Converts `days` to blocks assuming that blocks comes in 10-minute intervals.
 pub(crate) fn days_to_blocks(days: u32) -> u32 {
