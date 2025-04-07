@@ -148,7 +148,8 @@ pub(crate) fn BitcoinInput(mut update_var: Signal<String>, label: String, id: St
 
         match input.parse::<f64>() {
             Ok(amount) => {
-                let is_valid = Amount::from_btc(amount).is_ok();
+                let is_valid =
+                    Amount::from_btc(amount).is_ok() && amount <= 100.0 && amount >= 0.00000001;
                 *has_error.write() = !is_valid;
                 update_var.set(input.to_string());
             }
