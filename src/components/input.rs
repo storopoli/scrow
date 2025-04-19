@@ -15,17 +15,32 @@ use crate::{
 
 /// Nostr `npub` input validation component.
 #[component]
-pub(crate) fn NpubInput(mut update_var: Signal<String>, label: String, id: String) -> Element {
-    let mut has_error = use_signal(|| false);
-    let mut validate_npub = move |input: &str| {
-        let result = parse_npub(input);
-        *has_error.write() = result.is_err() && !input.is_empty();
-        if result.is_ok() || input.is_empty() {
-            update_var.set(input.to_string());
+pub(crate) fn NpubInput(
+    mut update_var: Signal<String>,
+    label: String,
+    id: String,
+    error: Signal<Option<String>>,
+) -> Element {
+    let invalid_msg = match id.as_str() {
+        "npub_arbitrator" => {
+            "Invalid arbitrator npub format. Please enter a valid Nostr public key."
         }
+        _ => "Invalid npub format. Please enter a valid Nostr public key.",
     };
 
-    let input_class = if *has_error.read() {
+    let mut validate_npub = move |input: &str| {
+        let result = parse_npub(input);
+
+        if result.is_err() {
+            error.set(Some(invalid_msg.to_string()));
+        } else {
+            error.set(None);
+        }
+
+        update_var.set(input.to_string());
+    };
+
+    let input_class = if error.read().is_some() {
         "shadow-sm focus:ring-red-500 focus:border-red-500 block w-full sm:text-sm border-red-300 rounded-md p-2 border bg-red-50"
     } else {
         "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
@@ -51,10 +66,8 @@ pub(crate) fn NpubInput(mut update_var: Signal<String>, label: String, id: Strin
                     },
                 }
             }
-            if *has_error.read() {
-                p { class: "mt-2 text-xs text-red-600",
-                    "Invalid npub format. Please enter a valid Nostr public key."
-                }
+            if let Some(error_msg) = error.read().as_ref() {
+                p { class: "mt-2 text-xs text-red-600", "{error_msg}" }
             }
         }
     }
@@ -68,12 +81,31 @@ pub(crate) fn NpubInputDerivedAddress(
     label: String,
     id: String,
     col_span: u8,
+    error: Signal<Option<String>>,
 ) -> Element {
-    let mut has_error = use_signal(|| false);
+    let required_msg = match id.as_str() {
+        "npub_buyer" => "Buyer npub is required",
+        "npub_seller" => "Seller npub is required",
+        _ => "This field is required",
+    };
+
+    let invalid_msg = match id.as_str() {
+        "npub_buyer" => "Invalid buyer npub format. Please enter a valid Nostr public key.",
+        "npub_seller" => "Invalid seller npub format. Please enter a valid Nostr public key.",
+        _ => "Invalid npub format. Please enter a valid Nostr public key.",
+    };
 
     let mut validate_and_derive = move |input: &str| {
         let parsed_npub = parse_npub(input);
-        has_error.set(parsed_npub.is_err() && !input.is_empty());
+        let is_valid = !input.is_empty() && parsed_npub.is_ok();
+
+        if input.is_empty() {
+            error.set(Some(required_msg.to_string()));
+        } else if !is_valid {
+            error.set(Some(invalid_msg.to_string()));
+        } else {
+            error.set(None);
+        }
 
         update_var.set(input.to_string());
 
@@ -98,7 +130,7 @@ pub(crate) fn NpubInputDerivedAddress(
         }
     };
 
-    let input_class = if *has_error.read() {
+    let input_class = if error.read().is_some() {
         "shadow-sm focus:ring-red-500 focus:border-red-500 block w-full sm:text-sm border-red-300 rounded-md p-2 border bg-red-50"
     } else {
         "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
@@ -125,10 +157,9 @@ pub(crate) fn NpubInputDerivedAddress(
                     },
                 }
             }
-            if *has_error.read() {
-                p { class: "mt-2 text-xs text-red-600",
-                    "Invalid npub format. Please enter a valid Nostr public key."
-                }
+
+            if let Some(error_msg) = error.read().as_ref() {
+                p { class: "mt-2 text-xs text-red-600", "{error_msg}" }
             }
         }
     }
@@ -136,12 +167,27 @@ pub(crate) fn NpubInputDerivedAddress(
 
 /// Bitcoin BTC amount input validation component.
 #[component]
-pub(crate) fn BitcoinInput(mut update_var: Signal<String>, label: String, id: String) -> Element {
-    let mut has_error = use_signal(|| false);
+pub(crate) fn BitcoinInput(
+    mut update_var: Signal<String>,
+    label: String,
+    id: String,
+    error: Signal<Option<String>>,
+) -> Element {
+    let required_msg = match id.as_str() {
+        "amount_buyer" => "Buyer amount is required",
+        "amount_seller" => "Seller amount is required",
+        _ => "Amount is required",
+    };
+
+    let invalid_msg = match id.as_str() {
+        "amount_buyer" => "Buyer amount must be between 0.00000001 and 100 BTC.",
+        "amount_seller" => "Seller amount must be between 0.00000001 and 100 BTC.",
+        _ => "Amount must be between 0.00000001 and 100 BTC.",
+    };
 
     let mut validate_amount = move |input: &str| {
         if input.is_empty() {
-            *has_error.write() = false;
+            error.set(Some(required_msg.to_string()));
             update_var.set(input.to_string());
             return;
         }
@@ -150,16 +196,20 @@ pub(crate) fn BitcoinInput(mut update_var: Signal<String>, label: String, id: St
             Ok(amount) => {
                 let is_valid =
                     Amount::from_btc(amount).is_ok() && amount <= 100.0 && amount >= 0.00000001;
-                *has_error.write() = !is_valid;
+                if !is_valid {
+                    error.set(Some(invalid_msg.to_string()));
+                } else {
+                    error.set(None);
+                }
                 update_var.set(input.to_string());
             }
             Err(_) => {
-                *has_error.write() = true;
+                error.set(Some("Invalid amount format.".to_string()));
             }
         }
     };
 
-    let input_class = if *has_error.read() {
+    let input_class = if error.read().is_some() {
         "shadow-sm focus:ring-red-500 focus:border-red-500 block w-full sm:text-sm border-red-300 rounded-md p-2 border bg-red-50"
     } else {
         "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
@@ -189,10 +239,8 @@ pub(crate) fn BitcoinInput(mut update_var: Signal<String>, label: String, id: St
                     },
                 }
             }
-            if *has_error.read() {
-                p { class: "mt-2 text-xs text-red-600",
-                    "Amount must be between 0.00000001 and 100 BTC."
-                }
+            if let Some(error_msg) = error.read().as_ref()  {
+                p { class: "mt-2 text-xs text-red-600", "{error_msg}" }
             }
         }
     }
@@ -207,12 +255,21 @@ pub(crate) fn FeeRateSelector(
     label_dropdown: String,
     mut update_var: Signal<String>,
     fee_estimates: Signal<Option<FeeEstimate>>,
+    error: Signal<Option<String>>,
 ) -> Element {
-    let mut has_error = use_signal(|| false);
+    let required_msg = match id.as_str() {
+        "fee" => "Fee rate is required",
+        _ => "This field is required",
+    };
+
+    let invalid_msg = match id.as_str() {
+        "fee" => "Fee rate must be a positive integer.",
+        _ => "Invalid fee rate.",
+    };
 
     let mut validate_fee_rate = move |input: &str| {
         if input.is_empty() {
-            *has_error.write() = false;
+            error.set(Some(required_msg.to_string()));
             update_var.set(input.to_string());
             return;
         }
@@ -220,11 +277,15 @@ pub(crate) fn FeeRateSelector(
         match input.parse::<u64>() {
             Ok(rate) => {
                 let is_valid = rate > 0 && FeeRate::from_sat_per_vb(rate).is_some();
-                *has_error.write() = !is_valid;
+                if !is_valid {
+                    error.set(Some(invalid_msg.to_string()));
+                } else {
+                    error.set(None);
+                }
                 update_var.set(input.to_string());
             }
             Err(_) => {
-                *has_error.write() = true;
+                error.set(Some("Invalid fee rate format.".to_string()));
             }
         }
     };
@@ -306,8 +367,8 @@ pub(crate) fn FeeRateSelector(
                     }
                 }
             }
-            if *has_error.read() {
-                p { class: "mt-2 text-xs text-red-600", "Fee rate must be a positive integer." }
+            if let Some(error_msg) = error.read().as_ref() {
+                p { class: "mt-2 text-xs text-red-600", "{error_msg}" }
             }
         }
     }
@@ -434,57 +495,60 @@ pub(crate) fn EsploraInput() -> Element {
 pub(crate) fn TimelockInput(
     mut update_day_var: Signal<String>,
     mut update_hour_var: Signal<String>,
+    day_error: Signal<Option<String>>,  
+    hour_error: Signal<Option<String>>,
 ) -> Element {
-    let mut days_has_error = use_signal(|| false);
-    let mut hours_has_error = use_signal(|| false);
-
     let mut validate_days = move |input: &str| {
         if input.is_empty() {
-            *days_has_error.write() = false;
+            day_error.set(Some("Timelock (days) is required".to_string()));
             update_day_var.set(input.to_string());
             return;
         }
 
         match input.parse::<u32>() {
             Ok(days) => {
-                // A very large value (e.g., over 1,000 days) might be a mistake
-                let is_valid = days <= 1_000;
-                *days_has_error.write() = !is_valid;
+                if days > 1_000 {
+                    day_error.set(Some("Days should be between 0 and 1,000.".to_string()));
+                } else {
+                    day_error.set(None);
+                }
                 update_day_var.set(input.to_string());
             }
             Err(_) => {
-                *days_has_error.write() = true;
+                day_error.set(Some("Invalid days format.".to_string()));
             }
         }
     };
 
     let mut validate_hours = move |input: &str| {
         if input.is_empty() {
-            *hours_has_error.write() = false;
+            hour_error.set(Some("Timelock (hours) is required".to_string()));
             update_hour_var.set(input.to_string());
             return;
         }
 
         match input.parse::<u32>() {
             Ok(hours) => {
-                // Hours should be 0-23
-                let is_valid = hours < 24;
-                *hours_has_error.write() = !is_valid;
+                if hours >= 24 {
+                    hour_error.set(Some("Hours should be between 0 and 23.".to_string()));
+                } else {
+                    hour_error.set(None);
+                }
                 update_hour_var.set(input.to_string());
             }
             Err(_) => {
-                *hours_has_error.write() = true;
+                hour_error.set(Some("Invalid hours format.".to_string()));
             }
         }
     };
 
-    let days_input_class = if *days_has_error.read() {
+    let days_input_class = if day_error.read().is_some() {
         "shadow-sm focus:ring-red-500 focus:border-red-500 block w-full sm:text-sm border-red-300 rounded-md p-2 border bg-red-50"
     } else {
         "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
     };
 
-    let hours_input_class = if *hours_has_error.read() {
+    let hours_input_class = if hour_error.read().is_some() {
         "shadow-sm focus:ring-red-500 focus:border-red-500 block w-full sm:text-sm border-red-300 rounded-md p-2 border bg-red-50"
     } else {
         "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
@@ -515,8 +579,8 @@ pub(crate) fn TimelockInput(
                             },
                         }
                     }
-                    if *days_has_error.read() {
-                        p { class: "mt-2 text-xs text-red-600", "Days should be between 0 and 1,000." }
+                    if let Some(error_msg) = day_error.read().as_ref() {
+                        p { class: "mt-2 text-xs text-red-600", "{error_msg}" }
                     }
                 }
                 div {
@@ -542,8 +606,8 @@ pub(crate) fn TimelockInput(
                             },
                         }
                     }
-                    if *hours_has_error.read() {
-                        p { class: "mt-2 text-xs text-red-600", "Hours should be between 0 and 23." }
+                    if let Some(error_msg) = hour_error.read().as_ref() {
+                        p { class: "mt-2 text-xs text-red-600", "{error_msg}" }
                     }
                 }
             }
@@ -643,16 +707,28 @@ pub(crate) fn NsecInput(mut update_var: Signal<String>) -> Element {
 
 /// Transaction ID input validation component.
 #[component]
-pub(crate) fn TxidInput(mut update_var: Signal<String>, label: String, warning: String) -> Element {
-    let mut has_error = use_signal(|| false);
-
+pub(crate) fn TxidInput(
+    mut update_var: Signal<String>,
+    label: String,
+    warning: String,
+    error: Signal<Option<String>>,
+) -> Element {
     let mut validate_txid = move |input: &str| {
-        let is_valid = input.is_empty() || input.parse::<Txid>().is_ok();
-        *has_error.write() = !is_valid && !input.is_empty();
+        if input.is_empty() {
+            error.set(Some("Transaction ID is required".to_string()));
+            update_var.set(input.to_string());
+            return;
+        }
+        let is_valid = input.parse::<Txid>().is_ok();
+        if !is_valid {
+            error.set(Some("Invalid transaction ID. Please enter a valid transaction ID.".to_string()));
+        } else {
+            error.set(None);
+        }
         update_var.set(input.to_string());
     };
 
-    let input_class = if *has_error.read() {
+    let input_class = if error.read().is_some() {
         "shadow-sm focus:ring-red-500 focus:border-red-500 block w-full sm:text-sm border-red-300 rounded-md p-2 border bg-red-50"
     } else {
         "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
@@ -685,12 +761,10 @@ pub(crate) fn TxidInput(mut update_var: Signal<String>, label: String, warning: 
                         trace!(% update_var, event_value =% event.value(), "Set funding transaction ID");
                         validate_txid(&event.value());
                     },
-                }
+                                    }
             }
-            if *has_error.read() {
-                p { class: "mt-2 text-xs text-red-600",
-                    "Invalid transaction ID. Please enter a valid transaction ID."
-                }
+            if let Some(error_msg) = error.read().as_ref() {
+                p { class: "mt-2 text-xs text-red-600", "{error_msg}" }
             }
         }
     }
