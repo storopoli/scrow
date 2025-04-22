@@ -181,7 +181,7 @@ pub(crate) fn Sign() -> Element {
 
                                             if has_sign_form_errors() {
                                                 #[cfg(debug_assertions)]
-                                                info!("Form has errors");
+                                                trace!("Form has validation errors, cannot sign transaction");
                                                 return;
                                             }
 
