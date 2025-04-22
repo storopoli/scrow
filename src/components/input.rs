@@ -49,7 +49,6 @@ pub(crate) fn NpubInput(
             } else {
                 error.set(None);
             }
-            return;
         } else if parse_npub(input).is_err() {
             error.set(Some(invalid_msg.to_string()));
         } else {
@@ -217,7 +216,7 @@ pub(crate) fn BitcoinInput(
 
         match input.parse::<f64>() {
             Ok(amount)
-                if amount >= 0.00000001 && amount <= 100.0 && Amount::from_btc(amount).is_ok() =>
+                if (0.00000001..=100.0).contains(&amount) && Amount::from_btc(amount).is_ok() =>
             {
                 error.set(None);
             }
