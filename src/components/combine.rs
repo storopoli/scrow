@@ -44,7 +44,7 @@ pub(crate) fn Combine() -> Element {
     let mut signature_2_error = use_signal(|| None);
     let mut signature_arbitrator_error = use_signal(|| None);
 
-    let has_combine_errors = move || {
+    let has_combine_form_errors = move || {
         unsigned_tx_error.read().is_some()
             || npub_buyer_error.read().is_some()
             || npub_seller_error.read().is_some()
@@ -181,7 +181,7 @@ pub(crate) fn Combine() -> Element {
                                     PrimaryButton {
                                         onclick: move |_| {
                                             validate_combine_form();
-                                            if has_combine_errors() {
+                                            if has_combine_form_errors() {
                                                 #[cfg(debug_assertions)]
                                                 trace!("Form has validation errors, cannot combine signatures");
                                                 return;
