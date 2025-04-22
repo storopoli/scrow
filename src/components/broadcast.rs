@@ -25,6 +25,17 @@ pub(crate) fn Broadcast() -> Element {
             .map(|&url| url.to_string())
             .unwrap_or_default()
     });
+
+    let mut signed_tx_error = use_signal(|| None);
+
+    let has_broadcast_form_errors = move || signed_tx_error.read().is_some();
+
+    let mut validate_broadcast_form = move || {
+        if signed_tx.read().is_empty() {
+            signed_tx_error.set(Some("Signed transaction is required.".to_string()));
+        }
+    };
+
     rsx! {
         main { class: "max-w-7xl mx-auto py-6 sm:px-6 lg:px-8",
             div { class: "px-4 py-6 sm:px-0",
@@ -37,6 +48,7 @@ pub(crate) fn Broadcast() -> Element {
                                 update_var: signed_tx,
                                 label: "Signed Transaction",
                                 id: "signed-tx",
+                                error: signed_tx_error,
                             }
 
                             div { class: "grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6",
@@ -47,6 +59,14 @@ pub(crate) fn Broadcast() -> Element {
                                 div { class: "flex justify-end",
                                     PrimaryButton {
                                         onclick: move |_| {
+                                            validate_broadcast_form();
+
+                                            if has_broadcast_form_errors() {
+                                                #[cfg(debug_assertions)]
+                                                trace!("Form has validation errors, cannot broadcast transaction");
+                                                return;
+                                            }
+
                                             #[cfg(debug_assertions)]
                                             info!(% ESPLORA_ENDPOINT, "Created esplora client");
                                             let esplora_client = create_client(&ESPLORA_ENDPOINT.read()).unwrap();
