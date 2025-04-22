@@ -67,7 +67,7 @@ pub(crate) fn Sign() -> Element {
         }
 
         if amount_total.read().is_empty() {
-            amount_total_error.set(Some("Total amount is required.".to_string()));
+            amount_total_error.set(Some("Amount is required.".to_string()));
         }
 
         if funding_txid.read().is_empty() {
