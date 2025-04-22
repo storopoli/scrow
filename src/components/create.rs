@@ -47,9 +47,61 @@ pub(crate) fn Create() -> Element {
     let mut amount_buyer_error = use_signal(|| None);
     let mut amount_seller_error = use_signal(|| None);
     let mut fee_rate_error = use_signal(|| None);
-    let timelock_days_error = use_signal(|| Option::<String>::None);
-    let timelock_hours_error = use_signal(|| Option::<String>::None);
+    let mut timelock_days_error = use_signal(|| Option::<String>::None);
+    let mut timelock_hours_error = use_signal(|| Option::<String>::None);
     let mut funding_txid_error = use_signal(|| Option::<String>::None);
+
+    let has_address_form_errors = move || {
+        npub_buyer_error.read().is_some()
+            || npub_seller_error.read().is_some()
+            || amount_buyer_error.read().is_some()
+            || amount_seller_error.read().is_some()
+            || fee_rate_error.read().is_some()
+            || npub_arbitrator_error.read().is_some()
+            || timelock_days_error.read().is_some()
+            || timelock_hours_error.read().is_some()
+    };
+
+    let mut validate_address_form = move || {
+        if npub_buyer.read().is_empty() {
+            npub_buyer_error.set(Some("Buyer npub is required.".to_string()));
+        }
+
+        if npub_seller.read().is_empty() {
+            npub_seller_error.set(Some("Seller npub is required.".to_string()));
+        }
+
+        if amount_buyer.read().is_empty() {
+            amount_buyer_error.set(Some("Buyer amount is required.".to_string()));
+        }
+
+        if amount_seller.read().is_empty() {
+            amount_seller_error.set(Some("Seller amount is required.".to_string()));
+        }
+
+        if fee_rate.read().is_empty() {
+            fee_rate_error.set(Some("Fee rate is required.".to_string()));
+        }
+
+        let arbitrator_filled = !npub_arbitrator.read().is_empty();
+
+        if arbitrator_filled {
+            if timelock_days.read().is_empty() {
+                timelock_days_error.set(Some("Timelock (days) is required.".to_string()));
+            }
+            if timelock_hours.read().is_empty() {
+                timelock_hours_error.set(Some("Timelock (hours) is required.".to_string()));
+            }
+        }
+    };
+
+    let has_transaction_form_errors = move || funding_txid_error.read().is_some();
+
+    let mut validate_transaction_form = move || {
+        if funding_txid.read().is_empty() {
+            funding_txid_error.set(Some("Transaction ID is required.".to_string()));
+        }
+    };
 
     use_effect(move || {
         to_owned![fee_estimates];
@@ -71,47 +123,6 @@ pub(crate) fn Create() -> Element {
             }
         });
     });
-
-    let has_address_form_errors = move || {
-        npub_buyer_error.read().is_some()
-            || npub_seller_error.read().is_some()
-            || amount_buyer_error.read().is_some()
-            || amount_seller_error.read().is_some()
-            || fee_rate_error.read().is_some()
-            || npub_arbitrator_error.read().is_some()
-            || timelock_days_error.read().is_some()
-            || timelock_hours_error.read().is_some()
-    };
-
-    let mut validate_address_form = move || {
-        if npub_buyer.read().is_empty() {
-            npub_buyer_error.set(Some("Buyer npub is required".to_string()));
-        }
-
-        if npub_seller.read().is_empty() {
-            npub_seller_error.set(Some("Seller npub is required".to_string()));
-        }
-
-        if amount_buyer.read().is_empty() {
-            amount_buyer_error.set(Some("Buyer amount is required".to_string()));
-        }
-
-        if amount_seller.read().is_empty() {
-            amount_seller_error.set(Some("Seller amount is required".to_string()));
-        }
-
-        if fee_rate.read().is_empty() {
-            fee_rate_error.set(Some("Fee rate is required".to_string()));
-        }
-    };
-
-    let mut validate_transaction_form = move || {
-        if funding_txid.read().is_empty() {
-            funding_txid_error.set(Some("Transaction ID is required".to_string()));
-        }
-    };
-
-    let has_transaction_form_errors = move || funding_txid_error.read().is_some();
 
     rsx! {
         main { class: "max-w-7xl mx-auto py-6 sm:px-6 lg:px-8",
@@ -186,6 +197,7 @@ pub(crate) fn Create() -> Element {
                                         update_hour_var: timelock_hours,
                                         day_error: timelock_days_error,
                                         hour_error: timelock_hours_error,
+                                        required: !npub_arbitrator.read().is_empty()
                                     }
                                 }
                             }
