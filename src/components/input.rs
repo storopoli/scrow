@@ -41,25 +41,20 @@ pub(crate) fn NpubInput(
     };
 
     let mut validate_npub = move |input: &str| {
+        update_var.set(input.to_string());
+
         if input.is_empty() {
             if required {
                 error.set(Some(required_msg.to_string()));
             } else {
                 error.set(None);
             }
-            update_var.set(input.to_string());
             return;
-        }
-
-        let result = parse_npub(input);
-
-        if result.is_err() {
+        } else if parse_npub(input).is_err() {
             error.set(Some(invalid_msg.to_string()));
         } else {
             error.set(None);
-        }
-
-        update_var.set(input.to_string());
+        };
     };
 
     let input_class = if error.read().is_some() {
@@ -120,16 +115,21 @@ pub(crate) fn NpubInputDerivedAddress(
     let mut validate_and_derive = move |input: &str| {
         let parsed_npub = parse_npub(input);
         let is_valid = !input.is_empty() && parsed_npub.is_ok();
+        update_var.set(input.to_string());
 
         if input.is_empty() {
             error.set(Some(required_msg.to_string()));
-        } else if !is_valid {
-            error.set(Some(invalid_msg.to_string()));
-        } else {
-            error.set(None);
+            update_address.set(String::new());
+            return;
         }
 
-        update_var.set(input.to_string());
+        if !is_valid {
+            error.set(Some(invalid_msg.to_string()));
+            update_address.set(String::new());
+            return;
+        }
+
+        error.set(None);
 
         if let Ok(parsed_npub) = parsed_npub {
             if let Ok(parsed_network) = parse_network(&NETWORK.read()) {
@@ -208,22 +208,21 @@ pub(crate) fn BitcoinInput(
     };
 
     let mut validate_amount = move |input: &str| {
+        update_var.set(input.to_string());
+
         if input.is_empty() {
             error.set(Some(required_msg.to_string()));
-            update_var.set(input.to_string());
             return;
         }
 
         match input.parse::<f64>() {
-            Ok(amount) => {
-                let is_valid =
-                    Amount::from_btc(amount).is_ok() && amount <= 100.0 && amount >= 0.00000001;
-                if !is_valid {
-                    error.set(Some(invalid_msg.to_string()));
-                } else {
-                    error.set(None);
-                }
-                update_var.set(input.to_string());
+            Ok(amount)
+                if amount >= 0.00000001 && amount <= 100.0 && Amount::from_btc(amount).is_ok() =>
+            {
+                error.set(None);
+            }
+            Ok(_) => {
+                error.set(Some(invalid_msg.to_string()));
             }
             Err(_) => {
                 error.set(Some("Invalid amount format.".to_string()));
@@ -285,26 +284,24 @@ pub(crate) fn FeeRateSelector(
     };
 
     let invalid_msg = match id.as_str() {
-        "fee" => "Fee rate must be a positive integer.",
+        "fee" => "Fee rate must be a positive integer greater than zero.",
         _ => "Invalid fee rate.",
     };
 
     let mut validate_fee_rate = move |input: &str| {
+        update_var.set(input.to_string());
+
         if input.is_empty() {
             error.set(Some(required_msg.to_string()));
-            update_var.set(input.to_string());
             return;
         }
 
         match input.parse::<u64>() {
-            Ok(rate) => {
-                let is_valid = rate > 0 && FeeRate::from_sat_per_vb(rate).is_some();
-                if !is_valid {
-                    error.set(Some(invalid_msg.to_string()));
-                } else {
-                    error.set(None);
-                }
-                update_var.set(input.to_string());
+            Ok(rate) if rate > 0 && FeeRate::from_sat_per_vb(rate).is_some() => {
+                error.set(None);
+            }
+            Ok(_) => {
+                error.set(Some(invalid_msg.to_string()));
             }
             Err(_) => {
                 error.set(Some("Invalid fee rate format.".to_string()));
@@ -524,24 +521,23 @@ pub(crate) fn TimelockInput(
     let required = required.unwrap_or(false);
 
     let mut validate_days = move |input: &str| {
+        update_day_var.set(input.to_string());
+
         if input.is_empty() {
             if required {
                 day_error.set(Some("Timelock (days) is required.".to_string()));
             } else {
                 day_error.set(None);
             }
-            update_day_var.set(input.to_string());
             return;
         }
 
         match input.parse::<u32>() {
-            Ok(days) => {
-                if days > 1_000 {
-                    day_error.set(Some("Days should be between 0 and 1,000.".to_string()));
-                } else {
-                    day_error.set(None);
-                }
-                update_day_var.set(input.to_string());
+            Ok(days) if days <= 1_000 => {
+                day_error.set(None);
+            }
+            Ok(_) => {
+                day_error.set(Some("Days should be between 0 and 1,000.".to_string()));
             }
             Err(_) => {
                 day_error.set(Some("Invalid days format.".to_string()));
@@ -550,23 +546,23 @@ pub(crate) fn TimelockInput(
     };
 
     let mut validate_hours = move |input: &str| {
+        update_hour_var.set(input.to_string());
+
         if input.is_empty() {
             if required {
                 hour_error.set(Some("Timelock (hours) is required.".to_string()));
             } else {
                 hour_error.set(None);
             }
-            update_hour_var.set(input.to_string());
             return;
         }
+
         match input.parse::<u32>() {
-            Ok(hours) => {
-                if hours >= 24 {
-                    hour_error.set(Some("Hours should be between 0 and 23.".to_string()));
-                } else {
-                    hour_error.set(None);
-                }
-                update_hour_var.set(input.to_string());
+            Ok(hours) if hours < 24 => {
+                hour_error.set(None);
+            }
+            Ok(_) => {
+                hour_error.set(Some("Hours should be between 0 and 23.".to_string()));
             }
             Err(_) => {
                 hour_error.set(Some("Invalid hours format.".to_string()));
@@ -692,6 +688,8 @@ pub(crate) fn EscrowTypeInput(mut update_var: Signal<String>) -> Element {
 #[component]
 pub(crate) fn NsecInput(mut update_var: Signal<String>, error: Signal<Option<String>>) -> Element {
     let mut validate_nsec = move |input: &str| {
+        update_var.set(input.to_string());
+
         if input.is_empty() {
             error.set(Some("Nsec is required.".to_string()));
         } else if parse_nsec(input).is_err() {
@@ -701,7 +699,6 @@ pub(crate) fn NsecInput(mut update_var: Signal<String>, error: Signal<Option<Str
         } else {
             error.set(None);
         }
-        update_var.set(input.to_string());
     };
 
     let input_class = if error.read().is_some() {
@@ -749,20 +746,17 @@ pub(crate) fn TxidInput(
     error: Signal<Option<String>>,
 ) -> Element {
     let mut validate_txid = move |input: &str| {
+        update_var.set(input.to_string());
+
         if input.is_empty() {
             error.set(Some("Transaction ID is required.".to_string()));
-            update_var.set(input.to_string());
-            return;
-        }
-        let is_valid = input.parse::<Txid>().is_ok();
-        if !is_valid {
+        } else if input.parse::<Txid>().is_err() {
             error.set(Some(
                 "Invalid transaction ID. Please enter a valid transaction ID.".to_string(),
             ));
         } else {
             error.set(None);
         }
-        update_var.set(input.to_string());
     };
 
     let input_class = if error.read().is_some() {
@@ -822,12 +816,18 @@ pub(crate) fn TransactionInput(
     };
 
     let invalid_msg = match id.as_str() {
-        "signed-tx" => "Invalid signed transaction format.",
-        "unsigned-tx" => "Invalid unsigned transaction format.",
+        "signed-tx" => {
+            "Invalid signed transaction format. The transaction should be a hexadecimal string."
+        }
+        "unsigned-tx" => {
+            "Invalid unsigned transaction format. The transaction should be a hexadecimal string."
+        }
         _ => "Invalid transaction format.",
     };
 
     let mut validate_transaction = move |input: &str| {
+        update_var.set(input.to_string());
+
         if input.is_empty() {
             error.set(Some(required_msg.to_string()));
         } else if consensus::encode::deserialize_hex::<Transaction>(input).is_err() {
@@ -835,8 +835,6 @@ pub(crate) fn TransactionInput(
         } else {
             error.set(None);
         }
-
-        update_var.set(input.to_string());
     };
 
     let input_class = if error.read().is_some() {
@@ -898,25 +896,19 @@ pub(crate) fn SignatureInput(
     };
 
     let mut validate_signature = move |input: &str| {
+        update_var.set(input.to_string());
+
         if input.is_empty() {
             if required {
                 error.set(Some(required_msg.to_string()));
             } else {
                 error.set(None);
             }
-            update_var.set(input.to_string());
-            return;
-        }
-
-        // Validate signature using `rust-bitcoin`
-        let is_valid = input.parse::<schnorr::Signature>().is_ok();
-
-        if !is_valid {
+        } else if input.parse::<schnorr::Signature>().is_err() {
             error.set(Some(invalid_msg.to_string()));
         } else {
             error.set(None);
         }
-        update_var.set(input.to_string());
     };
 
     let input_class = if error.read().is_some() {
@@ -963,9 +955,10 @@ pub(crate) fn AddressInput(
     let invalid_msg = "Invalid Bitcoin address format. Please check and try again.";
 
     let mut validate_address = move |input: &str| {
+        update_var.set(input.to_string());
+
         if input.is_empty() {
             error.set(Some(required_msg.to_string()));
-            update_var.set(input.to_string());
             return;
         }
 
@@ -975,12 +968,11 @@ pub(crate) fn AddressInput(
                 .and_then(|a| a.require_network(parse_network(&NETWORK.read()).unwrap()))
                 .is_ok();
 
-        if !is_valid {
-            error.set(Some(invalid_msg.to_string()));
-        } else {
+        if is_valid {
             error.set(None);
+        } else {
+            error.set(Some(invalid_msg.to_string()));
         }
-        update_var.set(input.to_string());
     };
 
     let input_class = if error.read().is_some() {
