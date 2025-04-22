@@ -34,6 +34,61 @@ pub(crate) fn Sign() -> Element {
     let timelock_days = use_signal(String::new);
     let timelock_hours = use_signal(String::new);
     let funding_txid = use_signal(String::new);
+
+    let mut npub_buyer_error = use_signal(|| None);
+    let mut npub_seller_error = use_signal(|| None);
+    let npub_arbitrator_error = use_signal(|| None);
+    let mut amount_total_error = use_signal(|| None);
+    let mut timelock_days_error = use_signal(|| None);
+    let mut timelock_hours_error = use_signal(|| None);
+    let mut funding_txid_error = use_signal(|| None);
+    let mut unsigned_tx_error = use_signal(|| None);
+    let mut nsec_error = use_signal(|| None);
+
+    let has_sign_form_errors = move || {
+        npub_buyer_error.read().is_some()
+            || npub_seller_error.read().is_some()
+            || npub_arbitrator_error.read().is_some()
+            || amount_total_error.read().is_some()
+            || timelock_days_error.read().is_some()
+            || timelock_hours_error.read().is_some()
+            || funding_txid_error.read().is_some()
+            || unsigned_tx_error.read().is_some()
+            || nsec_error.read().is_some()
+    };
+
+    let mut validate_sign_form = move || {
+        if npub_buyer.read().is_empty() {
+            npub_buyer_error.set(Some("Buyer npub is required.".to_string()));
+        }
+        if npub_seller.read().is_empty() {
+            npub_seller_error.set(Some("Seller npub is required.".to_string()));
+        }
+        if amount_total.read().is_empty() {
+            amount_total_error.set(Some("Total amount is required.".to_string()));
+        }
+        if funding_txid.read().is_empty() {
+            funding_txid_error.set(Some("Transaction ID is required.".to_string()));
+        }
+        if nsec.read().is_empty() {
+            nsec_error.set(Some("Nsec is required.".to_string()));
+        }
+        if unsigned_tx.read().is_empty() {
+            unsigned_tx_error.set(Some("Unsigned transaction is required.".to_string()));
+        }
+
+        let arbitrator_filled = !npub_arbitrator.read().is_empty();
+
+        if arbitrator_filled {
+            if timelock_days.read().is_empty() {
+                timelock_days_error.set(Some("Timelock (days) is required.".to_string()));
+            }
+            if timelock_hours.read().is_empty() {
+                timelock_hours_error.set(Some("Timelock (hours) is required.".to_string()));
+            }
+        }
+    };
+
     let var_name = rsx! {
         main { class: "max-w-7xl mx-auto py-6 sm:px-6 lg:px-8",
             div { class: "px-4 py-6 sm:px-0",
@@ -47,6 +102,7 @@ pub(crate) fn Sign() -> Element {
                                 update_var: unsigned_tx,
                                 label: "Unsigned Transaction",
                                 id: "unsigned-tx",
+                                error: unsigned_tx_error,
                             }
 
                             div { class: "grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6",
@@ -58,27 +114,36 @@ pub(crate) fn Sign() -> Element {
                                     id: "npub_buyer",
                                     label: "Buyer Nostr Public Key (npub)",
                                     update_var: npub_buyer,
+                                    error: npub_buyer_error,
                                 }
 
                                 NpubInput {
                                     id: "npub_seller",
                                     label: "Seller Nostr Public Key (npub)",
                                     update_var: npub_seller,
+                                    error: npub_seller_error,
                                 }
 
                                 TxidInput {
                                     label: "Escrow funding Transaction ID",
                                     update_var: funding_txid,
                                     warning: "",
+                                    error: funding_txid_error,
                                 }
+
 
                                 BitcoinInput {
-                                    id: "amount",
+                                    id: "amount_total",
                                     label: "Total Locked Escrow Amount (BTC)",
                                     update_var: amount_total,
+                                    error: amount_total_error,
                                 }
 
-                                NsecInput { update_var: nsec }
+                                NsecInput {
+                                    update_var: nsec,
+                                    error: nsec_error,
+                                }
+
                             }
 
                             div {
@@ -94,12 +159,17 @@ pub(crate) fn Sign() -> Element {
                                         id: "npub_arbitrator",
                                         label: "Arbitrator Nostr Public Key (npub)",
                                         update_var: npub_arbitrator,
+                                        error: npub_arbitrator_error,
                                     }
 
                                     TimelockInput {
                                         update_day_var: timelock_days,
                                         update_hour_var: timelock_hours,
+                                        day_error: timelock_days_error,
+                                        hour_error: timelock_hours_error,
+                                        required: !npub_arbitrator.read().is_empty()
                                     }
+
                                 }
                             }
 
@@ -107,6 +177,14 @@ pub(crate) fn Sign() -> Element {
                                 div { class: "flex justify-end",
                                     PrimaryButton {
                                         onclick: move |_| {
+                                            validate_sign_form();
+
+                                            if has_sign_form_errors() {
+                                                #[cfg(debug_assertions)]
+                                                info!("Form has errors");
+                                                return;
+                                            }
+
                                             #[cfg(debug_assertions)]
                                             trace!(
                                                 % npub_buyer, % npub_seller, % amount_total, % NETWORK, % npub_arbitrator, %
