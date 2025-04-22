@@ -61,7 +61,7 @@ pub(crate) fn Sign() -> Element {
         if npub_buyer.read().is_empty() {
             npub_buyer_error.set(Some("Buyer npub is required.".to_string()));
         }
-        
+
         if npub_seller.read().is_empty() {
             npub_seller_error.set(Some("Seller npub is required.".to_string()));
         }
@@ -88,7 +88,7 @@ pub(crate) fn Sign() -> Element {
             if timelock_days.read().is_empty() {
                 timelock_days_error.set(Some("Timelock (days) is required.".to_string()));
             }
-            
+
             if timelock_hours.read().is_empty() {
                 timelock_hours_error.set(Some("Timelock (hours) is required.".to_string()));
             }
@@ -145,11 +145,7 @@ pub(crate) fn Sign() -> Element {
                                     error: amount_total_error,
                                 }
 
-                                NsecInput {
-                                    update_var: nsec,
-                                    error: nsec_error,
-                                }
-
+                                NsecInput { update_var: nsec, error: nsec_error }
                             }
 
                             div {
@@ -173,9 +169,8 @@ pub(crate) fn Sign() -> Element {
                                         update_hour_var: timelock_hours,
                                         day_error: timelock_days_error,
                                         hour_error: timelock_hours_error,
-                                        required: !npub_arbitrator.read().is_empty()
+                                        required: !npub_arbitrator.read().is_empty(),
                                     }
-
                                 }
                             }
 
@@ -184,13 +179,11 @@ pub(crate) fn Sign() -> Element {
                                     PrimaryButton {
                                         onclick: move |_| {
                                             validate_sign_form();
-
                                             if has_sign_form_errors() {
                                                 #[cfg(debug_assertions)]
                                                 trace!("Form has validation errors, cannot sign transaction");
                                                 return;
                                             }
-
                                             #[cfg(debug_assertions)]
                                             trace!(
                                                 % npub_buyer, % npub_seller, % amount_total, % NETWORK, % npub_arbitrator, %

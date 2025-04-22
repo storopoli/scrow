@@ -60,13 +60,11 @@ pub(crate) fn Broadcast() -> Element {
                                     PrimaryButton {
                                         onclick: move |_| {
                                             validate_broadcast_form();
-
                                             if has_broadcast_form_errors() {
                                                 #[cfg(debug_assertions)]
                                                 trace!("Form has validation errors, cannot broadcast transaction");
                                                 return;
                                             }
-
                                             #[cfg(debug_assertions)]
                                             info!(% ESPLORA_ENDPOINT, "Created esplora client");
                                             let esplora_client = create_client(&ESPLORA_ENDPOINT.read()).unwrap();

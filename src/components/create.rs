@@ -89,7 +89,7 @@ pub(crate) fn Create() -> Element {
             if timelock_days.read().is_empty() {
                 timelock_days_error.set(Some("Timelock (days) is required.".to_string()));
             }
-            
+
             if timelock_hours.read().is_empty() {
                 timelock_hours_error.set(Some("Timelock (hours) is required.".to_string()));
             }
@@ -198,7 +198,7 @@ pub(crate) fn Create() -> Element {
                                         update_hour_var: timelock_hours,
                                         day_error: timelock_days_error,
                                         hour_error: timelock_hours_error,
-                                        required: !npub_arbitrator.read().is_empty()
+                                        required: !npub_arbitrator.read().is_empty(),
                                     }
                                 }
                             }
@@ -241,13 +241,11 @@ pub(crate) fn Create() -> Element {
                                 PrimaryButton {
                                     onclick: move |_| {
                                         validate_address_form();
-
                                         if has_address_form_errors() {
                                             #[cfg(debug_assertions)]
                                             trace!("Form has validation errors, cannot generate address");
                                             return;
                                         }
-
                                         #[cfg(debug_assertions)]
                                         trace!(
                                             % npub_buyer, % npub_seller, % amount_buyer, % amount_seller, % fee_rate, %
@@ -337,13 +335,11 @@ pub(crate) fn Create() -> Element {
                                 PrimaryButton {
                                     onclick: move |_| {
                                         validate_transaction_form();
-
                                         if has_transaction_form_errors() {
                                             #[cfg(debug_assertions)]
                                             trace!("Form has validation errors, cannot generate transaction");
                                             return;
                                         }
-
                                         #[cfg(debug_assertions)]
                                         trace!(
                                             % npub_buyer, % npub_seller, % amount_buyer, % amount_seller, % fee_rate, %

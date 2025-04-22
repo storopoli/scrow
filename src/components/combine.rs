@@ -87,7 +87,7 @@ pub(crate) fn Combine() -> Element {
             if timelock_hours.read().is_empty() {
                 timelock_hours_error.set(Some("Timelock (hours) is required.".to_string()));
             }
-            
+
             if signature_arbitrator.read().is_empty() {
                 signature_arbitrator_error
                     .set(Some("Arbitrator signature is required.".to_string()));
@@ -104,12 +104,12 @@ pub(crate) fn Combine() -> Element {
                     div { class: "px-4 py-5 sm:p-6",
                         div { class: "space-y-6",
 
-                        TransactionInput {
-                            update_var: unsigned_tx,
-                            label: "Unsigned Transaction",
-                            id: "unsigned-tx",
-                            error: unsigned_tx_error,
-                        }
+                            TransactionInput {
+                                update_var: unsigned_tx,
+                                label: "Unsigned Transaction",
+                                id: "unsigned-tx",
+                                error: unsigned_tx_error,
+                            }
 
                             div { class: "grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6",
 
@@ -118,7 +118,7 @@ pub(crate) fn Combine() -> Element {
                                     label: "First Nostr Public Key (npub)",
                                     update_var: npub_buyer,
                                     error: npub_buyer_error,
-                                    required: true
+                                    required: true,
                                 }
 
                                 NpubInput {
@@ -126,7 +126,7 @@ pub(crate) fn Combine() -> Element {
                                     label: "Second Nostr Public Key (npub)",
                                     update_var: npub_seller,
                                     error: npub_seller_error,
-                                    required: true
+                                    required: true,
                                 }
 
                                 SignatureInput {
@@ -169,7 +169,7 @@ pub(crate) fn Combine() -> Element {
                                         update_hour_var: timelock_hours,
                                         day_error: timelock_days_error,
                                         hour_error: timelock_hours_error,
-                                        required: !npub_arbitrator.read().is_empty()
+                                        required: !npub_arbitrator.read().is_empty(),
                                     }
 
                                     SignatureInput {
@@ -177,7 +177,7 @@ pub(crate) fn Combine() -> Element {
                                         label: "Arbitrator Signature",
                                         id: "signaturearb",
                                         error: signature_arbitrator_error,
-                                        required: !npub_arbitrator.read().is_empty()
+                                        required: !npub_arbitrator.read().is_empty(),
                                     }
                                 }
                             }

@@ -66,11 +66,11 @@ pub(crate) fn Spend() -> Element {
         if amount.read().is_empty() {
             amount_error.set(Some("Amount is required.".to_string()));
         }
-        
+
         if fee_rate.read().is_empty() {
             fee_rate_error.set(Some("Fee rate is required.".to_string()));
         }
-        
+
         if nsec.read().is_empty() {
             nsec_error.set(Some("Nsec is required.".to_string()));
         }
@@ -130,7 +130,10 @@ pub(crate) fn Spend() -> Element {
                                     update_var: vout,
                                 }
 
-                                AddressInput { update_var: destination_address, error: destination_address_error }
+                                AddressInput {
+                                    update_var: destination_address,
+                                    error: destination_address_error,
+                                }
 
                                 BitcoinInput {
                                     id: "amount",
@@ -155,7 +158,7 @@ pub(crate) fn Spend() -> Element {
                                     col_span: 3,
                                 }
 
-                                NsecInput { update_var: nsec, error: nsec_error, }
+                                NsecInput { update_var: nsec, error: nsec_error }
                             }
 
                             div { class: "pt-5",
@@ -163,13 +166,11 @@ pub(crate) fn Spend() -> Element {
                                     PrimaryButton {
                                         onclick: move |_| {
                                             validate_spend_form();
-
                                             if has_spend_form_errors() {
                                                 #[cfg(debug_assertions)]
                                                 trace!("Form has validation errors, cannot sign transaction");
                                                 return;
                                             }
-
                                             #[cfg(debug_assertions)]
                                             trace!(
                                                 % npub, % amount, % NETWORK, % escrow_txid, % derived_address,

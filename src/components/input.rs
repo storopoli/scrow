@@ -260,7 +260,7 @@ pub(crate) fn BitcoinInput(
                     },
                 }
             }
-            if let Some(error_msg) = error.read().as_ref()  {
+            if let Some(error_msg) = error.read().as_ref() {
                 p { class: "mt-2 text-xs text-red-600", "{error_msg}" }
             }
         }
@@ -792,7 +792,7 @@ pub(crate) fn TxidInput(
                         trace!(% update_var, event_value =% event.value(), "Set funding transaction ID");
                         validate_txid(&event.value());
                     },
-                                    }
+                }
             }
             if let Some(error_msg) = error.read().as_ref() {
                 p { class: "mt-2 text-xs text-red-600", "{error_msg}" }
@@ -939,7 +939,7 @@ pub(crate) fn SignatureInput(
                     value: update_var,
                 }
             }
-             if let Some(error_msg) = error.read().as_ref() {
+            if let Some(error_msg) = error.read().as_ref() {
                 p { class: "mt-2 text-xs text-red-600", "{error_msg}" }
             }
         }
