@@ -20,8 +20,20 @@ pub(crate) fn NpubInput(
     label: String,
     id: String,
     error: Signal<Option<String>>,
+    required: Option<bool>,
 ) -> Element {
+    let required = required.unwrap_or(false);
+
+    let required_msg = match id.as_str() {
+        "npub_1" => "First npub is required.",
+        "npub_2" => "Second npub is required.",
+        "npub_arbitrator" => "Arbitrator npub is required.",
+        _ => "Npub is required.",
+    };
+
     let invalid_msg = match id.as_str() {
+        "npub_1" => "Invalid first npub format. Please enter a valid Nostr public key.",
+        "npub_2" => "Invalid second npub format. Please enter a valid Nostr public key.",
         "npub_arbitrator" => {
             "Invalid arbitrator npub format. Please enter a valid Nostr public key."
         }
@@ -29,6 +41,16 @@ pub(crate) fn NpubInput(
     };
 
     let mut validate_npub = move |input: &str| {
+        if input.is_empty() {
+            if required {
+                error.set(Some(required_msg.to_string()));
+            } else {
+                error.set(None);
+            }
+            update_var.set(input.to_string());
+            return;
+        }
+
         let result = parse_npub(input);
 
         if result.is_err() {
@@ -84,9 +106,9 @@ pub(crate) fn NpubInputDerivedAddress(
     error: Signal<Option<String>>,
 ) -> Element {
     let required_msg = match id.as_str() {
-        "npub_buyer" => "Buyer npub is required",
-        "npub_seller" => "Seller npub is required",
-        _ => "This field is required",
+        "npub_buyer" => "Buyer npub is required.",
+        "npub_seller" => "Seller npub is required.",
+        _ => "Npub is required.",
     };
 
     let invalid_msg = match id.as_str() {
@@ -174,9 +196,9 @@ pub(crate) fn BitcoinInput(
     error: Signal<Option<String>>,
 ) -> Element {
     let required_msg = match id.as_str() {
-        "amount_buyer" => "Buyer amount is required",
-        "amount_seller" => "Seller amount is required",
-        _ => "Amount is required",
+        "amount_buyer" => "Buyer amount is required.",
+        "amount_seller" => "Seller amount is required.",
+        _ => "Amount is required.",
     };
 
     let invalid_msg = match id.as_str() {
@@ -258,8 +280,8 @@ pub(crate) fn FeeRateSelector(
     error: Signal<Option<String>>,
 ) -> Element {
     let required_msg = match id.as_str() {
-        "fee" => "Fee rate is required",
-        _ => "This field is required",
+        "fee" => "Fee rate is required.",
+        _ => "This field is required.",
     };
 
     let invalid_msg = match id.as_str() {
@@ -495,12 +517,19 @@ pub(crate) fn EsploraInput() -> Element {
 pub(crate) fn TimelockInput(
     mut update_day_var: Signal<String>,
     mut update_hour_var: Signal<String>,
-    day_error: Signal<Option<String>>,  
+    day_error: Signal<Option<String>>,
     hour_error: Signal<Option<String>>,
+    required: Option<bool>,
 ) -> Element {
+    let required = required.unwrap_or(false);
+
     let mut validate_days = move |input: &str| {
         if input.is_empty() {
-            day_error.set(Some("Timelock (days) is required".to_string()));
+            if required {
+                day_error.set(Some("Timelock (days) is required.".to_string()));
+            } else {
+                day_error.set(None);
+            }
             update_day_var.set(input.to_string());
             return;
         }
@@ -522,11 +551,14 @@ pub(crate) fn TimelockInput(
 
     let mut validate_hours = move |input: &str| {
         if input.is_empty() {
-            hour_error.set(Some("Timelock (hours) is required".to_string()));
+            if required {
+                hour_error.set(Some("Timelock (hours) is required.".to_string()));
+            } else {
+                hour_error.set(None);
+            }
             update_hour_var.set(input.to_string());
             return;
         }
-
         match input.parse::<u32>() {
             Ok(hours) => {
                 if hours >= 24 {
@@ -658,16 +690,21 @@ pub(crate) fn EscrowTypeInput(mut update_var: Signal<String>) -> Element {
 
 /// Nostr `nsec` input validation component.
 #[component]
-pub(crate) fn NsecInput(mut update_var: Signal<String>) -> Element {
-    let mut has_error = use_signal(|| false);
-
+pub(crate) fn NsecInput(mut update_var: Signal<String>, error: Signal<Option<String>>) -> Element {
     let mut validate_nsec = move |input: &str| {
-        let is_valid = input.is_empty() || parse_nsec(input).is_ok();
-        *has_error.write() = !is_valid && !input.is_empty();
+        if input.is_empty() {
+            error.set(Some("Nsec is required.".to_string()));
+        } else if parse_nsec(input).is_err() {
+            error.set(Some(
+                "Invalid nsec format. Please enter a valid Nostr secret key.".to_string(),
+            ));
+        } else {
+            error.set(None);
+        }
         update_var.set(input.to_string());
     };
 
-    let input_class = if *has_error.read() {
+    let input_class = if error.read().is_some() {
         "shadow-sm focus:ring-red-500 focus:border-red-500 block w-full sm:text-sm border-red-300 rounded-md p-2 border bg-red-50"
     } else {
         "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
@@ -692,10 +729,8 @@ pub(crate) fn NsecInput(mut update_var: Signal<String>) -> Element {
                     },
                 }
             }
-            if *has_error.read() {
-                p { class: "mt-2 text-xs text-red-600",
-                    "Invalid nsec format. Please enter a valid Nostr secret key."
-                }
+            if let Some(error_msg) = error.read().as_ref() {
+                p { class: "mt-2 text-xs text-red-600", "{error_msg}" }
             } else {
                 p { class: "mt-2 text-xs text-red-600",
                     "Your key is never stored or transmitted. All signing happens locally."
@@ -715,13 +750,15 @@ pub(crate) fn TxidInput(
 ) -> Element {
     let mut validate_txid = move |input: &str| {
         if input.is_empty() {
-            error.set(Some("Transaction ID is required".to_string()));
+            error.set(Some("Transaction ID is required.".to_string()));
             update_var.set(input.to_string());
             return;
         }
         let is_valid = input.parse::<Txid>().is_ok();
         if !is_valid {
-            error.set(Some("Invalid transaction ID. Please enter a valid transaction ID.".to_string()));
+            error.set(Some(
+                "Invalid transaction ID. Please enter a valid transaction ID.".to_string(),
+            ));
         } else {
             error.set(None);
         }
@@ -776,25 +813,33 @@ pub(crate) fn TransactionInput(
     mut update_var: Signal<String>,
     label: String,
     id: String,
+    error: Signal<Option<String>>,
 ) -> Element {
-    let mut has_error = use_signal(|| false);
+    let required_msg = match id.as_str() {
+        "signed-tx" => "Signed transaction is required.",
+        "unsigned-tx" => "Unsigned transaction is required.",
+        _ => "Transaction is required.",
+    };
+
+    let invalid_msg = match id.as_str() {
+        "signed-tx" => "Invalid signed transaction format.",
+        "unsigned-tx" => "Invalid unsigned transaction format.",
+        _ => "Invalid transaction format.",
+    };
 
     let mut validate_transaction = move |input: &str| {
-        // For empty inputs, don't show an error
         if input.is_empty() {
-            *has_error.write() = false;
-            update_var.set(input.to_string());
-            return;
+            error.set(Some(required_msg.to_string()));
+        } else if consensus::encode::deserialize_hex::<Transaction>(input).is_err() {
+            error.set(Some(invalid_msg.to_string()));
+        } else {
+            error.set(None);
         }
 
-        // Bitcoin transaction validation using `rust-bitcoin`
-        let is_valid = consensus::encode::deserialize_hex::<Transaction>(input).is_ok();
-
-        *has_error.write() = !is_valid;
         update_var.set(input.to_string());
     };
 
-    let input_class = if *has_error.read() {
+    let input_class = if error.read().is_some() {
         "shadow-sm focus:ring-red-500 focus:border-red-500 block w-full sm:text-sm border-red-300 rounded-md p-2 border bg-red-50"
     } else {
         "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
@@ -822,23 +867,43 @@ pub(crate) fn TransactionInput(
                     value: update_var,
                 }
             }
-            if *has_error.read() {
-                p { class: "mt-2 text-xs text-red-600",
-                    "Invalid transaction format. The transaction should be a hexadecimal string."
-                }
+            if let Some(error_msg) = error.read().as_ref() {
+                p { class: "mt-2 text-xs text-red-600", "{error_msg}" }
             }
         }
     }
 }
 /// Signature input validation component.
 #[component]
-pub(crate) fn SignatureInput(mut update_var: Signal<String>, label: String, id: String) -> Element {
-    let mut has_error = use_signal(|| false);
+pub(crate) fn SignatureInput(
+    mut update_var: Signal<String>,
+    label: String,
+    id: String,
+    error: Signal<Option<String>>,
+    required: Option<bool>,
+) -> Element {
+    let required = required.unwrap_or(false);
+    let required_msg = match id.as_str() {
+        "signature1" => "First signature is required.",
+        "signature2" => "Second signature is required.",
+        "signaturearb" => "Arbitrator signature is required.",
+        _ => "Signature is required.",
+    };
+
+    let invalid_msg = match id.as_str() {
+        "signature1" => "Invalid first signature format.",
+        "signature2" => "Invalid second signature format.",
+        "signaturearb" => "Invalid arbitrator signature format.",
+        _ => "Invalid signature format.",
+    };
 
     let mut validate_signature = move |input: &str| {
-        // For empty inputs, don't show an error
         if input.is_empty() {
-            *has_error.write() = false;
+            if required {
+                error.set(Some(required_msg.to_string()));
+            } else {
+                error.set(None);
+            }
             update_var.set(input.to_string());
             return;
         }
@@ -846,11 +911,15 @@ pub(crate) fn SignatureInput(mut update_var: Signal<String>, label: String, id: 
         // Validate signature using `rust-bitcoin`
         let is_valid = input.parse::<schnorr::Signature>().is_ok();
 
-        *has_error.write() = !is_valid;
+        if !is_valid {
+            error.set(Some(invalid_msg.to_string()));
+        } else {
+            error.set(None);
+        }
         update_var.set(input.to_string());
     };
 
-    let input_class = if *has_error.read() {
+    let input_class = if error.read().is_some() {
         "shadow-sm focus:ring-red-500 focus:border-red-500 block w-full sm:text-sm border-red-300 rounded-md p-2 border bg-red-50"
     } else {
         "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
@@ -878,29 +947,43 @@ pub(crate) fn SignatureInput(mut update_var: Signal<String>, label: String, id: 
                     value: update_var,
                 }
             }
-            if *has_error.read() {
-                p { class: "mt-2 text-xs text-red-600", "Invalid signature format." }
+             if let Some(error_msg) = error.read().as_ref() {
+                p { class: "mt-2 text-xs text-red-600", "{error_msg}" }
             }
         }
     }
 }
 /// Address input validation component.
 #[component]
-pub(crate) fn AddressInput(mut update_var: Signal<String>) -> Element {
-    let mut has_error = use_signal(|| false);
+pub(crate) fn AddressInput(
+    mut update_var: Signal<String>,
+    error: Signal<Option<String>>,
+) -> Element {
+    let required_msg = "Destination address is required.";
+    let invalid_msg = "Invalid Bitcoin address format. Please check and try again.";
 
     let mut validate_address = move |input: &str| {
+        if input.is_empty() {
+            error.set(Some(required_msg.to_string()));
+            update_var.set(input.to_string());
+            return;
+        }
+
         let is_valid = input.parse::<Address<_>>().is_ok()
             && input
                 .parse::<Address<_>>()
                 .and_then(|a| a.require_network(parse_network(&NETWORK.read()).unwrap()))
                 .is_ok();
 
-        *has_error.write() = !is_valid && !input.is_empty();
+        if !is_valid {
+            error.set(Some(invalid_msg.to_string()));
+        } else {
+            error.set(None);
+        }
         update_var.set(input.to_string());
     };
 
-    let input_class = if *has_error.read() {
+    let input_class = if error.read().is_some() {
         "shadow-sm focus:ring-red-500 focus:border-red-500 block w-full sm:text-sm border-red-300 rounded-md p-2 border bg-red-50"
     } else {
         "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
@@ -927,10 +1010,8 @@ pub(crate) fn AddressInput(mut update_var: Signal<String>) -> Element {
                     },
                 }
             }
-            if *has_error.read() {
-                p { class: "mt-2 text-xs text-red-600",
-                    "Invalid Bitcoin address format. Please check and try again."
-                }
+            if let Some(error_msg) = error.read().as_ref() {
+                p { class: "mt-2 text-xs text-red-600", "{error_msg}" }
             }
         }
     }
