@@ -33,6 +33,62 @@ pub(crate) fn Combine() -> Element {
     let timelock_days = use_signal(String::new);
     let timelock_hours = use_signal(String::new);
     let signature_arbitrator = use_signal(String::new);
+
+    let mut unsigned_tx_error = use_signal(|| None);
+    let mut npub_buyer_error = use_signal(|| None);
+    let mut npub_seller_error = use_signal(|| None);
+    let npub_arbitrator_error: Signal<Option<String>> = use_signal(|| None);
+    let mut timelock_days_error = use_signal(|| None);
+    let mut timelock_hours_error = use_signal(|| None);
+    let mut signature_1_error = use_signal(|| None);
+    let mut signature_2_error = use_signal(|| None);
+    let mut signature_arbitrator_error = use_signal(|| None);
+
+    let has_combine_errors = move || {
+        unsigned_tx_error.read().is_some()
+            || npub_buyer_error.read().is_some()
+            || npub_seller_error.read().is_some()
+            || signature_1_error.read().is_some()
+            || signature_2_error.read().is_some()
+            || npub_arbitrator_error.read().is_some()
+            || timelock_days_error.read().is_some()
+            || timelock_hours_error.read().is_some()
+            || signature_arbitrator_error.read().is_some()
+    };
+
+    let mut validate_combine_form = move || {
+        if unsigned_tx.read().is_empty() {
+            unsigned_tx_error.set(Some("Unsigned transaction is required.".to_string()));
+        }
+        if npub_buyer.read().is_empty() {
+            npub_buyer_error.set(Some("First npub is required.".to_string()));
+        }
+        if npub_seller.read().is_empty() {
+            npub_seller_error.set(Some("Second npub is required.".to_string()));
+        }
+        if signature_1.read().is_empty() {
+            signature_1_error.set(Some("First signature is required.".to_string()));
+        }
+        if signature_2.read().is_empty() {
+            signature_2_error.set(Some("Second signature is required.".to_string()));
+        }
+
+        let arbitrator_filled = !npub_arbitrator.read().is_empty();
+
+        if arbitrator_filled {
+            if timelock_days.read().is_empty() {
+                timelock_days_error.set(Some("Timelock (days) is required.".to_string()));
+            }
+            if timelock_hours.read().is_empty() {
+                timelock_hours_error.set(Some("Timelock (hours) is required.".to_string()));
+            }
+            if signature_arbitrator.read().is_empty() {
+                signature_arbitrator_error
+                    .set(Some("Arbitrator signature is required.".to_string()));
+            }
+        }
+    };
+
     rsx! {
         main { class: "max-w-7xl mx-auto py-6 sm:px-6 lg:px-8",
             div { class: "px-4 py-6 sm:px-0",
@@ -42,12 +98,12 @@ pub(crate) fn Combine() -> Element {
                     div { class: "px-4 py-5 sm:p-6",
                         div { class: "space-y-6",
 
-                            TransactionInput {
-                                update_var: unsigned_tx,
-                                label: "Unsigned Transaction",
-                                id: "unsigned-tx",
-                            }
-
+                        TransactionInput {
+                            update_var: unsigned_tx,
+                            label: "Unsigned Transaction",
+                            id: "unsigned-tx",
+                            error: unsigned_tx_error,
+                        }
 
                             div { class: "grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6",
 
@@ -55,24 +111,32 @@ pub(crate) fn Combine() -> Element {
                                     id: "npub_1",
                                     label: "First Nostr Public Key (npub)",
                                     update_var: npub_buyer,
+                                    error: npub_buyer_error,
+                                    required: true
                                 }
 
                                 NpubInput {
                                     id: "npub_2",
                                     label: "Second Nostr Public Key (npub)",
                                     update_var: npub_seller,
+                                    error: npub_seller_error,
+                                    required: true
                                 }
 
                                 SignatureInput {
                                     update_var: signature_1,
                                     label: "First Signature",
                                     id: "signature1",
+                                    error: signature_1_error,
+                                    required: true,
                                 }
 
                                 SignatureInput {
                                     update_var: signature_2,
                                     label: "Second Signature",
                                     id: "signature2",
+                                    error: signature_2_error,
+                                    required: true,
                                 }
 
                                 EscrowTypeInput { update_var: escrow_type }
@@ -91,19 +155,23 @@ pub(crate) fn Combine() -> Element {
                                         id: "npub_arbitrator",
                                         label: "Arbitrator Nostr Public Key (npub)",
                                         update_var: npub_arbitrator,
+                                        error: npub_arbitrator_error,
                                     }
-
 
                                     TimelockInput {
                                         update_day_var: timelock_days,
                                         update_hour_var: timelock_hours,
+                                        day_error: timelock_days_error,
+                                        hour_error: timelock_hours_error,
+                                        required: !npub_arbitrator.read().is_empty()
                                     }
-
 
                                     SignatureInput {
                                         update_var: signature_arbitrator,
                                         label: "Arbitrator Signature",
                                         id: "signaturearb",
+                                        error: signature_arbitrator_error,
+                                        required: !npub_arbitrator.read().is_empty()
                                     }
                                 }
                             }
@@ -112,6 +180,12 @@ pub(crate) fn Combine() -> Element {
                                 div { class: "flex justify-end",
                                     PrimaryButton {
                                         onclick: move |_| {
+                                            validate_combine_form();
+                                            if has_combine_errors() {
+                                                #[cfg(debug_assertions)]
+                                                trace!("Form has validation errors, cannot combine signatures");
+                                                return;
+                                            }
                                             #[cfg(debug_assertions)]
                                             trace!(
                                                 % npub_buyer, % npub_seller, % signature_1, % signature_2, % npub_arbitrator,
