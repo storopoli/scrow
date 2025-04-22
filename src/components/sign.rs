@@ -61,18 +61,23 @@ pub(crate) fn Sign() -> Element {
         if npub_buyer.read().is_empty() {
             npub_buyer_error.set(Some("Buyer npub is required.".to_string()));
         }
+        
         if npub_seller.read().is_empty() {
             npub_seller_error.set(Some("Seller npub is required.".to_string()));
         }
+
         if amount_total.read().is_empty() {
             amount_total_error.set(Some("Total amount is required.".to_string()));
         }
+
         if funding_txid.read().is_empty() {
             funding_txid_error.set(Some("Transaction ID is required.".to_string()));
         }
+
         if nsec.read().is_empty() {
             nsec_error.set(Some("Nsec is required.".to_string()));
         }
+
         if unsigned_tx.read().is_empty() {
             unsigned_tx_error.set(Some("Unsigned transaction is required.".to_string()));
         }
@@ -83,6 +88,7 @@ pub(crate) fn Sign() -> Element {
             if timelock_days.read().is_empty() {
                 timelock_days_error.set(Some("Timelock (days) is required.".to_string()));
             }
+            
             if timelock_hours.read().is_empty() {
                 timelock_hours_error.set(Some("Timelock (hours) is required.".to_string()));
             }

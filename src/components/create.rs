@@ -89,6 +89,7 @@ pub(crate) fn Create() -> Element {
             if timelock_days.read().is_empty() {
                 timelock_days_error.set(Some("Timelock (days) is required.".to_string()));
             }
+            
             if timelock_hours.read().is_empty() {
                 timelock_hours_error.set(Some("Timelock (hours) is required.".to_string()));
             }

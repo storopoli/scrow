@@ -60,15 +60,19 @@ pub(crate) fn Combine() -> Element {
         if unsigned_tx.read().is_empty() {
             unsigned_tx_error.set(Some("Unsigned transaction is required.".to_string()));
         }
+
         if npub_buyer.read().is_empty() {
             npub_buyer_error.set(Some("First npub is required.".to_string()));
         }
+
         if npub_seller.read().is_empty() {
             npub_seller_error.set(Some("Second npub is required.".to_string()));
         }
+
         if signature_1.read().is_empty() {
             signature_1_error.set(Some("First signature is required.".to_string()));
         }
+
         if signature_2.read().is_empty() {
             signature_2_error.set(Some("Second signature is required.".to_string()));
         }
@@ -79,9 +83,11 @@ pub(crate) fn Combine() -> Element {
             if timelock_days.read().is_empty() {
                 timelock_days_error.set(Some("Timelock (days) is required.".to_string()));
             }
+
             if timelock_hours.read().is_empty() {
                 timelock_hours_error.set(Some("Timelock (hours) is required.".to_string()));
             }
+            
             if signature_arbitrator.read().is_empty() {
                 signature_arbitrator_error
                     .set(Some("Arbitrator signature is required.".to_string()));

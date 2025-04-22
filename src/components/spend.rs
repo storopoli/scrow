@@ -54,18 +54,23 @@ pub(crate) fn Spend() -> Element {
         if npub.read().is_empty() {
             npub_error.set(Some("Npub is required.".to_string()));
         }
+
         if escrow_txid.read().is_empty() {
             escrow_txid_error.set(Some("Transaction ID is required.".to_string()));
         }
+
         if destination_address.read().is_empty() {
             destination_address_error.set(Some("Destination address is required.".to_string()));
         }
+
         if amount.read().is_empty() {
             amount_error.set(Some("Amount is required.".to_string()));
         }
+        
         if fee_rate.read().is_empty() {
             fee_rate_error.set(Some("Fee rate is required.".to_string()));
         }
+        
         if nsec.read().is_empty() {
             nsec_error.set(Some("Nsec is required.".to_string()));
         }
