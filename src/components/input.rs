@@ -451,23 +451,33 @@ pub(crate) fn NetworkInput(label: String, id: String) -> Element {
 
 /// Esplora backend input validation component.
 #[component]
-pub(crate) fn EsploraInput() -> Element {
-    let mut has_error = use_signal(|| false);
-
+pub(crate) fn EsploraInput(
+    mut update_var: Signal<String>,
+    label: String,
+    id: String,
+    error: Signal<Option<String>>,
+) -> Element {
     let mut validate_url = move |input: &str| {
+        update_var.set(input.to_string());
+
         if input.is_empty() {
-            *has_error.write() = false;
-            *ESPLORA_ENDPOINT.write() = input.to_string();
+            error.set(Some("Esplora url is required.".to_string()));
             return;
         }
 
         // Simple URL validation
         let is_valid = input.starts_with("http://") || input.starts_with("https://");
-        *has_error.write() = !is_valid;
-        *ESPLORA_ENDPOINT.write() = input.to_string();
+
+        if is_valid {
+            error.set(None);
+        } else {
+            error.set(Some(
+                "Invalid URL format. URL should start with http:// or https://".to_string(),
+            ));
+        }
     };
 
-    let input_class = if *has_error.read() {
+    let input_class = if error.read().is_some() {
         "shadow-sm focus:ring-red-500 focus:border-red-500 block w-full sm:text-sm border-red-300 rounded-md p-2 border bg-red-50"
     } else {
         "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
@@ -478,16 +488,16 @@ pub(crate) fn EsploraInput() -> Element {
             label {
                 r#for: "esplora-url",
                 class: "block text-sm font-medium text-gray-700",
-                "Esplora API Backend URL"
+                {label}
             }
             div { class: "mt-1",
                 input {
                     r#type: "url",
-                    name: "esplora-url",
-                    id: "esplora-url",
+                    name: id.as_str(),
+                    id: id.as_str(),
                     class: input_class,
                     placeholder: "https://mempool.space/api",
-                    value: ESPLORA_ENDPOINT.read().clone(),
+                    value: "{update_var}",
                     oninput: move |event| {
                         #[cfg(debug_assertions)]
                         trace!(% ESPLORA_ENDPOINT, event_value =% event.value(), "Set Eslora endpoint");
@@ -495,10 +505,8 @@ pub(crate) fn EsploraInput() -> Element {
                     },
                 }
             }
-            if *has_error.read() {
-                p { class: "mt-2 text-xs text-red-600",
-                    "Invalid URL format. URL should start with http:// or https://"
-                }
+            if let Some(error_msg) = error.read().as_ref() {
+                p { class: "mt-2 text-xs text-red-600", "{error_msg}" }
             } else {
                 p { class: "mt-2 text-xs text-gray-500",
                     "Default for mainnet: https://mempool.space/api"
