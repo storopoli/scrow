@@ -13,6 +13,7 @@ use crate::{
     util::{
         days_to_blocks, hours_to_blocks, parse_escrow_type, parse_network, parse_npub, parse_nsec,
     },
+    validation::{ValidationField, validate_input},
 };
 
 use super::{
@@ -37,7 +38,7 @@ pub(crate) fn Sign() -> Element {
 
     let mut npub_buyer_error = use_signal(|| None);
     let mut npub_seller_error = use_signal(|| None);
-    let npub_arbitrator_error = use_signal(|| None);
+    let mut npub_arbitrator_error = use_signal(|| None);
     let mut amount_total_error = use_signal(|| None);
     let mut timelock_days_error = use_signal(|| None);
     let mut timelock_hours_error = use_signal(|| None);
@@ -58,40 +59,55 @@ pub(crate) fn Sign() -> Element {
     };
 
     let mut validate_sign_form = move || {
-        if npub_buyer.read().is_empty() {
-            npub_buyer_error.set(Some("Buyer npub is required.".to_string()));
-        }
-
-        if npub_seller.read().is_empty() {
-            npub_seller_error.set(Some("Seller npub is required.".to_string()));
-        }
-
-        if amount_total.read().is_empty() {
-            amount_total_error.set(Some("Amount is required.".to_string()));
-        }
-
-        if funding_txid.read().is_empty() {
-            funding_txid_error.set(Some("Transaction ID is required.".to_string()));
-        }
-
-        if nsec.read().is_empty() {
-            nsec_error.set(Some("Nsec is required.".to_string()));
-        }
-
-        if unsigned_tx.read().is_empty() {
-            unsigned_tx_error.set(Some("Unsigned transaction is required.".to_string()));
-        }
+        npub_buyer_error.set(
+            validate_input(&npub_buyer.read(), ValidationField::Npub, true)
+                .err()
+                .map(|e| e.to_string()),
+        );
+        npub_seller_error.set(
+            validate_input(&npub_seller.read(), ValidationField::Npub, true)
+                .err()
+                .map(|e| e.to_string()),
+        );
+        amount_total_error.set(
+            validate_input(&amount_total.read(), ValidationField::Amount, true)
+                .err()
+                .map(|e| e.to_string()),
+        );
+        funding_txid_error.set(
+            validate_input(&funding_txid.read(), ValidationField::Txid, true)
+                .err()
+                .map(|e| e.to_string()),
+        );
+        nsec_error.set(
+            validate_input(&nsec.read(), ValidationField::Nsec, true)
+                .err()
+                .map(|e| e.to_string()),
+        );
+        unsigned_tx_error.set(
+            validate_input(&unsigned_tx.read(), ValidationField::Transaction, true)
+                .err()
+                .map(|e| e.to_string()),
+        );
 
         let arbitrator_filled = !npub_arbitrator.read().is_empty();
+        npub_arbitrator_error.set(
+            validate_input(&npub_arbitrator.read(), ValidationField::Npub, false)
+                .err()
+                .map(|e| e.to_string()),
+        );
 
         if arbitrator_filled {
-            if timelock_days.read().is_empty() {
-                timelock_days_error.set(Some("Timelock (days) is required.".to_string()));
-            }
-
-            if timelock_hours.read().is_empty() {
-                timelock_hours_error.set(Some("Timelock (hours) is required.".to_string()));
-            }
+            timelock_days_error.set(
+                validate_input(&timelock_days.read(), ValidationField::TimelockDays, true)
+                    .err()
+                    .map(|e| e.to_string()),
+            );
+            timelock_hours_error.set(
+                validate_input(&timelock_hours.read(), ValidationField::TimelockHours, true)
+                    .err()
+                    .map(|e| e.to_string()),
+            );
         }
     };
 

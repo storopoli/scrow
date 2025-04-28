@@ -15,6 +15,7 @@ use crate::{
         P2TR_TX_VBYTE_C, days_to_blocks, hours_to_blocks, npub_to_address, parse_network,
         parse_npub,
     },
+    validation::{ValidationField, validate_input},
 };
 
 use super::{
@@ -43,7 +44,7 @@ pub(crate) fn Create() -> Element {
 
     let mut npub_buyer_error = use_signal(|| None);
     let mut npub_seller_error = use_signal(|| None);
-    let npub_arbitrator_error = use_signal(|| None);
+    let mut npub_arbitrator_error = use_signal(|| None);
     let mut amount_buyer_error = use_signal(|| None);
     let mut amount_seller_error = use_signal(|| None);
     let mut fee_rate_error = use_signal(|| None);
@@ -63,45 +64,61 @@ pub(crate) fn Create() -> Element {
     };
 
     let mut validate_address_form = move || {
-        if npub_buyer.read().is_empty() {
-            npub_buyer_error.set(Some("Buyer npub is required.".to_string()));
-        }
-
-        if npub_seller.read().is_empty() {
-            npub_seller_error.set(Some("Seller npub is required.".to_string()));
-        }
-
-        if amount_buyer.read().is_empty() {
-            amount_buyer_error.set(Some("Buyer amount is required.".to_string()));
-        }
-
-        if amount_seller.read().is_empty() {
-            amount_seller_error.set(Some("Seller amount is required.".to_string()));
-        }
-
-        if fee_rate.read().is_empty() {
-            fee_rate_error.set(Some("Fee rate is required.".to_string()));
-        }
+        npub_buyer_error.set(
+            validate_input(&npub_buyer.read(), ValidationField::Npub, true)
+                .err()
+                .map(|e| e.to_string()),
+        );
+        npub_seller_error.set(
+            validate_input(&npub_seller.read(), ValidationField::Npub, true)
+                .err()
+                .map(|e| e.to_string()),
+        );
+        amount_buyer_error.set(
+            validate_input(&amount_buyer.read(), ValidationField::Amount, true)
+                .err()
+                .map(|e| e.to_string()),
+        );
+        amount_seller_error.set(
+            validate_input(&amount_seller.read(), ValidationField::Amount, true)
+                .err()
+                .map(|e| e.to_string()),
+        );
+        fee_rate_error.set(
+            validate_input(&fee_rate.read(), ValidationField::FeeRate, true)
+                .err()
+                .map(|e| e.to_string()),
+        );
 
         let arbitrator_filled = !npub_arbitrator.read().is_empty();
+        npub_arbitrator_error.set(
+            validate_input(&npub_arbitrator.read(), ValidationField::Npub, false)
+                .err()
+                .map(|e| e.to_string()),
+        );
 
         if arbitrator_filled {
-            if timelock_days.read().is_empty() {
-                timelock_days_error.set(Some("Timelock (days) is required.".to_string()));
-            }
-
-            if timelock_hours.read().is_empty() {
-                timelock_hours_error.set(Some("Timelock (hours) is required.".to_string()));
-            }
+            timelock_days_error.set(
+                validate_input(&timelock_days.read(), ValidationField::TimelockDays, true)
+                    .err()
+                    .map(|e| e.to_string()),
+            );
+            timelock_hours_error.set(
+                validate_input(&timelock_hours.read(), ValidationField::TimelockHours, true)
+                    .err()
+                    .map(|e| e.to_string()),
+            );
         }
     };
 
     let has_transaction_form_errors = move || funding_txid_error.read().is_some();
 
     let mut validate_transaction_form = move || {
-        if funding_txid.read().is_empty() {
-            funding_txid_error.set(Some("Transaction ID is required.".to_string()));
-        }
+        funding_txid_error.set(
+            validate_input(&funding_txid.read(), ValidationField::Txid, true)
+                .err()
+                .map(|e| e.to_string()),
+        );
     };
 
     use_effect(move || {

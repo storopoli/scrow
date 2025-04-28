@@ -5,7 +5,7 @@ use dioxus::prelude::*;
 #[cfg(debug_assertions)]
 use dioxus::logger::tracing::trace;
 
-use crate::{ESPLORA_ENDPOINT, NETWORK};
+use crate::{ESPLORA_ENDPOINT, NETWORK, validation::*};
 
 use super::{EsploraInput, Footer, NetworkInput, PrimaryButton, SecondaryButton};
 
@@ -19,9 +19,11 @@ pub(crate) fn Settings() -> Element {
     let has_settings_form_errors = move || esplora_url_error.read().is_some();
 
     let mut validate_settings_form = move || {
-        if esplora_url.read().is_empty() {
-            esplora_url_error.set(Some("Esplora url is required.".to_string()));
-        }
+        esplora_url_error.set(
+            validate_input(&esplora_url.read(), ValidationField::Url, true)
+                .err()
+                .map(|e| e.to_string()),
+        );
     };
 
     // Read the current values from global state

@@ -17,6 +17,7 @@ pub(crate) mod scripts;
 pub(crate) mod sign;
 pub(crate) mod tx;
 pub(crate) mod util;
+pub(crate) mod validation;
 
 use components::{Broadcast, Combine, Create, Home, Navbar, Settings, Sign, Spend};
 

@@ -12,6 +12,7 @@ use crate::{
     scripts::{escrow_scripts, escrow_spend_info},
     sign::combine_signatures,
     util::{days_to_blocks, hours_to_blocks, parse_escrow_type, parse_npub},
+    validation::{ValidationField, validate_input},
 };
 
 use super::{
@@ -37,7 +38,7 @@ pub(crate) fn Combine() -> Element {
     let mut unsigned_tx_error = use_signal(|| None);
     let mut npub_buyer_error = use_signal(|| None);
     let mut npub_seller_error = use_signal(|| None);
-    let npub_arbitrator_error: Signal<Option<String>> = use_signal(|| None);
+    let mut npub_arbitrator_error: Signal<Option<String>> = use_signal(|| None);
     let mut timelock_days_error = use_signal(|| None);
     let mut timelock_hours_error = use_signal(|| None);
     let mut signature_1_error = use_signal(|| None);
@@ -57,41 +58,59 @@ pub(crate) fn Combine() -> Element {
     };
 
     let mut validate_combine_form = move || {
-        if unsigned_tx.read().is_empty() {
-            unsigned_tx_error.set(Some("Unsigned transaction is required.".to_string()));
-        }
-
-        if npub_buyer.read().is_empty() {
-            npub_buyer_error.set(Some("First npub is required.".to_string()));
-        }
-
-        if npub_seller.read().is_empty() {
-            npub_seller_error.set(Some("Second npub is required.".to_string()));
-        }
-
-        if signature_1.read().is_empty() {
-            signature_1_error.set(Some("First signature is required.".to_string()));
-        }
-
-        if signature_2.read().is_empty() {
-            signature_2_error.set(Some("Second signature is required.".to_string()));
-        }
+        unsigned_tx_error.set(
+            validate_input(&unsigned_tx.read(), ValidationField::Transaction, true)
+                .err()
+                .map(|e| e.to_string()),
+        );
+        npub_buyer_error.set(
+            validate_input(&npub_buyer.read(), ValidationField::Npub, true)
+                .err()
+                .map(|e| e.to_string()),
+        );
+        npub_seller_error.set(
+            validate_input(&npub_seller.read(), ValidationField::Npub, true)
+                .err()
+                .map(|e| e.to_string()),
+        );
+        signature_1_error.set(
+            validate_input(&signature_1.read(), ValidationField::Signature, true)
+                .err()
+                .map(|e| e.to_string()),
+        );
+        signature_2_error.set(
+            validate_input(&signature_2.read(), ValidationField::Signature, true)
+                .err()
+                .map(|e| e.to_string()),
+        );
 
         let arbitrator_filled = !npub_arbitrator.read().is_empty();
+        npub_arbitrator_error.set(
+            validate_input(&npub_arbitrator.read(), ValidationField::Npub, false)
+                .err()
+                .map(|e| e.to_string()),
+        );
 
         if arbitrator_filled {
-            if timelock_days.read().is_empty() {
-                timelock_days_error.set(Some("Timelock (days) is required.".to_string()));
-            }
-
-            if timelock_hours.read().is_empty() {
-                timelock_hours_error.set(Some("Timelock (hours) is required.".to_string()));
-            }
-
-            if signature_arbitrator.read().is_empty() {
-                signature_arbitrator_error
-                    .set(Some("Arbitrator signature is required.".to_string()));
-            }
+            timelock_days_error.set(
+                validate_input(&timelock_days.read(), ValidationField::TimelockDays, true)
+                    .err()
+                    .map(|e| e.to_string()),
+            );
+            timelock_hours_error.set(
+                validate_input(&timelock_hours.read(), ValidationField::TimelockHours, true)
+                    .err()
+                    .map(|e| e.to_string()),
+            );
+            signature_arbitrator_error.set(
+                validate_input(
+                    &signature_arbitrator.read(),
+                    ValidationField::Signature,
+                    true,
+                )
+                .err()
+                .map(|e| e.to_string()),
+            );
         }
     };
 

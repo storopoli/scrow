@@ -12,6 +12,7 @@ use crate::{
     sign::sign_resolution_tx,
     tx::resolution_tx,
     util::{P2TR_TX_VBYTE_KEY_PATH, parse_network, parse_nsec},
+    validation::{ValidationField, validate_input},
 };
 
 use super::{
@@ -51,29 +52,36 @@ pub(crate) fn Spend() -> Element {
     };
 
     let mut validate_spend_form = move || {
-        if npub.read().is_empty() {
-            npub_error.set(Some("Npub is required.".to_string()));
-        }
-
-        if escrow_txid.read().is_empty() {
-            escrow_txid_error.set(Some("Transaction ID is required.".to_string()));
-        }
-
-        if destination_address.read().is_empty() {
-            destination_address_error.set(Some("Destination address is required.".to_string()));
-        }
-
-        if amount.read().is_empty() {
-            amount_error.set(Some("Amount is required.".to_string()));
-        }
-
-        if fee_rate.read().is_empty() {
-            fee_rate_error.set(Some("Fee rate is required.".to_string()));
-        }
-
-        if nsec.read().is_empty() {
-            nsec_error.set(Some("Nsec is required.".to_string()));
-        }
+        npub_error.set(
+            validate_input(&npub.read(), ValidationField::Npub, true)
+                .err()
+                .map(|e| e.to_string()),
+        );
+        escrow_txid_error.set(
+            validate_input(&escrow_txid.read(), ValidationField::Txid, true)
+                .err()
+                .map(|e| e.to_string()),
+        );
+        destination_address_error.set(
+            validate_input(&destination_address.read(), ValidationField::Address, true)
+                .err()
+                .map(|e| e.to_string()),
+        );
+        amount_error.set(
+            validate_input(&amount.read(), ValidationField::Amount, true)
+                .err()
+                .map(|e| e.to_string()),
+        );
+        fee_rate_error.set(
+            validate_input(&fee_rate.read(), ValidationField::FeeRate, true)
+                .err()
+                .map(|e| e.to_string()),
+        );
+        nsec_error.set(
+            validate_input(&nsec.read(), ValidationField::Nsec, true)
+                .err()
+                .map(|e| e.to_string()),
+        );
     };
 
     use_effect(move || {

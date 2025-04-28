@@ -33,3 +33,42 @@ pub(crate) enum Error {
     #[error("Expected exactly one funding transaction")]
     ExpectedOneFundingTransaction,
 }
+
+#[derive(Debug, Error)]
+pub(crate) enum ValidationError {
+    #[error("Field is required.")]
+    Required,
+
+    #[error("Invalid npub format. Please enter a valid Nostr public key.")]
+    InvalidNpub,
+
+    #[error("Amount must be between 0.00000001 and 100 BTC.")]
+    InvalidAmount,
+
+    #[error("Fee rate must be a positive integer greater than zero.")]
+    InvalidFeeRate,
+
+    #[error("Invalid nsec format. Please enter a valid Nostr secret key.")]
+    InvalidNsec,
+
+    #[error("Invalid transaction ID. Please enter a valid transaction ID.")]
+    InvalidTxid,
+
+    #[error("Invalid transaction format. The transaction should be a hexadecimal string.")]
+    InvalidTransaction,
+
+    #[error("Invalid signature format.")]
+    InvalidSignature,
+
+    #[error("Invalid Bitcoin address format. Please check and try again.")]
+    InvalidAddress,
+
+    #[error("Invalid URL format. Should start with http:// or https://.")]
+    InvalidUrl,
+
+    #[error("Days should be between 0 and 1,000.")]
+    InvalidTimelockDays,
+
+    #[error("Hours should be between 0 and 23.")]
+    InvalidTimelockHours,
+}

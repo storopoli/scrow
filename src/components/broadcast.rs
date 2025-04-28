@@ -6,8 +6,8 @@ use dioxus::prelude::*;
 #[cfg(debug_assertions)]
 use dioxus::logger::tracing::{info, trace};
 
-use crate::ESPLORA_ENDPOINT;
 use crate::esplora::{broadcast_transaction, create_client};
+use crate::{ESPLORA_ENDPOINT, validation::*};
 
 use super::{Footer, NetworkInput, PrimaryButton, TransactionInput};
 
@@ -31,9 +31,11 @@ pub(crate) fn Broadcast() -> Element {
     let has_broadcast_form_errors = move || signed_tx_error.read().is_some();
 
     let mut validate_broadcast_form = move || {
-        if signed_tx.read().is_empty() {
-            signed_tx_error.set(Some("Signed transaction is required.".to_string()));
-        }
+        signed_tx_error.set(
+            validate_input(&signed_tx.read(), ValidationField::Transaction, true)
+                .err()
+                .map(|e| e.to_string()),
+        );
     };
 
     rsx! {
