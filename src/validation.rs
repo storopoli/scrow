@@ -1,3 +1,4 @@
+//! Validation logic for form fields and user input.
 use crate::NETWORK;
 use crate::error::ValidationError;
 use crate::util::{parse_network, parse_npub, parse_nsec};
@@ -5,6 +6,7 @@ use bitcoin::{Address, Amount, FeeRate, Transaction, Txid};
 use dioxus::signals::Readable;
 use secp256k1::schnorr;
 
+/// Represents the type of field to be validated in forms and inputs.
 #[derive(Debug)]
 pub(crate) enum ValidationField {
     Npub,
@@ -20,6 +22,16 @@ pub(crate) enum ValidationField {
     TimelockHours,
 }
 
+/// Validates a given input string according to the specified `ValidationField` type.
+///
+/// Returns:
+/// - `Ok(())` if the input is valid (or not required and empty)
+/// - `Err(ValidationError)` with the appropriate error if the input is invalid or required but empty
+///
+/// # Arguments
+/// * `input` - The input string to validate
+/// * `field` - The type of field to validate against
+/// * `required` - Whether the field is required (true) or optional (false)
 pub(crate) fn validate_input(
     input: &str,
     field: ValidationField,

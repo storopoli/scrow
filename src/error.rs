@@ -34,6 +34,10 @@ pub(crate) enum Error {
     ExpectedOneFundingTransaction,
 }
 
+/// Represents validation errors for form fields and user input.
+///
+/// Each variant corresponds to a specific validation failure and provides a descriptive error message
+/// that can be displayed to the user.
 #[derive(Debug, Error)]
 pub(crate) enum ValidationError {
     #[error("Field is required.")]
