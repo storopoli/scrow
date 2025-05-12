@@ -78,7 +78,7 @@ See: [Bisq Trading Rules](https://docs.bisq.network/trading-rules#dispute-resolu
 [Private Law Society](https://privatelawsociety.net/)
 (PLS) also does escrow dispute resolution with third-parties,
 but assumes that the third-party needs to be onboarded
-and does not provide Nostr easy npub/nsec signing.
+and does not provide easy Nostr npub/nsec signing.
 
 ## Development
 
