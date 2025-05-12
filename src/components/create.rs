@@ -15,6 +15,7 @@ use crate::{
         P2TR_TX_VBYTE_C, days_to_blocks, hours_to_blocks, npub_to_address, parse_network,
         parse_npub,
     },
+    validation::{ValidationField, validate_input},
 };
 
 use super::{
@@ -40,6 +41,85 @@ pub(crate) fn Create() -> Element {
     let mut escrow_transaction = use_signal(String::new);
     let mut derived_address_buyer = use_signal(String::new);
     let mut derived_address_seller = use_signal(String::new);
+
+    let mut npub_buyer_error = use_signal(|| None);
+    let mut npub_seller_error = use_signal(|| None);
+    let mut npub_arbitrator_error = use_signal(|| None);
+    let mut amount_buyer_error = use_signal(|| None);
+    let mut amount_seller_error = use_signal(|| None);
+    let mut fee_rate_error = use_signal(|| None);
+    let mut timelock_days_error = use_signal(|| Option::<String>::None);
+    let mut timelock_hours_error = use_signal(|| Option::<String>::None);
+    let mut funding_txid_error = use_signal(|| Option::<String>::None);
+
+    let has_address_form_errors = move || {
+        npub_buyer_error.read().is_some()
+            || npub_seller_error.read().is_some()
+            || amount_buyer_error.read().is_some()
+            || amount_seller_error.read().is_some()
+            || fee_rate_error.read().is_some()
+            || npub_arbitrator_error.read().is_some()
+            || timelock_days_error.read().is_some()
+            || timelock_hours_error.read().is_some()
+    };
+
+    let mut validate_address_form = move || {
+        npub_buyer_error.set(
+            validate_input(&npub_buyer.read(), ValidationField::Npub, true)
+                .err()
+                .map(|e| e.to_string()),
+        );
+        npub_seller_error.set(
+            validate_input(&npub_seller.read(), ValidationField::Npub, true)
+                .err()
+                .map(|e| e.to_string()),
+        );
+        amount_buyer_error.set(
+            validate_input(&amount_buyer.read(), ValidationField::Amount, true)
+                .err()
+                .map(|e| e.to_string()),
+        );
+        amount_seller_error.set(
+            validate_input(&amount_seller.read(), ValidationField::Amount, true)
+                .err()
+                .map(|e| e.to_string()),
+        );
+        fee_rate_error.set(
+            validate_input(&fee_rate.read(), ValidationField::FeeRate, true)
+                .err()
+                .map(|e| e.to_string()),
+        );
+
+        let arbitrator_filled = !npub_arbitrator.read().is_empty();
+        npub_arbitrator_error.set(
+            validate_input(&npub_arbitrator.read(), ValidationField::Npub, false)
+                .err()
+                .map(|e| e.to_string()),
+        );
+
+        if arbitrator_filled {
+            timelock_days_error.set(
+                validate_input(&timelock_days.read(), ValidationField::TimelockDays, true)
+                    .err()
+                    .map(|e| e.to_string()),
+            );
+            timelock_hours_error.set(
+                validate_input(&timelock_hours.read(), ValidationField::TimelockHours, true)
+                    .err()
+                    .map(|e| e.to_string()),
+            );
+        }
+    };
+
+    let has_transaction_form_errors = move || funding_txid_error.read().is_some();
+
+    let mut validate_transaction_form = move || {
+        funding_txid_error.set(
+            validate_input(&funding_txid.read(), ValidationField::Txid, true)
+                .err()
+                .map(|e| e.to_string()),
+        );
+    };
 
     use_effect(move || {
         to_owned![fee_estimates];
@@ -78,6 +158,7 @@ pub(crate) fn Create() -> Element {
                                     update_var: npub_buyer,
                                     update_address: derived_address_buyer,
                                     col_span: 3,
+                                    error: npub_buyer_error,
                                 }
 
                                 NpubInputDerivedAddress {
@@ -86,18 +167,21 @@ pub(crate) fn Create() -> Element {
                                     update_var: npub_seller,
                                     update_address: derived_address_seller,
                                     col_span: 3,
+                                    error: npub_seller_error,
                                 }
 
                                 BitcoinInput {
                                     id: "amount_buyer",
                                     label: "Buyer Escrow Amount (BTC)",
                                     update_var: amount_buyer,
+                                    error: amount_buyer_error,
                                 }
 
                                 BitcoinInput {
                                     id: "amount_seller",
                                     label: "Seller Escrow Amount (BTC)",
                                     update_var: amount_seller,
+                                    error: amount_seller_error,
                                 }
 
                                 FeeRateSelector {
@@ -106,6 +190,7 @@ pub(crate) fn Create() -> Element {
                                     label_dropdown: "Target Blocks",
                                     update_var: fee_rate,
                                     fee_estimates,
+                                    error: fee_rate_error,
                                 }
 
                                 NetworkInput { id: "network", label: "Bitcoin Network" }
@@ -122,11 +207,15 @@ pub(crate) fn Create() -> Element {
                                         id: "npub_arbitrator",
                                         label: "Arbitrator Nostr Public Key (npub)",
                                         update_var: npub_arbitrator,
+                                        error: npub_arbitrator_error,
                                     }
 
                                     TimelockInput {
                                         update_day_var: timelock_days,
                                         update_hour_var: timelock_hours,
+                                        day_error: timelock_days_error,
+                                        hour_error: timelock_hours_error,
+                                        required: !npub_arbitrator.read().is_empty(),
                                     }
                                 }
                             }
@@ -168,6 +257,12 @@ pub(crate) fn Create() -> Element {
                                 }
                                 PrimaryButton {
                                     onclick: move |_| {
+                                        validate_address_form();
+                                        if has_address_form_errors() {
+                                            #[cfg(debug_assertions)]
+                                            trace!("Form has validation errors, cannot generate address");
+                                            return;
+                                        }
                                         #[cfg(debug_assertions)]
                                         trace!(
                                             % npub_buyer, % npub_seller, % amount_buyer, % amount_seller, % fee_rate, %
@@ -234,6 +329,7 @@ pub(crate) fn Create() -> Element {
                                 This transaction will be used to fund the escrow address.
                                 Note that it should be a coinjoin transaction between buyer and seller,
                                 i.e. should have only one output: the escrow address with the whole total escrow amount.",
+                                error: funding_txid_error,
                             }
                         }
 
@@ -255,6 +351,12 @@ pub(crate) fn Create() -> Element {
                                 }
                                 PrimaryButton {
                                     onclick: move |_| {
+                                        validate_transaction_form();
+                                        if has_transaction_form_errors() {
+                                            #[cfg(debug_assertions)]
+                                            trace!("Form has validation errors, cannot generate transaction");
+                                            return;
+                                        }
                                         #[cfg(debug_assertions)]
                                         trace!(
                                             % npub_buyer, % npub_seller, % amount_buyer, % amount_seller, % fee_rate, %

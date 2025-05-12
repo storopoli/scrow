@@ -1,31 +1,37 @@
 //! Input Validation Components.
 
-use bitcoin::{Address, Amount, FeeRate, Transaction, Txid, consensus};
 use dioxus::prelude::*;
 
 #[cfg(debug_assertions)]
 use dioxus::logger::tracing::trace;
-use secp256k1::schnorr;
 
 use crate::{
     ESPLORA_ENDPOINT, NETWORK,
     esplora::FeeEstimate,
-    util::{npub_to_address, parse_network, parse_npub, parse_nsec},
+    util::{npub_to_address, parse_network, parse_npub},
+    validation::{ValidationField, validate_input},
 };
 
 /// Nostr `npub` input validation component.
 #[component]
-pub(crate) fn NpubInput(mut update_var: Signal<String>, label: String, id: String) -> Element {
-    let mut has_error = use_signal(|| false);
-    let mut validate_npub = move |input: &str| {
-        let result = parse_npub(input);
-        *has_error.write() = result.is_err() && !input.is_empty();
-        if result.is_ok() || input.is_empty() {
-            update_var.set(input.to_string());
-        }
+pub(crate) fn NpubInput(
+    mut update_var: Signal<String>,
+    label: String,
+    id: String,
+    error: Signal<Option<String>>,
+    required: Option<bool>,
+) -> Element {
+    let required = required.unwrap_or(false);
+
+    let mut on_validate_npub = move |input: &str| {
+        update_var.set(input.to_string());
+        let error_msg = validate_input(input, ValidationField::Npub, required)
+            .err()
+            .map(|e| e.to_string());
+        error.set(error_msg);
     };
 
-    let input_class = if *has_error.read() {
+    let input_class = if error.read().is_some() {
         "shadow-sm focus:ring-red-500 focus:border-red-500 block w-full sm:text-sm border-red-300 rounded-md p-2 border bg-red-50"
     } else {
         "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
@@ -47,14 +53,12 @@ pub(crate) fn NpubInput(mut update_var: Signal<String>, label: String, id: Strin
                     oninput: move |event| {
                         #[cfg(debug_assertions)]
                         trace!(% id, % update_var, event_value =% event.value(), "Set npub");
-                        validate_npub(&event.value());
+                        on_validate_npub(&event.value());
                     },
                 }
             }
-            if *has_error.read() {
-                p { class: "mt-2 text-xs text-red-600",
-                    "Invalid npub format. Please enter a valid Nostr public key."
-                }
+            if let Some(error_msg) = error.read().as_ref() {
+                p { class: "mt-2 text-xs text-red-600", "{error_msg}" }
             }
         }
     }
@@ -68,16 +72,24 @@ pub(crate) fn NpubInputDerivedAddress(
     label: String,
     id: String,
     col_span: u8,
+    error: Signal<Option<String>>,
+    required: Option<bool>,
 ) -> Element {
-    let mut has_error = use_signal(|| false);
+    let required = required.unwrap_or(true);
 
-    let mut validate_and_derive = move |input: &str| {
-        let parsed_npub = parse_npub(input);
-        has_error.set(parsed_npub.is_err() && !input.is_empty());
-
+    let mut on_validate_and_derive = move |input: &str| {
         update_var.set(input.to_string());
+        let error_msg = validate_input(input, ValidationField::Npub, required)
+            .err()
+            .map(|e| e.to_string());
+        error.set(error_msg.clone());
 
-        if let Ok(parsed_npub) = parsed_npub {
+        if error_msg.is_some() {
+            update_address.set(String::new());
+            return;
+        }
+
+        if let Ok(parsed_npub) = parse_npub(input) {
             if let Ok(parsed_network) = parse_network(&NETWORK.read()) {
                 if let Ok(address) = npub_to_address(&parsed_npub, parsed_network) {
                     let derived_address_str = address.to_string();
@@ -98,7 +110,7 @@ pub(crate) fn NpubInputDerivedAddress(
         }
     };
 
-    let input_class = if *has_error.read() {
+    let input_class = if error.read().is_some() {
         "shadow-sm focus:ring-red-500 focus:border-red-500 block w-full sm:text-sm border-red-300 rounded-md p-2 border bg-red-50"
     } else {
         "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
@@ -121,14 +133,13 @@ pub(crate) fn NpubInputDerivedAddress(
                     oninput: move |event| {
                         #[cfg(debug_assertions)]
                         trace!(% id, % update_var, event_value =% event.value(), "Set npub");
-                        validate_and_derive(&event.value());
+                        on_validate_and_derive(&event.value());
                     },
                 }
             }
-            if *has_error.read() {
-                p { class: "mt-2 text-xs text-red-600",
-                    "Invalid npub format. Please enter a valid Nostr public key."
-                }
+
+            if let Some(error_msg) = error.read().as_ref() {
+                p { class: "mt-2 text-xs text-red-600", "{error_msg}" }
             }
         }
     }
@@ -136,29 +147,21 @@ pub(crate) fn NpubInputDerivedAddress(
 
 /// Bitcoin BTC amount input validation component.
 #[component]
-pub(crate) fn BitcoinInput(mut update_var: Signal<String>, label: String, id: String) -> Element {
-    let mut has_error = use_signal(|| false);
-
-    let mut validate_amount = move |input: &str| {
-        if input.is_empty() {
-            *has_error.write() = false;
-            update_var.set(input.to_string());
-            return;
-        }
-
-        match input.parse::<f64>() {
-            Ok(amount) => {
-                let is_valid = Amount::from_btc(amount).is_ok();
-                *has_error.write() = !is_valid;
-                update_var.set(input.to_string());
-            }
-            Err(_) => {
-                *has_error.write() = true;
-            }
-        }
+pub(crate) fn BitcoinInput(
+    mut update_var: Signal<String>,
+    label: String,
+    id: String,
+    error: Signal<Option<String>>,
+) -> Element {
+    let mut on_validate_amount = move |input: &str| {
+        update_var.set(input.to_string());
+        let error_msg = validate_input(input, ValidationField::Amount, true)
+            .err()
+            .map(|e| e.to_string());
+        error.set(error_msg);
     };
 
-    let input_class = if *has_error.read() {
+    let input_class = if error.read().is_some() {
         "shadow-sm focus:ring-red-500 focus:border-red-500 block w-full sm:text-sm border-red-300 rounded-md p-2 border bg-red-50"
     } else {
         "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
@@ -184,14 +187,12 @@ pub(crate) fn BitcoinInput(mut update_var: Signal<String>, label: String, id: St
                     oninput: move |event| {
                         #[cfg(debug_assertions)]
                         trace!(% update_var, event_value =% event.value(), "Set Bitcoin amount");
-                        validate_amount(&event.value());
+                        on_validate_amount(&event.value());
                     },
                 }
             }
-            if *has_error.read() {
-                p { class: "mt-2 text-xs text-red-600",
-                    "Amount must be between 0.00000001 and 100 BTC."
-                }
+            if let Some(error_msg) = error.read().as_ref() {
+                p { class: "mt-2 text-xs text-red-600", "{error_msg}" }
             }
         }
     }
@@ -206,26 +207,14 @@ pub(crate) fn FeeRateSelector(
     label_dropdown: String,
     mut update_var: Signal<String>,
     fee_estimates: Signal<Option<FeeEstimate>>,
+    error: Signal<Option<String>>,
 ) -> Element {
-    let mut has_error = use_signal(|| false);
-
-    let mut validate_fee_rate = move |input: &str| {
-        if input.is_empty() {
-            *has_error.write() = false;
-            update_var.set(input.to_string());
-            return;
-        }
-
-        match input.parse::<u64>() {
-            Ok(rate) => {
-                let is_valid = rate > 0 && FeeRate::from_sat_per_vb(rate).is_some();
-                *has_error.write() = !is_valid;
-                update_var.set(input.to_string());
-            }
-            Err(_) => {
-                *has_error.write() = true;
-            }
-        }
+    let mut on_validate_fee_rate = move |input: &str| {
+        update_var.set(input.to_string());
+        let error_msg = validate_input(input, ValidationField::FeeRate, true)
+            .err()
+            .map(|e| e.to_string());
+        error.set(error_msg);
     };
 
     let mut selected_target = use_signal(|| "3".to_string()); // Default to 3-block confirmation
@@ -280,7 +269,7 @@ pub(crate) fn FeeRateSelector(
                         oninput: move |event| {
                             #[cfg(debug_assertions)]
                             trace!(% update_var, event_value =% event.value(), "Set fee rate");
-                            validate_fee_rate(&event.value());
+                            on_validate_fee_rate(&event.value());
                         },
                     }
                 }
@@ -305,8 +294,8 @@ pub(crate) fn FeeRateSelector(
                     }
                 }
             }
-            if *has_error.read() {
-                p { class: "mt-2 text-xs text-red-600", "Fee rate must be a positive integer." }
+            if let Some(error_msg) = error.read().as_ref() {
+                p { class: "mt-2 text-xs text-red-600", "{error_msg}" }
             }
         }
     }
@@ -371,23 +360,21 @@ pub(crate) fn NetworkInput(label: String, id: String) -> Element {
 
 /// Esplora backend input validation component.
 #[component]
-pub(crate) fn EsploraInput() -> Element {
-    let mut has_error = use_signal(|| false);
-
-    let mut validate_url = move |input: &str| {
-        if input.is_empty() {
-            *has_error.write() = false;
-            *ESPLORA_ENDPOINT.write() = input.to_string();
-            return;
-        }
-
-        // Simple URL validation
-        let is_valid = input.starts_with("http://") || input.starts_with("https://");
-        *has_error.write() = !is_valid;
-        *ESPLORA_ENDPOINT.write() = input.to_string();
+pub(crate) fn EsploraInput(
+    mut update_var: Signal<String>,
+    label: String,
+    id: String,
+    error: Signal<Option<String>>,
+) -> Element {
+    let mut on_validate_url = move |input: &str| {
+        update_var.set(input.to_string());
+        let error_msg = validate_input(input, ValidationField::Url, true)
+            .err()
+            .map(|e| e.to_string());
+        error.set(error_msg);
     };
 
-    let input_class = if *has_error.read() {
+    let input_class = if error.read().is_some() {
         "shadow-sm focus:ring-red-500 focus:border-red-500 block w-full sm:text-sm border-red-300 rounded-md p-2 border bg-red-50"
     } else {
         "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
@@ -398,27 +385,25 @@ pub(crate) fn EsploraInput() -> Element {
             label {
                 r#for: "esplora-url",
                 class: "block text-sm font-medium text-gray-700",
-                "Esplora API Backend URL"
+                {label}
             }
             div { class: "mt-1",
                 input {
                     r#type: "url",
-                    name: "esplora-url",
-                    id: "esplora-url",
+                    name: id.as_str(),
+                    id: id.as_str(),
                     class: input_class,
                     placeholder: "https://mempool.space/api",
-                    value: ESPLORA_ENDPOINT.read().clone(),
+                    value: "{update_var}",
                     oninput: move |event| {
                         #[cfg(debug_assertions)]
                         trace!(% ESPLORA_ENDPOINT, event_value =% event.value(), "Set Eslora endpoint");
-                        validate_url(&event.value());
+                        on_validate_url(&event.value());
                     },
                 }
             }
-            if *has_error.read() {
-                p { class: "mt-2 text-xs text-red-600",
-                    "Invalid URL format. URL should start with http:// or https://"
-                }
+            if let Some(error_msg) = error.read().as_ref() {
+                p { class: "mt-2 text-xs text-red-600", "{error_msg}" }
             } else {
                 p { class: "mt-2 text-xs text-gray-500",
                     "Default for mainnet: https://mempool.space/api"
@@ -433,57 +418,34 @@ pub(crate) fn EsploraInput() -> Element {
 pub(crate) fn TimelockInput(
     mut update_day_var: Signal<String>,
     mut update_hour_var: Signal<String>,
+    day_error: Signal<Option<String>>,
+    hour_error: Signal<Option<String>>,
+    required: Option<bool>,
 ) -> Element {
-    let mut days_has_error = use_signal(|| false);
-    let mut hours_has_error = use_signal(|| false);
+    let required = required.unwrap_or(false);
 
-    let mut validate_days = move |input: &str| {
-        if input.is_empty() {
-            *days_has_error.write() = false;
-            update_day_var.set(input.to_string());
-            return;
-        }
-
-        match input.parse::<u32>() {
-            Ok(days) => {
-                // A very large value (e.g., over 1,000 days) might be a mistake
-                let is_valid = days <= 1_000;
-                *days_has_error.write() = !is_valid;
-                update_day_var.set(input.to_string());
-            }
-            Err(_) => {
-                *days_has_error.write() = true;
-            }
-        }
+    let mut on_validate_days = move |input: &str| {
+        update_day_var.set(input.to_string());
+        let error_msg = validate_input(input, ValidationField::TimelockDays, required)
+            .err()
+            .map(|e| e.to_string());
+        day_error.set(error_msg);
     };
 
-    let mut validate_hours = move |input: &str| {
-        if input.is_empty() {
-            *hours_has_error.write() = false;
-            update_hour_var.set(input.to_string());
-            return;
-        }
-
-        match input.parse::<u32>() {
-            Ok(hours) => {
-                // Hours should be 0-23
-                let is_valid = hours < 24;
-                *hours_has_error.write() = !is_valid;
-                update_hour_var.set(input.to_string());
-            }
-            Err(_) => {
-                *hours_has_error.write() = true;
-            }
-        }
+    let mut on_validate_hours = move |input: &str| {
+        update_hour_var.set(input.to_string());
+        let error_msg = validate_input(input, ValidationField::TimelockHours, required)
+            .err()
+            .map(|e| e.to_string());
+        hour_error.set(error_msg);
     };
-
-    let days_input_class = if *days_has_error.read() {
+    let days_input_class = if day_error.read().is_some() {
         "shadow-sm focus:ring-red-500 focus:border-red-500 block w-full sm:text-sm border-red-300 rounded-md p-2 border bg-red-50"
     } else {
         "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
     };
 
-    let hours_input_class = if *hours_has_error.read() {
+    let hours_input_class = if hour_error.read().is_some() {
         "shadow-sm focus:ring-red-500 focus:border-red-500 block w-full sm:text-sm border-red-300 rounded-md p-2 border bg-red-50"
     } else {
         "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
@@ -510,12 +472,12 @@ pub(crate) fn TimelockInput(
                             oninput: move |event| {
                                 #[cfg(debug_assertions)]
                                 trace!(% update_day_var, event_value =% event.value(), "Set timelock days");
-                                validate_days(&event.value());
+                                on_validate_days(&event.value());
                             },
                         }
                     }
-                    if *days_has_error.read() {
-                        p { class: "mt-2 text-xs text-red-600", "Days should be between 0 and 1,000." }
+                    if let Some(error_msg) = day_error.read().as_ref() {
+                        p { class: "mt-2 text-xs text-red-600", "{error_msg}" }
                     }
                 }
                 div {
@@ -537,12 +499,12 @@ pub(crate) fn TimelockInput(
                             oninput: move |event| {
                                 #[cfg(debug_assertions)]
                                 trace!(% update_hour_var, event_value =% event.value(), "Set timelock hours");
-                                validate_hours(&event.value());
+                                on_validate_hours(&event.value());
                             },
                         }
                     }
-                    if *hours_has_error.read() {
-                        p { class: "mt-2 text-xs text-red-600", "Hours should be between 0 and 23." }
+                    if let Some(error_msg) = hour_error.read().as_ref() {
+                        p { class: "mt-2 text-xs text-red-600", "{error_msg}" }
                     }
                 }
             }
@@ -593,16 +555,16 @@ pub(crate) fn EscrowTypeInput(mut update_var: Signal<String>) -> Element {
 
 /// Nostr `nsec` input validation component.
 #[component]
-pub(crate) fn NsecInput(mut update_var: Signal<String>) -> Element {
-    let mut has_error = use_signal(|| false);
-
-    let mut validate_nsec = move |input: &str| {
-        let is_valid = input.is_empty() || parse_nsec(input).is_ok();
-        *has_error.write() = !is_valid && !input.is_empty();
+pub(crate) fn NsecInput(mut update_var: Signal<String>, error: Signal<Option<String>>) -> Element {
+    let mut on_validate_nsec = move |input: &str| {
         update_var.set(input.to_string());
+        let error_msg = validate_input(input, ValidationField::Nsec, true)
+            .err()
+            .map(|e| e.to_string());
+        error.set(error_msg);
     };
 
-    let input_class = if *has_error.read() {
+    let input_class = if error.read().is_some() {
         "shadow-sm focus:ring-red-500 focus:border-red-500 block w-full sm:text-sm border-red-300 rounded-md p-2 border bg-red-50"
     } else {
         "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
@@ -623,14 +585,12 @@ pub(crate) fn NsecInput(mut update_var: Signal<String>) -> Element {
                     class: input_class,
                     placeholder: "nsec...",
                     oninput: move |event| {
-                        validate_nsec(&event.value());
+                        on_validate_nsec(&event.value());
                     },
                 }
             }
-            if *has_error.read() {
-                p { class: "mt-2 text-xs text-red-600",
-                    "Invalid nsec format. Please enter a valid Nostr secret key."
-                }
+            if let Some(error_msg) = error.read().as_ref() {
+                p { class: "mt-2 text-xs text-red-600", "{error_msg}" }
             } else {
                 p { class: "mt-2 text-xs text-red-600",
                     "Your key is never stored or transmitted. All signing happens locally."
@@ -642,16 +602,21 @@ pub(crate) fn NsecInput(mut update_var: Signal<String>) -> Element {
 
 /// Transaction ID input validation component.
 #[component]
-pub(crate) fn TxidInput(mut update_var: Signal<String>, label: String, warning: String) -> Element {
-    let mut has_error = use_signal(|| false);
-
-    let mut validate_txid = move |input: &str| {
-        let is_valid = input.is_empty() || input.parse::<Txid>().is_ok();
-        *has_error.write() = !is_valid && !input.is_empty();
+pub(crate) fn TxidInput(
+    mut update_var: Signal<String>,
+    label: String,
+    warning: String,
+    error: Signal<Option<String>>,
+) -> Element {
+    let mut on_validate_txid = move |input: &str| {
         update_var.set(input.to_string());
+        let error_msg = validate_input(input, ValidationField::Txid, true)
+            .err()
+            .map(|e| e.to_string());
+        error.set(error_msg);
     };
 
-    let input_class = if *has_error.read() {
+    let input_class = if error.read().is_some() {
         "shadow-sm focus:ring-red-500 focus:border-red-500 block w-full sm:text-sm border-red-300 rounded-md p-2 border bg-red-50"
     } else {
         "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
@@ -682,14 +647,12 @@ pub(crate) fn TxidInput(mut update_var: Signal<String>, label: String, warning: 
                     oninput: move |event| {
                         #[cfg(debug_assertions)]
                         trace!(% update_var, event_value =% event.value(), "Set funding transaction ID");
-                        validate_txid(&event.value());
+                        on_validate_txid(&event.value());
                     },
                 }
             }
-            if *has_error.read() {
-                p { class: "mt-2 text-xs text-red-600",
-                    "Invalid transaction ID. Please enter a valid transaction ID."
-                }
+            if let Some(error_msg) = error.read().as_ref() {
+                p { class: "mt-2 text-xs text-red-600", "{error_msg}" }
             }
         }
     }
@@ -701,25 +664,17 @@ pub(crate) fn TransactionInput(
     mut update_var: Signal<String>,
     label: String,
     id: String,
+    error: Signal<Option<String>>,
 ) -> Element {
-    let mut has_error = use_signal(|| false);
-
-    let mut validate_transaction = move |input: &str| {
-        // For empty inputs, don't show an error
-        if input.is_empty() {
-            *has_error.write() = false;
-            update_var.set(input.to_string());
-            return;
-        }
-
-        // Bitcoin transaction validation using `rust-bitcoin`
-        let is_valid = consensus::encode::deserialize_hex::<Transaction>(input).is_ok();
-
-        *has_error.write() = !is_valid;
+    let mut on_validate_transaction = move |input: &str| {
         update_var.set(input.to_string());
+        let error_msg = validate_input(input, ValidationField::Transaction, true)
+            .err()
+            .map(|e| e.to_string());
+        error.set(error_msg);
     };
 
-    let input_class = if *has_error.read() {
+    let input_class = if error.read().is_some() {
         "shadow-sm focus:ring-red-500 focus:border-red-500 block w-full sm:text-sm border-red-300 rounded-md p-2 border bg-red-50"
     } else {
         "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
@@ -742,40 +697,37 @@ pub(crate) fn TransactionInput(
                     oninput: move |event| {
                         #[cfg(debug_assertions)]
                         trace!(% update_var, event_value =% event.value(), "Set transaction");
-                        validate_transaction(&event.value());
+                        on_validate_transaction(&event.value());
                     },
                     value: update_var,
                 }
             }
-            if *has_error.read() {
-                p { class: "mt-2 text-xs text-red-600",
-                    "Invalid transaction format. The transaction should be a hexadecimal string."
-                }
+            if let Some(error_msg) = error.read().as_ref() {
+                p { class: "mt-2 text-xs text-red-600", "{error_msg}" }
             }
         }
     }
 }
 /// Signature input validation component.
 #[component]
-pub(crate) fn SignatureInput(mut update_var: Signal<String>, label: String, id: String) -> Element {
-    let mut has_error = use_signal(|| false);
+pub(crate) fn SignatureInput(
+    mut update_var: Signal<String>,
+    label: String,
+    id: String,
+    error: Signal<Option<String>>,
+    required: Option<bool>,
+) -> Element {
+    let required = required.unwrap_or(false);
 
-    let mut validate_signature = move |input: &str| {
-        // For empty inputs, don't show an error
-        if input.is_empty() {
-            *has_error.write() = false;
-            update_var.set(input.to_string());
-            return;
-        }
-
-        // Validate signature using `rust-bitcoin`
-        let is_valid = input.parse::<schnorr::Signature>().is_ok();
-
-        *has_error.write() = !is_valid;
+    let mut on_validate_signature = move |input: &str| {
         update_var.set(input.to_string());
+        let error_msg = validate_input(input, ValidationField::Signature, required)
+            .err()
+            .map(|e| e.to_string());
+        error.set(error_msg);
     };
 
-    let input_class = if *has_error.read() {
+    let input_class = if error.read().is_some() {
         "shadow-sm focus:ring-red-500 focus:border-red-500 block w-full sm:text-sm border-red-300 rounded-md p-2 border bg-red-50"
     } else {
         "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
@@ -798,34 +750,32 @@ pub(crate) fn SignatureInput(mut update_var: Signal<String>, label: String, id: 
                     oninput: move |event| {
                         #[cfg(debug_assertions)]
                         trace!(% update_var, event_value =% event.value(), "Set signature");
-                        validate_signature(&event.value());
+                        on_validate_signature(&event.value());
                     },
                     value: update_var,
                 }
             }
-            if *has_error.read() {
-                p { class: "mt-2 text-xs text-red-600", "Invalid signature format." }
+            if let Some(error_msg) = error.read().as_ref() {
+                p { class: "mt-2 text-xs text-red-600", "{error_msg}" }
             }
         }
     }
 }
 /// Address input validation component.
 #[component]
-pub(crate) fn AddressInput(mut update_var: Signal<String>) -> Element {
-    let mut has_error = use_signal(|| false);
-
-    let mut validate_address = move |input: &str| {
-        let is_valid = input.parse::<Address<_>>().is_ok()
-            && input
-                .parse::<Address<_>>()
-                .and_then(|a| a.require_network(parse_network(&NETWORK.read()).unwrap()))
-                .is_ok();
-
-        *has_error.write() = !is_valid && !input.is_empty();
+pub(crate) fn AddressInput(
+    mut update_var: Signal<String>,
+    error: Signal<Option<String>>,
+) -> Element {
+    let mut on_validate_address = move |input: &str| {
         update_var.set(input.to_string());
+        let error_msg = validate_input(input, ValidationField::Address, true)
+            .err()
+            .map(|e| e.to_string());
+        error.set(error_msg);
     };
 
-    let input_class = if *has_error.read() {
+    let input_class = if error.read().is_some() {
         "shadow-sm focus:ring-red-500 focus:border-red-500 block w-full sm:text-sm border-red-300 rounded-md p-2 border bg-red-50"
     } else {
         "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
@@ -848,14 +798,12 @@ pub(crate) fn AddressInput(mut update_var: Signal<String>) -> Element {
                     oninput: move |event| {
                         #[cfg(debug_assertions)]
                         trace!(% update_var, event_value =% event.value(), "Set address");
-                        validate_address(&event.value());
+                        on_validate_address(&event.value());
                     },
                 }
             }
-            if *has_error.read() {
-                p { class: "mt-2 text-xs text-red-600",
-                    "Invalid Bitcoin address format. Please check and try again."
-                }
+            if let Some(error_msg) = error.read().as_ref() {
+                p { class: "mt-2 text-xs text-red-600", "{error_msg}" }
             }
         }
     }

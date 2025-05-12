@@ -2,7 +2,10 @@
 
 use dioxus::prelude::*;
 
-use crate::{ESPLORA_ENDPOINT, NETWORK};
+#[cfg(debug_assertions)]
+use dioxus::logger::tracing::trace;
+
+use crate::{ESPLORA_ENDPOINT, NETWORK, validation::*};
 
 use super::{EsploraInput, Footer, NetworkInput, PrimaryButton, SecondaryButton};
 
@@ -10,6 +13,18 @@ use super::{EsploraInput, Footer, NetworkInput, PrimaryButton, SecondaryButton};
 #[component]
 pub(crate) fn Settings() -> Element {
     let settings_saved = use_signal(|| false);
+    let mut esplora_url = use_signal(|| ESPLORA_ENDPOINT.read().clone());
+    let mut esplora_url_error = use_signal(|| None);
+
+    let has_settings_form_errors = move || esplora_url_error.read().is_some();
+
+    let mut validate_settings_form = move || {
+        esplora_url_error.set(
+            validate_input(&esplora_url.read(), ValidationField::Url, true)
+                .err()
+                .map(|e| e.to_string()),
+        );
+    };
 
     // Read the current values from global state
     rsx! {
@@ -26,7 +41,12 @@ pub(crate) fn Settings() -> Element {
                                     label: "Default Bitcoin Network",
                                 }
 
-                                EsploraInput {}
+                                EsploraInput {
+                                    id: "esplora-url",
+                                    label: "Esplora API Backend URL",
+                                    update_var: esplora_url,
+                                    error: esplora_url_error,
+                                }
                             }
 
                             div { class: "pt-5",
@@ -35,11 +55,20 @@ pub(crate) fn Settings() -> Element {
                                         onclick: move |_| {
                                             *NETWORK.write() = "Mainnet".to_string();
                                             *ESPLORA_ENDPOINT.write() = "https://mempool.space/api".to_string();
+                                            esplora_url.set("https://mempool.space/api".to_string());
                                         },
                                         text: "Restore Defaults",
                                     }
                                     PrimaryButton {
-                                        onclick: move |_| {},
+                                        onclick: move |_| {
+                                            validate_settings_form();
+                                            if has_settings_form_errors() {
+                                                #[cfg(debug_assertions)]
+                                                trace!("Form has validation errors, cannot save settings");
+                                                return;
+                                            }
+                                            *ESPLORA_ENDPOINT.write() = esplora_url.to_string();
+                                        },
                                         text: "Save Settings",
                                     }
                                 }

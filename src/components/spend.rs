@@ -12,6 +12,7 @@ use crate::{
     sign::sign_resolution_tx,
     tx::resolution_tx,
     util::{P2TR_TX_VBYTE_KEY_PATH, parse_network, parse_nsec},
+    validation::{ValidationField, validate_input},
 };
 
 use super::{
@@ -33,6 +34,55 @@ pub(crate) fn Spend() -> Element {
     let derived_address = use_signal(String::new);
     let nsec = use_signal(String::new);
     let mut signed_tx_str = use_signal(String::new);
+
+    let mut npub_error = use_signal(|| None);
+    let mut escrow_txid_error = use_signal(|| None);
+    let mut destination_address_error = use_signal(|| None);
+    let mut amount_error = use_signal(|| None);
+    let mut fee_rate_error = use_signal(|| None);
+    let mut nsec_error = use_signal(|| None);
+
+    let has_spend_form_errors = move || {
+        npub_error.read().is_some()
+            || escrow_txid_error.read().is_some()
+            || destination_address_error.read().is_some()
+            || amount_error.read().is_some()
+            || fee_rate_error.read().is_some()
+            || nsec_error.read().is_some()
+    };
+
+    let mut validate_spend_form = move || {
+        npub_error.set(
+            validate_input(&npub.read(), ValidationField::Npub, true)
+                .err()
+                .map(|e| e.to_string()),
+        );
+        escrow_txid_error.set(
+            validate_input(&escrow_txid.read(), ValidationField::Txid, true)
+                .err()
+                .map(|e| e.to_string()),
+        );
+        destination_address_error.set(
+            validate_input(&destination_address.read(), ValidationField::Address, true)
+                .err()
+                .map(|e| e.to_string()),
+        );
+        amount_error.set(
+            validate_input(&amount.read(), ValidationField::Amount, true)
+                .err()
+                .map(|e| e.to_string()),
+        );
+        fee_rate_error.set(
+            validate_input(&fee_rate.read(), ValidationField::FeeRate, true)
+                .err()
+                .map(|e| e.to_string()),
+        );
+        nsec_error.set(
+            validate_input(&nsec.read(), ValidationField::Nsec, true)
+                .err()
+                .map(|e| e.to_string()),
+        );
+    };
 
     use_effect(move || {
         to_owned![fee_estimates];
@@ -72,12 +122,14 @@ pub(crate) fn Spend() -> Element {
                                     update_var: npub,
                                     update_address: derived_address,
                                     col_span: 3,
+                                    error: npub_error,
                                 }
 
                                 TxidInput {
                                     label: "Escrow Resolution Transaction ID",
                                     update_var: escrow_txid,
                                     warning: "",
+                                    error: escrow_txid_error,
                                 }
 
                                 VoutInput {
@@ -86,12 +138,16 @@ pub(crate) fn Spend() -> Element {
                                     update_var: vout,
                                 }
 
-                                AddressInput { update_var: destination_address }
+                                AddressInput {
+                                    update_var: destination_address,
+                                    error: destination_address_error,
+                                }
 
                                 BitcoinInput {
                                     id: "amount",
                                     label: "Total Locked Amount (BTC)",
                                     update_var: amount,
+                                    error: amount_error,
                                 }
 
                                 FeeRateSelector {
@@ -100,6 +156,7 @@ pub(crate) fn Spend() -> Element {
                                     label_dropdown: "Target Blocks",
                                     update_var: fee_rate,
                                     fee_estimates,
+                                    error: fee_rate_error,
                                 }
 
                                 DerivedAddressOutput {
@@ -109,13 +166,19 @@ pub(crate) fn Spend() -> Element {
                                     col_span: 3,
                                 }
 
-                                NsecInput { update_var: nsec }
+                                NsecInput { update_var: nsec, error: nsec_error }
                             }
 
                             div { class: "pt-5",
                                 div { class: "flex justify-end",
                                     PrimaryButton {
                                         onclick: move |_| {
+                                            validate_spend_form();
+                                            if has_spend_form_errors() {
+                                                #[cfg(debug_assertions)]
+                                                trace!("Form has validation errors, cannot sign transaction");
+                                                return;
+                                            }
                                             #[cfg(debug_assertions)]
                                             trace!(
                                                 % npub, % amount, % NETWORK, % escrow_txid, % derived_address,

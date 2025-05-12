@@ -12,6 +12,7 @@ use crate::{
     scripts::{escrow_scripts, escrow_spend_info},
     sign::combine_signatures,
     util::{days_to_blocks, hours_to_blocks, parse_escrow_type, parse_npub},
+    validation::{ValidationField, validate_input},
 };
 
 use super::{
@@ -33,6 +34,86 @@ pub(crate) fn Combine() -> Element {
     let timelock_days = use_signal(String::new);
     let timelock_hours = use_signal(String::new);
     let signature_arbitrator = use_signal(String::new);
+
+    let mut unsigned_tx_error = use_signal(|| None);
+    let mut npub_buyer_error = use_signal(|| None);
+    let mut npub_seller_error = use_signal(|| None);
+    let mut npub_arbitrator_error: Signal<Option<String>> = use_signal(|| None);
+    let mut timelock_days_error = use_signal(|| None);
+    let mut timelock_hours_error = use_signal(|| None);
+    let mut signature_1_error = use_signal(|| None);
+    let mut signature_2_error = use_signal(|| None);
+    let mut signature_arbitrator_error = use_signal(|| None);
+
+    let has_combine_form_errors = move || {
+        unsigned_tx_error.read().is_some()
+            || npub_buyer_error.read().is_some()
+            || npub_seller_error.read().is_some()
+            || signature_1_error.read().is_some()
+            || signature_2_error.read().is_some()
+            || npub_arbitrator_error.read().is_some()
+            || timelock_days_error.read().is_some()
+            || timelock_hours_error.read().is_some()
+            || signature_arbitrator_error.read().is_some()
+    };
+
+    let mut validate_combine_form = move || {
+        unsigned_tx_error.set(
+            validate_input(&unsigned_tx.read(), ValidationField::Transaction, true)
+                .err()
+                .map(|e| e.to_string()),
+        );
+        npub_buyer_error.set(
+            validate_input(&npub_buyer.read(), ValidationField::Npub, true)
+                .err()
+                .map(|e| e.to_string()),
+        );
+        npub_seller_error.set(
+            validate_input(&npub_seller.read(), ValidationField::Npub, true)
+                .err()
+                .map(|e| e.to_string()),
+        );
+        signature_1_error.set(
+            validate_input(&signature_1.read(), ValidationField::Signature, true)
+                .err()
+                .map(|e| e.to_string()),
+        );
+        signature_2_error.set(
+            validate_input(&signature_2.read(), ValidationField::Signature, true)
+                .err()
+                .map(|e| e.to_string()),
+        );
+
+        let arbitrator_filled = !npub_arbitrator.read().is_empty();
+        npub_arbitrator_error.set(
+            validate_input(&npub_arbitrator.read(), ValidationField::Npub, false)
+                .err()
+                .map(|e| e.to_string()),
+        );
+
+        if arbitrator_filled {
+            timelock_days_error.set(
+                validate_input(&timelock_days.read(), ValidationField::TimelockDays, true)
+                    .err()
+                    .map(|e| e.to_string()),
+            );
+            timelock_hours_error.set(
+                validate_input(&timelock_hours.read(), ValidationField::TimelockHours, true)
+                    .err()
+                    .map(|e| e.to_string()),
+            );
+            signature_arbitrator_error.set(
+                validate_input(
+                    &signature_arbitrator.read(),
+                    ValidationField::Signature,
+                    true,
+                )
+                .err()
+                .map(|e| e.to_string()),
+            );
+        }
+    };
+
     rsx! {
         main { class: "max-w-7xl mx-auto py-6 sm:px-6 lg:px-8",
             div { class: "px-4 py-6 sm:px-0",
@@ -46,8 +127,8 @@ pub(crate) fn Combine() -> Element {
                                 update_var: unsigned_tx,
                                 label: "Unsigned Transaction",
                                 id: "unsigned-tx",
+                                error: unsigned_tx_error,
                             }
-
 
                             div { class: "grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6",
 
@@ -55,24 +136,32 @@ pub(crate) fn Combine() -> Element {
                                     id: "npub_1",
                                     label: "First Nostr Public Key (npub)",
                                     update_var: npub_buyer,
+                                    error: npub_buyer_error,
+                                    required: true,
                                 }
 
                                 NpubInput {
                                     id: "npub_2",
                                     label: "Second Nostr Public Key (npub)",
                                     update_var: npub_seller,
+                                    error: npub_seller_error,
+                                    required: true,
                                 }
 
                                 SignatureInput {
                                     update_var: signature_1,
                                     label: "First Signature",
                                     id: "signature1",
+                                    error: signature_1_error,
+                                    required: true,
                                 }
 
                                 SignatureInput {
                                     update_var: signature_2,
                                     label: "Second Signature",
                                     id: "signature2",
+                                    error: signature_2_error,
+                                    required: true,
                                 }
 
                                 EscrowTypeInput { update_var: escrow_type }
@@ -91,19 +180,23 @@ pub(crate) fn Combine() -> Element {
                                         id: "npub_arbitrator",
                                         label: "Arbitrator Nostr Public Key (npub)",
                                         update_var: npub_arbitrator,
+                                        error: npub_arbitrator_error,
                                     }
-
 
                                     TimelockInput {
                                         update_day_var: timelock_days,
                                         update_hour_var: timelock_hours,
+                                        day_error: timelock_days_error,
+                                        hour_error: timelock_hours_error,
+                                        required: !npub_arbitrator.read().is_empty(),
                                     }
-
 
                                     SignatureInput {
                                         update_var: signature_arbitrator,
                                         label: "Arbitrator Signature",
                                         id: "signaturearb",
+                                        error: signature_arbitrator_error,
+                                        required: !npub_arbitrator.read().is_empty(),
                                     }
                                 }
                             }
@@ -112,6 +205,12 @@ pub(crate) fn Combine() -> Element {
                                 div { class: "flex justify-end",
                                     PrimaryButton {
                                         onclick: move |_| {
+                                            validate_combine_form();
+                                            if has_combine_form_errors() {
+                                                #[cfg(debug_assertions)]
+                                                trace!("Form has validation errors, cannot combine signatures");
+                                                return;
+                                            }
                                             #[cfg(debug_assertions)]
                                             trace!(
                                                 % npub_buyer, % npub_seller, % signature_1, % signature_2, % npub_arbitrator,
