@@ -37,7 +37,7 @@ pub(crate) fn sign_resolution_tx(
 
     // For key path spend, we need to apply taproot tweak.
     let tweaked = keypair.tap_tweak(SECP256K1, None);
-    let signature = SECP256K1.sign_schnorr_no_aux_rand(&message, &tweaked.to_inner());
+    let signature = SECP256K1.sign_schnorr_no_aux_rand(&message, &tweaked.to_keypair());
     #[cfg(debug_assertions)]
     trace!(signature = %signature, txid = %transaction.compute_txid(), "Signature resolution transaction");
     let mut transaction = transaction.clone();
