@@ -63,7 +63,7 @@ jobs:
               cargo-${{ runner.os }}-
 
       - name: Install Dioxus
-        run: cargo install dioxus-cli@${{ env.DIOXUS_VERSION }} --force
+        run: cargo install dioxus-cli@${{ env.DIOXUS_VERSION }} --force --locked
 
       - name: Check Dioxus formatting
         run: dx fmt --check
