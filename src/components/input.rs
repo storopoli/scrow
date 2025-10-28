@@ -89,19 +89,18 @@ pub(crate) fn NpubInputDerivedAddress(
             return;
         }
 
-        if let Ok(parsed_npub) = parse_npub(input) {
-            if let Ok(parsed_network) = parse_network(&NETWORK.read()) {
-                if let Ok(address) = npub_to_address(&parsed_npub, parsed_network) {
-                    let derived_address_str = address.to_string();
-                    #[cfg(debug_assertions)]
-                    trace!(
-                        % derived_address_str, % update_address, event_value =% input,
-                        "Set derived address"
-                    );
-                    update_address.set(derived_address_str);
-                    return;
-                }
-            }
+        if let Ok(parsed_npub) = parse_npub(input)
+            && let Ok(parsed_network) = parse_network(&NETWORK.read())
+            && let Ok(address) = npub_to_address(&parsed_npub, parsed_network)
+        {
+            let derived_address_str = address.to_string();
+            #[cfg(debug_assertions)]
+            trace!(
+                % derived_address_str, % update_address, event_value =% input,
+                "Set derived address"
+            );
+            update_address.set(derived_address_str);
+            return;
         }
 
         // Clear the address if validation fails
@@ -219,7 +218,7 @@ pub(crate) fn FeeRateSelector(
 
     let mut selected_target = use_signal(|| "3".to_string()); // Default to 3-block confirmation
     // Simple confirmation options - show just the blocks
-    let confirmation_options = vec![
+    let confirmation_options = [
         ("1", "1 block"),
         ("3", "3 blocks"),
         ("6", "6 blocks"),
@@ -234,18 +233,18 @@ pub(crate) fn FeeRateSelector(
     use_effect(move || {
         to_owned![update_var, fee_estimates, selected_target];
 
-        if let Some(estimates) = fee_estimates.read().as_ref() {
-            if let Some(fee) = estimates.get(&selected_target.read().parse::<u16>().unwrap_or(3)) {
-                let rounded_fee = fee.ceil() as u64;
-                update_var.set(rounded_fee.to_string());
+        if let Some(estimates) = fee_estimates.read().as_ref()
+            && let Some(fee) = estimates.get(&selected_target.read().parse::<u16>().unwrap_or(3))
+        {
+            let rounded_fee = fee.ceil() as u64;
+            update_var.set(rounded_fee.to_string());
 
-                #[cfg(debug_assertions)]
-                trace!(
-                    "Updated fee rate to {} for target {} blocks",
-                    rounded_fee,
-                    selected_target.read()
-                );
-            }
+            #[cfg(debug_assertions)]
+            trace!(
+                "Updated fee rate to {} for target {} blocks",
+                rounded_fee,
+                selected_target.read()
+            );
         }
     });
 

@@ -356,7 +356,7 @@ mod tests {
         let sighash = SighashCache::new(&unsigned)
             .taproot_script_spend_signature_hash(
                 0,
-                &Prevouts::All(&[prevouts.clone()]),
+                &Prevouts::All(std::slice::from_ref(&prevouts)),
                 tap_leaf_hash,
                 TapSighashType::Default,
             )
@@ -540,7 +540,7 @@ mod tests {
         let sighash = SighashCache::new(&unsigned)
             .taproot_script_spend_signature_hash(
                 0,
-                &Prevouts::All(&[prevouts.clone()]),
+                &Prevouts::All(std::slice::from_ref(&prevouts)),
                 tap_leaf_hash,
                 TapSighashType::Default,
             )
@@ -733,7 +733,7 @@ mod tests {
         let sighash = SighashCache::new(&unsigned)
             .taproot_script_spend_signature_hash(
                 0,
-                &Prevouts::All(&[prevouts.clone()]),
+                &Prevouts::All(std::slice::from_ref(&prevouts)),
                 tap_leaf_hash,
                 TapSighashType::Default,
             )
