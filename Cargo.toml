@@ -25,7 +25,7 @@ esplora-client = { version = "0.11.0", default-features = false, features = [
     "tokio",
     "async-https-rustls",
 ] }
-dioxus = { version = "0.6.3", features = ["router"] }
+dioxus = { version = "0.7.2", features = ["router"] }
 # web-sys and wasm-bindgen-futures is to get clipboard interactivity in WASM
 web-sys = { version = "0.3.77", default-features = false, features = [
     "Clipboard",
@@ -36,8 +36,7 @@ web-sys = { version = "0.3.77", default-features = false, features = [
 wasm-bindgen-futures = { version = "0.4.50" }
 
 [dev-dependencies]
-corepc-node = { version = "0.5.0", features = ["28_0", "download"] }
-tracing = { version = "0.1.41", default-features = false }
+corepc-node = { version = "0.10.1", features = ["29_0", "download"] }
 tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
 tokio = { version = "1.43.0", features = ["rt", "macros"] }
 

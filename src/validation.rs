@@ -3,7 +3,7 @@ use crate::NETWORK;
 use crate::error::ValidationError;
 use crate::util::{parse_network, parse_npub, parse_nsec};
 use bitcoin::{Address, Amount, FeeRate, Transaction, Txid};
-use dioxus::signals::Readable;
+use dioxus::signals::ReadableExt;
 use secp256k1::schnorr;
 
 /// Represents the type of field to be validated in forms and inputs.
@@ -65,7 +65,12 @@ pub(crate) fn validate_input(
         ValidationField::Signature => input.parse::<schnorr::Signature>().is_ok(),
         ValidationField::Address => input
             .parse::<Address<_>>()
-            .and_then(|a| a.require_network(parse_network(&NETWORK.read()).unwrap()))
+            .and_then(|a| {
+                a.require_network(
+                    parse_network(&NETWORK.try_read().expect("Failed to read network"))
+                        .expect("Failed to parse network"),
+                )
+            })
             .is_ok(),
         ValidationField::Url => input.starts_with("http://") || input.starts_with("https://"),
         ValidationField::TimelockDays => {
