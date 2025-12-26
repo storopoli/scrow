@@ -175,7 +175,7 @@ mod tests {
 
     use corepc_node::Node;
     use dioxus::logger::tracing::{debug, info};
-    use nostr::nips::nip21::NostrURI;
+    use nostr::nips::nip21::ToNostrUri;
     use tracing_subscriber::{EnvFilter, fmt, layer::SubscriberExt, util::SubscriberInitExt};
 
     use crate::{

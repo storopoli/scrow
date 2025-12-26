@@ -12,34 +12,33 @@ license = "MIT"
 
 [dependencies]
 # NOTE: keep bitcoin and secp256k1 versions in sync.
-bitcoin = { version = "0.32.7", default-features = false, features = [
+bitcoin = { version = "0.32.8", default-features = false, features = [
     "std",
     "serde",
     "secp-recovery",
     "rand",
 ] }
-secp256k1 = { version = "0.29.0", features = ["global-context"] }
-nostr = "0.39.0"
+secp256k1 = { version = "0.29.1", features = ["global-context"] }
+nostr = "0.44.2"
 thiserror = "2.0.11"
-esplora-client = { version = "0.11.0", default-features = false, features = [
+esplora-client = { version = "0.12.1", default-features = false, features = [
     "tokio",
     "async-https-rustls",
 ] }
-dioxus = { version = "0.6.3", features = ["router"] }
+dioxus = { version = "0.7.2", features = ["router"] }
 # web-sys and wasm-bindgen-futures is to get clipboard interactivity in WASM
-web-sys = { version = "0.3.77", default-features = false, features = [
+web-sys = { version = "0.3.83", default-features = false, features = [
     "Clipboard",
     "Window",
     "Navigator",
     "Permissions",
 ] }
-wasm-bindgen-futures = { version = "0.4.50" }
+wasm-bindgen-futures = { version = "0.4.56" }
 
 [dev-dependencies]
-corepc-node = { version = "0.5.0", features = ["28_0", "download"] }
-tracing = { version = "0.1.41", default-features = false }
-tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
-tokio = { version = "1.43.0", features = ["rt", "macros"] }
+corepc-node = { version = "0.10.1", features = ["29_0", "download"] }
+tracing-subscriber = { version = "0.3.22", features = ["env-filter"] }
+tokio = { version = "1.48.0", features = ["rt", "macros"] }
 
 [features]
 default = ["web"]
