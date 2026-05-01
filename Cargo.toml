@@ -36,7 +36,7 @@ web-sys = { version = "0.3.83", default-features = false, features = [
 wasm-bindgen-futures = { version = "0.4.56" }
 
 [dev-dependencies]
-corepc-node = { version = "0.10.1", features = ["29_0", "download"] }
+corepc-node = { version = "0.12.0", features = ["29_0", "download"] }
 tracing-subscriber = { version = "0.3.22", features = ["env-filter"] }
 tokio = { version = "1.48.0", features = ["rt", "macros"] }
 
